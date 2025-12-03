@@ -33,12 +33,21 @@ class MemoryService:
             content=memory_data.content,
             source_type=memory_data.source_type,
             source_url=memory_data.source_url,
+            image_url=memory_data.image_url,
+            backdrop_url=memory_data.backdrop_url,
+            memory_metadata=memory_data.memory_metadata or {},
             category_id=memory_data.category_id,
         )
+        
+        print(f"✅ [SERVICE] Memory object created with image_url: {new_memory.image_url}")
         
         db.add(new_memory)
         await db.commit()
         await db.refresh(new_memory)
+        
+        print(f"✅ [SERVICE] Memory saved to DB with ID: {new_memory.id}")
+        print(f"   - image_url: {new_memory.image_url}")
+        print(f"   - backdrop_url: {new_memory.backdrop_url}")
         
         return new_memory
     

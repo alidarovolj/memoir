@@ -31,18 +31,24 @@ class AuthInterceptor extends Interceptor {
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
     // Если 401 или 403 - токен истек или недействителен
+    // НО не делаем logout если это страница логина/регистрации
     if (err.response?.statusCode == 401 || err.response?.statusCode == 403) {
-      print('🔐 Token expired or invalid (${err.response?.statusCode}), logging out...');
+      final uri = err.requestOptions.uri.toString();
       
-      // Очищаем токен
-      await authService.logout();
-      
-      // Перенаправляем на страницу логина
-      if (navigatorKey.currentState != null) {
-        navigatorKey.currentState!.pushNamedAndRemoveUntil(
-          '/login',
-          (route) => false,
-        );
+      // Не делаем автоматический logout для auth endpoints
+      if (!uri.contains('/auth/login') && !uri.contains('/auth/register')) {
+        print('🔐 Token expired or invalid (${err.response?.statusCode}), logging out...');
+        
+        // Очищаем токен
+        await authService.logout();
+        
+        // Перенаправляем на страницу логина
+        if (navigatorKey.currentState != null) {
+          navigatorKey.currentState!.pushNamedAndRemoveUntil(
+            '/login',
+            (route) => false,
+          );
+        }
       }
     }
     

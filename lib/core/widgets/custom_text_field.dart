@@ -6,6 +6,7 @@ class CustomTextField extends StatelessWidget {
   final String? labelText;
   final String? hintText;
   final IconData? prefixIcon;
+  final Widget? suffixIcon;
   final int maxLines;
   final bool enabled;
   final TextInputType? keyboardType;
@@ -19,6 +20,7 @@ class CustomTextField extends StatelessWidget {
     this.labelText,
     this.hintText,
     this.prefixIcon,
+    this.suffixIcon,
     this.maxLines = 1,
     this.enabled = true,
     this.keyboardType,
@@ -53,6 +55,7 @@ class CustomTextField extends StatelessWidget {
                   )
                 : Icon(prefixIcon, color: AppTheme.primaryColor)
             : null,
+        suffixIcon: suffixIcon,
         alignLabelWithHint: maxLines > 1,
       ),
     );

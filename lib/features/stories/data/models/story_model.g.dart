@@ -1,0 +1,72 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of 'story_model.dart';
+
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
+
+_$StoryModelImpl _$$StoryModelImplFromJson(Map<String, dynamic> json) =>
+    _$StoryModelImpl(
+      id: json['id'] as String,
+      user_id: json['user_id'] as String,
+      memory_id: json['memory_id'] as String,
+      is_public: json['is_public'] as bool,
+      created_at: DateTime.parse(json['created_at'] as String),
+      expires_at: DateTime.parse(json['expires_at'] as String),
+      user: json['user'] == null
+          ? null
+          : StoryUserModel.fromJson(json['user'] as Map<String, dynamic>),
+      memory: json['memory'] == null
+          ? null
+          : StoryMemoryModel.fromJson(json['memory'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$$StoryModelImplToJson(_$StoryModelImpl instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'user_id': instance.user_id,
+      'memory_id': instance.memory_id,
+      'is_public': instance.is_public,
+      'created_at': instance.created_at.toIso8601String(),
+      'expires_at': instance.expires_at.toIso8601String(),
+      'user': instance.user,
+      'memory': instance.memory,
+    };
+
+_$StoryUserModelImpl _$$StoryUserModelImplFromJson(Map<String, dynamic> json) =>
+    _$StoryUserModelImpl(
+      id: json['id'] as String,
+      username: json['username'] as String?,
+      email: json['email'] as String?,
+    );
+
+Map<String, dynamic> _$$StoryUserModelImplToJson(
+  _$StoryUserModelImpl instance,
+) => <String, dynamic>{
+  'id': instance.id,
+  'username': instance.username,
+  'email': instance.email,
+};
+
+_$StoryMemoryModelImpl _$$StoryMemoryModelImplFromJson(
+  Map<String, dynamic> json,
+) => _$StoryMemoryModelImpl(
+  id: json['id'] as String,
+  title: json['title'] as String?,
+  content: json['content'] as String?,
+  image_url: json['image_url'] as String?,
+  backdrop_url: json['backdrop_url'] as String?,
+  source_type: json['source_type'] as String?,
+);
+
+Map<String, dynamic> _$$StoryMemoryModelImplToJson(
+  _$StoryMemoryModelImpl instance,
+) => <String, dynamic>{
+  'id': instance.id,
+  'title': instance.title,
+  'content': instance.content,
+  'image_url': instance.image_url,
+  'backdrop_url': instance.backdrop_url,
+  'source_type': instance.source_type,
+};

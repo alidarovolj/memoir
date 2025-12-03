@@ -7,12 +7,19 @@ import 'package:memoir/core/utils/snackbar_utils.dart';
 import 'package:memoir/core/utils/error_messages.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:memoir/features/memories/presentation/pages/create_memory_page.dart';
+import 'package:memoir/features/memories/presentation/pages/memory_detail_page.dart';
 import 'package:memoir/features/memories/presentation/widgets/widgets.dart';
+import 'package:memoir/features/search/presentation/pages/search_page.dart';
 import 'package:memoir/core/network/dio_client.dart';
 import 'package:memoir/features/memories/data/datasources/memory_remote_datasource.dart';
 import 'package:memoir/core/services/auth_service.dart';
 import 'package:memoir/features/auth/presentation/pages/login_page.dart';
 import 'package:memoir/features/auth/presentation/pages/register_page.dart';
+import 'package:memoir/features/stories/data/datasources/story_remote_datasource.dart';
+import 'package:memoir/features/stories/data/models/story_model.dart';
+import 'package:memoir/features/stories/presentation/widgets/stories_list.dart';
+import 'package:memoir/features/stories/presentation/pages/story_viewer_page.dart';
+import 'package:memoir/features/memories/presentation/pages/edit_memory_page.dart';
 
 // Global navigation key для навигации из interceptor
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -213,8 +220,11 @@ class _HomePageState extends State<HomePage>
   int _selectedIndex = 0;
 
   late MemoryRemoteDataSource _memoryDataSource;
+  late StoryRemoteDataSource _storyDataSource;
   List<Map<String, dynamic>> _memories = [];
+  List<StoryModel> _stories = [];
   bool _isLoading = false;
+  bool _isLoadingStories = false;
 
   @override
   void initState() {
@@ -226,7 +236,9 @@ class _HomePageState extends State<HomePage>
     _fabAnimController.forward();
 
     _memoryDataSource = MemoryRemoteDataSourceImpl(dio: DioClient.instance);
+    _storyDataSource = StoryRemoteDataSourceImpl(dio: DioClient.instance);
     _loadMemories();
+    _loadStories();
   }
 
   @override
@@ -240,6 +252,18 @@ class _HomePageState extends State<HomePage>
 
     try {
       final memories = await _memoryDataSource.getMemories();
+      print('📋 [HOME] Loaded ${memories.length} memories');
+
+      // Debug: print first memory details
+      if (memories.isNotEmpty) {
+        print('🔍 [HOME] First memory data:');
+        print('   - id: ${memories[0]['id']}');
+        print('   - title: ${memories[0]['title']}');
+        print('   - image_url: ${memories[0]['image_url']}');
+        print('   - backdrop_url: ${memories[0]['backdrop_url']}');
+        print('   - memory_metadata: ${memories[0]['memory_metadata']}');
+      }
+
       if (mounted) {
         setState(() {
           _memories = memories;
@@ -256,16 +280,65 @@ class _HomePageState extends State<HomePage>
   }
 
   Future<void> _createMemory(Map<String, dynamic> memoryData) async {
+    print('🏠 [HOME] Received memory data from CreateMemoryPage');
+    print('📦 [HOME] Memory data keys: ${memoryData.keys}');
+
+    // Extract story flag before sending to backend
+    final shouldPublishAsStory =
+        memoryData.remove('publish_as_story') as bool? ?? false;
+    print(
+      '📖 [HOME] Should publish as story: $shouldPublishAsStory (type: ${shouldPublishAsStory.runtimeType})',
+    );
+
     try {
-      await _memoryDataSource.createMemory(memoryData);
-      if (mounted) {
-        await _loadMemories(); // Перезагружаем список
-        SnackBarUtils.showAIProcessing(
-          context,
-          'Воспоминание создано!\nAI классифицирует его в фоне...',
+      print('🚀 [HOME] Calling backend API...');
+      final response = await _memoryDataSource.createMemory(memoryData);
+      print('✅ [HOME] Backend API call successful!');
+      print('📦 [HOME] Response ID: ${response['id']}');
+
+      // If user wants to publish as story, create story
+      if (shouldPublishAsStory && response['id'] != null) {
+        print('📖 [HOME] Creating story for memory ${response['id']}...');
+        try {
+          await _storyDataSource.createStory(response['id'], true);
+          print('✅ [HOME] Story created successfully');
+          await _loadStories(); // Reload stories
+        } catch (storyError) {
+          print('❌ [HOME] Error creating story: $storyError');
+          if (mounted) {
+            SnackBarUtils.showWarning(
+              context,
+              'Воспоминание создано, но не удалось опубликовать в историях',
+            );
+          }
+        }
+      } else {
+        print(
+          'ℹ️ [HOME] Not publishing as story (flag was: $shouldPublishAsStory)',
         );
       }
-    } catch (e) {
+
+      if (mounted) {
+        print('🔄 [HOME] Reloading memories list...');
+        await _loadMemories(); // Перезагружаем список
+        print('✅ [HOME] Memories reloaded');
+
+        if (shouldPublishAsStory) {
+          SnackBarUtils.showSuccess(
+            context,
+            '✨ Воспоминание создано и опубликовано в историях!\nAI обрабатывает данные...',
+          );
+        } else {
+          SnackBarUtils.showAIProcessing(
+            context,
+            'Воспоминание создано!\nAI классифицирует его в фоне...',
+          );
+        }
+      }
+    } catch (e, stackTrace) {
+      print('❌ [HOME] Error creating memory: $e');
+      print('📚 [HOME] Stack trace: $stackTrace');
+
       if (mounted) {
         final message = ErrorMessages.getErrorMessage(e);
         SnackBarUtils.showError(
@@ -293,6 +366,85 @@ class _HomePageState extends State<HomePage>
     }
   }
 
+  Future<void> _editMemory(Map<String, dynamic> memory, int index) async {
+    final result = await Navigator.of(
+      context,
+    ).push(PageTransitions.slideFromRight(EditMemoryPage(memory: memory)));
+
+    if (result != null && result is Map<String, dynamic>) {
+      print('🏠 [HOME] Received updated memory data');
+      print('📦 [HOME] Update data: $result');
+
+      try {
+        print('🚀 [HOME] Calling backend API to update...');
+        await _memoryDataSource.updateMemory(memory['id'], result);
+
+        if (mounted) {
+          await _loadMemories();
+          SnackBarUtils.showSuccess(
+            context,
+            '✅ Воспоминание обновлено!\nAI переклассифицирует в фоне...',
+          );
+          print('✅ [HOME] Memory updated successfully');
+        }
+      } catch (e, stackTrace) {
+        print('❌ [HOME] Error updating memory: $e');
+        print('📚 [HOME] Stack trace: $stackTrace');
+
+        if (mounted) {
+          final message = ErrorMessages.getErrorMessage(e);
+          SnackBarUtils.showError(context, 'Не удалось обновить: $message');
+        }
+      }
+    }
+  }
+
+  Future<void> _loadStories() async {
+    setState(() => _isLoadingStories = true);
+
+    try {
+      final stories = await _storyDataSource.getPublicStories();
+      print('📖 [STORIES] Loaded ${stories.length} stories');
+
+      if (mounted) {
+        setState(() {
+          _stories = stories;
+          _isLoadingStories = false;
+        });
+      }
+    } catch (e) {
+      print('❌ [STORIES] Error loading stories: $e');
+      if (mounted) {
+        setState(() => _isLoadingStories = false);
+      }
+    }
+  }
+
+  Future<void> _showAddStoryDialog() async {
+    // Redirect to create memory page
+    SnackBarUtils.showInfo(
+      context,
+      'Создайте воспоминание и включите "Опубликовать в историях" 📖',
+    );
+
+    final result = await Navigator.of(
+      context,
+    ).push(PageTransitions.slideFromBottom(const CreateMemoryPage()));
+
+    if (result != null && result is Map<String, dynamic>) {
+      await _createMemory(result);
+    }
+  }
+
+  void _openStoryViewer(int index) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) =>
+            StoryViewerPage(stories: _stories, initialIndex: index),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -302,8 +454,9 @@ class _HomePageState extends State<HomePage>
         actions: [
           IconButton(
             icon: const Icon(Ionicons.search_outline, size: 22),
-            onPressed: () =>
-                SnackBarUtils.showInfo(context, 'Поиск - в разработке'),
+            onPressed: () => Navigator.of(
+              context,
+            ).push(PageTransitions.slideFromRight(const SearchPage())),
           ),
           IconButton(
             icon: const Icon(Ionicons.person_circle_outline, size: 22),
@@ -316,24 +469,48 @@ class _HomePageState extends State<HomePage>
         decoration: const BoxDecoration(
           gradient: AppTheme.lightBackgroundGradient,
         ),
-        child: SafeArea(child: _buildBody()),
-      ),
-      // floatingActionButton: ScaleTransition(
-      //   scale: _fabAnimController,
-      //   child: FloatingActionButton.extended(
-      //     onPressed: () async {
-      //       final result = await Navigator.of(context).push(
-      //         PageTransitions.slideFromBottom(const CreateMemoryPage()),
-      //       );
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Stories list (always visible)
+              if (_stories.isNotEmpty || _isLoadingStories)
+                _isLoadingStories
+                    ? Container(
+                        height: 110,
+                        color: Colors.white,
+                        child: const Center(child: CircularProgressIndicator()),
+                      )
+                    : StoriesList(
+                        stories: _stories,
+                        onAddStory: _showAddStoryDialog,
+                        onStoryTap: (story) {
+                          final index = _stories.indexOf(story);
+                          _openStoryViewer(index);
+                        },
+                      ),
 
-      //       if (result != null && result is Map<String, dynamic>) {
-      //         await _createMemory(result);
-      //       }
-      //     },
-      //     icon: const Icon(Ionicons.add_outline, size: 20),
-      //     label: const Text('Создать'),
-      //   ),
-      // ),
+              // Main body
+              Expanded(child: _buildBody()),
+            ],
+          ),
+        ),
+      ),
+      floatingActionButton: ScaleTransition(
+        scale: _fabAnimController,
+        child: FloatingActionButton.extended(
+          onPressed: () async {
+            final result = await Navigator.of(
+              context,
+            ).push(PageTransitions.slideFromBottom(const CreateMemoryPage()));
+
+            if (result != null && result is Map<String, dynamic>) {
+              await _createMemory(result);
+            }
+          },
+          icon: const Icon(Ionicons.add_outline, size: 20),
+          label: const Text('Создать'),
+        ),
+      ),
       bottomNavigationBar: CustomBottomNav(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (index) {
@@ -397,6 +574,16 @@ class _HomePageState extends State<HomePage>
               ? DateTime.parse(memory['created_at'])
               : DateTime.now();
 
+          // Extract AI data
+          final aiConfidence = memory['ai_confidence'] != null
+              ? (memory['ai_confidence'] as num).toDouble()
+              : null;
+
+          // Check if AI is still processing (memory created recently with no category)
+          final isProcessing =
+              memory['category_id'] == null &&
+              DateTime.now().difference(createdAt).inMinutes < 5;
+
           return MemoryCard(
             title: memory['title'] ?? 'Без заголовка',
             content: memory['content'] ?? '',
@@ -405,15 +592,22 @@ class _HomePageState extends State<HomePage>
                 ? List<String>.from(memory['tags'])
                 : null,
             createdAt: createdAt,
-            onTap: () {
-              SnackBarUtils.showInfo(
-                context,
-                'Детальный просмотр - в разработке',
+            imageUrl: memory['image_url'],
+            aiConfidence: aiConfidence,
+            isAiProcessing: isProcessing,
+            onTap: () async {
+              final result = await Navigator.of(context).push(
+                PageTransitions.slideFromRight(
+                  MemoryDetailPage(memoryId: memory['id']),
+                ),
               );
+
+              // If memory was deleted, reload the list
+              if (result == true) {
+                await _loadMemories();
+              }
             },
-            onEdit: () {
-              SnackBarUtils.showInfo(context, 'Редактирование - в разработке');
-            },
+            onEdit: () => _editMemory(memory, index),
             onDelete: () {
               _showDeleteConfirmation(context, memory['id'], index);
             },

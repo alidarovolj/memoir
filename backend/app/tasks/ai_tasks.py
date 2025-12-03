@@ -6,9 +6,12 @@ from sqlalchemy.orm import sessionmaker
 from app.tasks.celery_app import celery_app
 from app.core.config import settings
 from app.services.ai_service import ai_service
-from app.models.memory import Memory
-from app.models.embedding import Embedding
-from app.models.category import Category
+
+# Import all models FIRST to avoid relationship issues
+from app.models.user import User  # noqa
+from app.models.category import Category  # noqa
+from app.models.memory import Memory  # noqa
+from app.models.embedding import Embedding  # noqa
 
 
 # Sync engine for Celery tasks

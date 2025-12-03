@@ -7,6 +7,7 @@ abstract class MemoryRemoteDataSource {
   Future<Map<String, dynamic>> getMemory(String id);
   Future<Map<String, dynamic>> updateMemory(String id, Map<String, dynamic> memoryData);
   Future<void> deleteMemory(String id);
+  Future<List<Map<String, dynamic>>> searchMemories({required String query, bool isSemanticSearch = false});
 }
 
 class MemoryRemoteDataSourceImpl implements MemoryRemoteDataSource {
@@ -31,7 +32,20 @@ class MemoryRemoteDataSourceImpl implements MemoryRemoteDataSource {
   Future<List<Map<String, dynamic>>> getMemories() async {
     try {
       final response = await dio.get(ApiConfig.memories);
-      return List<Map<String, dynamic>>.from(response.data as List);
+      
+      // Backend возвращает {items: [...], total: 1, page: 1, ...}
+      // Нам нужен только массив items
+      if (response.data is Map && response.data.containsKey('items')) {
+        final items = response.data['items'] as List;
+        return List<Map<String, dynamic>>.from(items);
+      }
+      
+      // Если вдруг вернулся просто массив
+      if (response.data is List) {
+        return List<Map<String, dynamic>>.from(response.data as List);
+      }
+      
+      return [];
     } catch (e) {
       rethrow;
     }
@@ -67,6 +81,38 @@ class MemoryRemoteDataSourceImpl implements MemoryRemoteDataSource {
   Future<void> deleteMemory(String id) async {
     try {
       await dio.delete('${ApiConfig.memories}/$id');
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> searchMemories({
+    required String query,
+    bool isSemanticSearch = false,
+  }) async {
+    try {
+      final Response response;
+      
+      if (isSemanticSearch) {
+        // Semantic search uses POST
+        response = await dio.post(
+          '${ApiConfig.search}/semantic',
+          queryParameters: {'q': query},
+        );
+      } else {
+        // Text search uses GET
+        response = await dio.get(
+          ApiConfig.search,
+          queryParameters: {'q': query},
+        );
+      }
+      
+      if (response.data is List) {
+        return List<Map<String, dynamic>>.from(response.data as List);
+      }
+      
+      return [];
     } catch (e) {
       rethrow;
     }

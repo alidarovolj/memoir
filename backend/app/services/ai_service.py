@@ -222,6 +222,82 @@ class AIService:
         
         except Exception as e:
             raise AIServiceError(f"Entity extraction failed: {str(e)}")
+    
+    async def detect_content_intent(self, user_input: str) -> Dict[str, Any]:
+        """
+        Detect user intent from input text
+        
+        Args:
+            user_input: User's input text
+        
+        Returns:
+            Intent information with search query
+        """
+        try:
+            system_prompt = """Проанализируй текст и определи его тип и intent.
+
+Типы контента:
+- movie: фильм, сериал, кино, документалка
+- book: книга, роман, статья, учебник
+- recipe: рецепт, блюдо, готовка, кулинария
+- place: ресторан, кафе, город, локация, достопримечательность
+- product: товар, покупка, вещь для приобретения
+- idea: мысль, идея, заметка (без поиска)
+- task: задача, дело, todo, напоминание
+
+Верни JSON:
+{
+  "intent": "movie",
+  "search_query": "Интерстеллар",
+  "needs_search": true,
+  "confidence": 0.95,
+  "reasoning": "краткое объяснение"
+}
+
+Правила:
+- Если упоминается "купить", "приобрести", "заказать" → product, needs_search=true
+- Если "посмотрел", "фильм", "кино", "сериал" → movie, needs_search=true
+- Если "прочитал", "книга", "роман" → book, needs_search=true
+- Если "рецепт", "приготовить", "блюдо" → recipe, needs_search=true
+- Если "ресторан", "кафе", "место" → place, needs_search=true
+- Если "идея", "мысль", только размышления → idea, needs_search=false
+- Если "надо", "нужно", todo без конкретного объекта → task, needs_search=false
+- Для search_query - извлеки только ключевые слова (убери "посмотрел", "купить", "нужно", etc)
+- Если это просто название (например "Интерстеллар") - попробуй угадать тип по контексту
+"""
+            
+            response = await self.client.chat.completions.create(
+                model=self.classification_model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_input},
+                ],
+                temperature=0.3,
+                max_tokens=200,
+            )
+            
+            result_text = response.choices[0].message.content.strip()
+            
+            try:
+                result_json = json.loads(result_text)
+            except json.JSONDecodeError:
+                if "```json" in result_text:
+                    result_text = result_text.split("```json")[1].split("```")[0]
+                    result_json = json.loads(result_text)
+                else:
+                    # Fallback
+                    return {
+                        "intent": "idea",
+                        "search_query": user_input,
+                        "needs_search": False,
+                        "confidence": 0.5,
+                        "reasoning": "Failed to parse AI response",
+                    }
+            
+            return result_json
+        
+        except Exception as e:
+            raise AIServiceError(f"Intent detection failed: {str(e)}")
 
 
 # Singleton instance

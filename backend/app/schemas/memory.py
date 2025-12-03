@@ -11,6 +11,8 @@ class MemoryBase(BaseModel):
     content: str
     source_type: str = "text"
     source_url: Optional[str] = None
+    image_url: Optional[str] = None  # For posters/covers
+    backdrop_url: Optional[str] = None  # For backdrop images
     
     class Config:
         populate_by_name = True
@@ -19,6 +21,7 @@ class MemoryBase(BaseModel):
 class MemoryCreate(MemoryBase):
     """Memory creation schema"""
     category_id: Optional[UUID] = None
+    memory_metadata: Optional[Dict[str, Any]] = None
 
 
 class MemoryUpdate(BaseModel):
@@ -36,6 +39,8 @@ class MemoryInDB(MemoryBase):
     id: UUID
     user_id: UUID
     category_id: Optional[UUID]
+    image_url: Optional[str] = None
+    backdrop_url: Optional[str] = None
     memory_metadata: Dict[str, Any] = {}
     ai_confidence: Optional[float]
     tags: List[str] = []

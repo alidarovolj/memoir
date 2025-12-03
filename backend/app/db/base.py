@@ -11,4 +11,5 @@ def import_models():
     from app.models.category import Category  # noqa
     from app.models.memory import Memory  # noqa
     from app.models.embedding import Embedding  # noqa
+    from app.models.story import Story  # noqa
 

@@ -28,6 +28,8 @@ class Memory(Base):
     content = Column(Text, nullable=False)
     source_type = Column(SQLEnum(SourceType), nullable=False, default=SourceType.text)
     source_url = Column(String(2048), nullable=True)
+    image_url = Column(String(2048), nullable=True)  # For posters/covers
+    backdrop_url = Column(String(2048), nullable=True)  # For backdrop images
     
     # AI-generated fields
     memory_metadata = Column(JSONB, nullable=True, default=dict)

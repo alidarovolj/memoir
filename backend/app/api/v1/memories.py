@@ -51,22 +51,39 @@ async def create_memory(
     current_user: User = Depends(get_current_user),
 ):
     """Create new memory"""
+    print(f"🎯 [API] Received create memory request")
+    print(f"👤 [API] User: {current_user.username} ({current_user.id})")
+    print(f"📦 [API] Memory data: {memory_data.dict()}")
+    
     try:
+        print(f"💾 [API] Calling MemoryService.create_memory...")
         memory = await MemoryService.create_memory(
             db,
             user_id=str(current_user.id),
             memory_data=memory_data,
         )
+        print(f"✅ [API] Memory created with ID: {memory.id}")
         
         # Trigger background AI processing
+        print(f"🤖 [API] Triggering AI processing...")
         from app.tasks.ai_tasks import process_memory_full
         process_memory_full.delay(str(memory.id))
+        print(f"✅ [API] AI task queued")
         
         return memory
     except NotFoundError as e:
+        print(f"❌ [API] NotFoundError: {e}")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(e),
+        )
+    except Exception as e:
+        print(f"❌ [API] Unexpected error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create memory: {str(e)}",
         )
 
 
