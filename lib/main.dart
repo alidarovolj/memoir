@@ -18,7 +18,7 @@ import 'package:memoir/features/auth/presentation/pages/register_page.dart';
 import 'package:memoir/features/stories/data/datasources/story_remote_datasource.dart';
 import 'package:memoir/features/stories/data/models/story_model.dart';
 import 'package:memoir/features/stories/presentation/widgets/stories_list.dart';
-import 'package:memoir/features/stories/presentation/pages/story_viewer_page.dart';
+import 'package:memoir/features/tasks/presentation/pages/tasks_page.dart';
 import 'package:memoir/features/memories/presentation/pages/edit_memory_page.dart';
 
 // Global navigation key для навигации из interceptor
@@ -436,15 +436,6 @@ class _HomePageState extends State<HomePage>
     }
   }
 
-  void _openStoryViewer(int index) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) =>
-            StoryViewerPage(stories: _stories, initialIndex: index),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -469,31 +460,7 @@ class _HomePageState extends State<HomePage>
         decoration: const BoxDecoration(
           gradient: AppTheme.lightBackgroundGradient,
         ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Stories list (always visible)
-              if (_stories.isNotEmpty || _isLoadingStories)
-                _isLoadingStories
-                    ? Container(
-                        height: 110,
-                        color: Colors.white,
-                        child: const Center(child: CircularProgressIndicator()),
-                      )
-                    : StoriesList(
-                        stories: _stories,
-                        onAddStory: _showAddStoryDialog,
-                        onStoryTap: (story) {
-                          final index = _stories.indexOf(story);
-                          _openStoryViewer(index);
-                        },
-                      ),
-
-              // Main body
-              Expanded(child: _buildBody()),
-            ],
-          ),
-        ),
+        child: SafeArea(child: _buildBody()),
       ),
       floatingActionButton: ScaleTransition(
         scale: _fabAnimController,
@@ -514,7 +481,15 @@ class _HomePageState extends State<HomePage>
       bottomNavigationBar: CustomBottomNav(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (index) {
-          if (index == 1) {
+          if (index == 0) {
+            // Home page
+            setState(() => _selectedIndex = index);
+          } else if (index == 1) {
+            // Navigate to Tasks page
+            Navigator.of(
+              context,
+            ).push(PageTransitions.slideFromRight(const TasksPage()));
+          } else if (index == 2) {
             // Показываем модалку категорий
             showModalBottomSheet(
               context: context,
@@ -527,10 +502,8 @@ class _HomePageState extends State<HomePage>
                 builder: (context, scrollController) => const CategoriesModal(),
               ),
             );
-          } else if (index == 2) {
+          } else if (index == 3) {
             SnackBarUtils.showInfo(context, 'Поиск - в разработке');
-          } else {
-            setState(() => _selectedIndex = index);
           }
         },
       ),
@@ -542,77 +515,119 @@ class _HomePageState extends State<HomePage>
       return const LoadingState(message: 'Загрузка воспоминаний...');
     }
 
-    if (_memories.isEmpty) {
-      return EmptyState(
-        icon: Ionicons.folder_open_outline,
-        title: 'У вас пока нет воспоминаний',
-        subtitle: 'Начните сохранять важные моменты,\nидеи и мысли',
-        buttonText: 'Создать первое воспоминание',
-        buttonIcon: Ionicons.add_circle_outline,
-        onButtonPressed: () async {
-          final result = await Navigator.of(
-            context,
-          ).push(PageTransitions.slideFromBottom(const CreateMemoryPage()));
-
-          if (result != null && result is Map<String, dynamic>) {
-            await _createMemory(result);
-          }
-        },
-      );
-    }
-
     return RefreshIndicator(
       onRefresh: _loadMemories,
       color: AppTheme.primaryColor,
       backgroundColor: AppTheme.surfaceColor,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: _memories.length,
-        itemBuilder: (context, index) {
-          final memory = _memories[index];
-          final createdAt = memory['created_at'] != null
-              ? DateTime.parse(memory['created_at'])
-              : DateTime.now();
+      child: CustomScrollView(
+        slivers: [
+          // Stories list
+          if (_stories.isNotEmpty || _isLoadingStories)
+            SliverToBoxAdapter(
+              child: StoriesList(
+                stories: _stories,
+                isLoading: _isLoadingStories,
+                onAddStory: _showAddStoryDialog,
+                onStoryTap: (story) {
+                  // onStoryTap больше не используется, навигация внутри StoriesList
+                },
+              ),
+            ),
 
-          // Extract AI data
-          final aiConfidence = memory['ai_confidence'] != null
-              ? (memory['ai_confidence'] as num).toDouble()
-              : null;
-
-          // Check if AI is still processing (memory created recently with no category)
-          final isProcessing =
-              memory['category_id'] == null &&
-              DateTime.now().difference(createdAt).inMinutes < 5;
-
-          return MemoryCard(
-            title: memory['title'] ?? 'Без заголовка',
-            content: memory['content'] ?? '',
-            category: memory['category_name'],
-            tags: memory['tags'] != null
-                ? List<String>.from(memory['tags'])
-                : null,
-            createdAt: createdAt,
-            imageUrl: memory['image_url'],
-            aiConfidence: aiConfidence,
-            isAiProcessing: isProcessing,
-            onTap: () async {
-              final result = await Navigator.of(context).push(
-                PageTransitions.slideFromRight(
-                  MemoryDetailPage(memoryId: memory['id']),
+          // Banner carousel
+          SliverToBoxAdapter(
+            child: BannerCarousel(
+              banners: [
+                BannerItem(
+                  assetPath: 'assets/images/test_banner.jpg',
+                  title: 'Netflix Poster Series II',
+                  subtitle: 'Новая коллекция постеров',
+                  onTap: () {
+                    SnackBarUtils.showInfo(
+                      context,
+                      'Открытие баннера - в разработке',
+                    );
+                  },
                 ),
-              );
+                // Можно добавить больше баннеров
+              ],
+              height: 180,
+            ),
+          ),
 
-              // If memory was deleted, reload the list
-              if (result == true) {
-                await _loadMemories();
-              }
-            },
-            onEdit: () => _editMemory(memory, index),
-            onDelete: () {
-              _showDeleteConfirmation(context, memory['id'], index);
-            },
-          );
-        },
+          // Memories list
+          if (_memories.isEmpty)
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: EmptyState(
+                icon: Ionicons.folder_open_outline,
+                title: 'У вас пока нет воспоминаний',
+                subtitle: 'Начните сохранять важные моменты,\nидеи и мысли',
+                buttonText: 'Создать первое воспоминание',
+                buttonIcon: Ionicons.add_circle_outline,
+                onButtonPressed: () async {
+                  final result = await Navigator.of(context).push(
+                    PageTransitions.slideFromBottom(const CreateMemoryPage()),
+                  );
+
+                  if (result != null && result is Map<String, dynamic>) {
+                    await _createMemory(result);
+                  }
+                },
+              ),
+            )
+          else
+            SliverPadding(
+              padding: const EdgeInsets.all(16),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final memory = _memories[index];
+                  final createdAt = memory['created_at'] != null
+                      ? DateTime.parse(memory['created_at'])
+                      : DateTime.now();
+
+                  // Extract AI data
+                  final aiConfidence = memory['ai_confidence'] != null
+                      ? (memory['ai_confidence'] as num).toDouble()
+                      : null;
+
+                  // Check if AI is still processing (memory created recently with no category)
+                  final isProcessing =
+                      memory['category_id'] == null &&
+                      DateTime.now().difference(createdAt).inMinutes < 5;
+
+                  return MemoryCard(
+                    title: memory['title'] ?? 'Без заголовка',
+                    content: memory['content'] ?? '',
+                    category: memory['category_name'],
+                    tags: memory['tags'] != null
+                        ? List<String>.from(memory['tags'])
+                        : null,
+                    createdAt: createdAt,
+                    imageUrl: memory['image_url'],
+                    aiConfidence: aiConfidence,
+                    isAiProcessing: isProcessing,
+                    onTap: () async {
+                      final result = await Navigator.of(context).push(
+                        PageTransitions.slideFromRight(
+                          MemoryDetailPage(memoryId: memory['id']),
+                        ),
+                      );
+
+                      // If memory was deleted, reload the list
+                      if (result == true) {
+                        await _loadMemories();
+                      }
+                    },
+                    onEdit: () => _editMemory(memory, index),
+                    onDelete: () {
+                      _showDeleteConfirmation(context, memory['id'], index);
+                    },
+                  );
+                }, childCount: _memories.length),
+              ),
+            ),
+        ],
       ),
     );
   }

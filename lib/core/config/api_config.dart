@@ -18,6 +18,15 @@ class ApiConfig {
   // Search endpoints
   static const String search = '$apiV1/search';
   static const String searchSemantic = '$apiV1/search/semantic';
+  static const String smartSearch = '$apiV1/smart-search';
+  static const String contentDetails = '$apiV1/content-details';
+  
+  // Story endpoints
+  static const String stories = '$apiV1/stories';
+  
+  // Task endpoints
+  static const String tasks = '$apiV1/tasks';
+  static const String tasksAnalyze = '$apiV1/tasks/analyze';
   
   // Timeouts
   static const int connectTimeout = 30000; // 30 seconds

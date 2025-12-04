@@ -40,12 +40,18 @@ class CustomBottomNav extends StatelessWidget {
               _buildNavItem(0, Ionicons.home, Ionicons.home_outline, 'Главная'),
               _buildNavItem(
                 1,
+                Ionicons.calendar,
+                Ionicons.calendar_outline,
+                'Задачи',
+              ),
+              _buildNavItem(
+                2,
                 Ionicons.apps,
                 Ionicons.apps_outline,
                 'Категории',
               ),
               _buildNavItem(
-                2,
+                3,
                 Ionicons.search,
                 Ionicons.search_outline,
                 'Поиск',

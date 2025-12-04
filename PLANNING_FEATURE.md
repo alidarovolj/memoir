@@ -463,25 +463,42 @@ Planning Page
 
 ## 📊 Приоритизация разработки
 
-### Phase 1: Core Tasks (1 неделя)
+### ✅ РЕАЛИЗОВАНО:
+- ✅ Stories Feature (создание, просмотр, группировка, автопрогресс)
+- ✅ Smart Content Search (TMDB, Google Books, AI Intent Detection)
+- ✅ Banner Carousel (автопролистывание, индикаторы)
+- ✅ OAuth (Google, Apple Sign In)
+- ✅ Memory Cards с изображениями
+- ✅ **Planning Feature Phase 1 & 2 (Core Tasks + Time Management):**
+  - ✅ Backend: Task модель, API endpoints, миграция БД
+  - ✅ Flutter: Models, DataSource, UI (TasksPage, CreateTaskPage, TaskCard)
+  - ✅ Вкладки: Daily/Weekly/Monthly/Long-term
+  - ✅ CRUD операции: создание, завершение, удаление задач
+  - ✅ Приоритеты (low, medium, high, urgent)
+  - ✅ Due dates с календарем
+  - ✅ Интеграция с Bottom Navigation
+
+### 🚧 ТЕКУЩИЙ ФОКУС: AI Integration
+
+### Phase 1: Core Tasks (1 неделя) ✅ ГОТОВО
 - ✅ Модель Task в backend
 - ✅ CRUD endpoints для задач
 - ✅ UI для списка задач
 - ✅ Создание/редактирование задач
 - ✅ Статусы и фильтры
 
-### Phase 2: Time Management (1 неделя)
+### Phase 2: Time Management (1 неделя) ✅ ГОТОВО
 - ✅ Daily planner
 - ✅ Weekly planner
 - ✅ Monthly view
-- ✅ Due dates и notifications
-- ✅ Календарь integration
+- ✅ Due dates и календарь
+- ⏳ Push notifications (опционально)
 
 ### Phase 3: AI Integration (3-5 дней)
-- ✅ Suggest tasks from memories
-- ✅ Auto-categorize tasks
-- ✅ Task → Memory conversion
-- ✅ Smart due date suggestions
+- ⏳ Suggest tasks from memories
+- ⏳ Auto-categorize tasks
+- ⏳ Task → Memory conversion
+- ⏳ Smart due date suggestions
 
 ### Phase 4: Advanced Features (опционально)
 - ⏳ Recurring tasks

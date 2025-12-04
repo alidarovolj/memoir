@@ -20,6 +20,7 @@ class User(Base):
 
     # Relationships
     memories = relationship("Memory", back_populates="user", cascade="all, delete-orphan")
+    tasks = relationship("Task", back_populates="user", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<User {self.email}>"

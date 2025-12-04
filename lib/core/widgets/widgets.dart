@@ -11,4 +11,5 @@ export 'glass_card.dart';
 export 'gradient_icon.dart';
 export 'page_transitions.dart';
 export 'oauth_button.dart';
+export 'banner_carousel.dart';
 
