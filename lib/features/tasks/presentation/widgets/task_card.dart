@@ -7,15 +7,17 @@ import 'package:intl/intl.dart';
 class TaskCard extends StatelessWidget {
   final TaskModel task;
   final VoidCallback onTap;
-  final VoidCallback onComplete;
-  final VoidCallback onDelete;
+  final VoidCallback? onComplete;
+  final VoidCallback? onDelete;
+  final bool compact;
 
   const TaskCard({
     super.key,
     required this.task,
     required this.onTap,
-    required this.onComplete,
-    required this.onDelete,
+    this.onComplete,
+    this.onDelete,
+    this.compact = false,
   });
 
   @override

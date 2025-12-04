@@ -33,6 +33,10 @@ class Settings(BaseSettings):
     GOOGLE_SEARCH_CX: str = ""  # Custom Search Engine ID
     SPOONACULAR_KEY: str = ""  # Spoonacular API (recipes)
     
+    # Mobizon (Kazakhstan SMS service)
+    MOBIZON_API_KEY: str = ""
+    SMS_TEST_MODE: bool = False  # Если True, код просто логируется вместо отправки SMS
+    
     # Auth
     JWT_SECRET_KEY: str
     JWT_ALGORITHM: str = "HS256"

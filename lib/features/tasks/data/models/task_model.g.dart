@@ -72,3 +72,27 @@ const _$TimeScopeEnumMap = {
   TimeScope.monthly: 'monthly',
   TimeScope.longTerm: 'long_term',
 };
+
+_$TaskAnalyzeResponseImpl _$$TaskAnalyzeResponseImplFromJson(
+  Map<String, dynamic> json,
+) => _$TaskAnalyzeResponseImpl(
+  time_scope: $enumDecode(_$TimeScopeEnumMap, json['time_scope']),
+  priority: $enumDecode(_$TaskPriorityEnumMap, json['priority']),
+  suggested_time: json['suggested_time'] as String?,
+  needs_deadline: json['needs_deadline'] as bool? ?? false,
+  category: json['category'] as String?,
+  confidence: (json['confidence'] as num).toDouble(),
+  reasoning: json['reasoning'] as String,
+);
+
+Map<String, dynamic> _$$TaskAnalyzeResponseImplToJson(
+  _$TaskAnalyzeResponseImpl instance,
+) => <String, dynamic>{
+  'time_scope': _$TimeScopeEnumMap[instance.time_scope]!,
+  'priority': _$TaskPriorityEnumMap[instance.priority]!,
+  'suggested_time': instance.suggested_time,
+  'needs_deadline': instance.needs_deadline,
+  'category': instance.category,
+  'confidence': instance.confidence,
+  'reasoning': instance.reasoning,
+};

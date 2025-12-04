@@ -29,6 +29,8 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
   TaskPriority _priority = TaskPriority.medium;
   late TimeScope _timeScope;
   DateTime? _dueDate;
+  TimeOfDay? _suggestedTime;
+  bool _needsDeadline = false;
   bool _isLoading = false;
   bool _isAnalyzing = false;
   bool _showAdvancedFields = false;
@@ -66,11 +68,24 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
           _timeScope = _parseTimeScope(result['time_scope']);
           _priority = _parsePriority(result['priority']);
           _aiReasoning = result['reasoning'];
+          _needsDeadline = result['needs_deadline'] ?? false;
+          
+          // Parse suggested time
+          if (result['suggested_time'] != null) {
+            final timeParts = result['suggested_time'].split(':');
+            if (timeParts.length == 2) {
+              _suggestedTime = TimeOfDay(
+                hour: int.parse(timeParts[0]),
+                minute: int.parse(timeParts[1]),
+              );
+            }
+          }
+          
           _isAnalyzing = false;
           _showAdvancedFields = true; // Show all fields after AI analysis
         });
 
-        log('✨ [AI] Task analyzed: time_scope=${result['time_scope']}, priority=${result['priority']}');
+        log('✨ [AI] Task analyzed: time_scope=${result['time_scope']}, priority=${result['priority']}, time=${result['suggested_time']}, needs_deadline=${result['needs_deadline']}');
       }
     } catch (e) {
       log('❌ [AI] Error analyzing task: $e');
@@ -113,31 +128,6 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
     }
   }
 
-  Future<void> _selectDueDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _dueDate ?? DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: AppTheme.primaryColor,
-              onPrimary: Colors.white,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (picked != null) {
-      setState(() {
-        _dueDate = picked;
-      });
-    }
-  }
 
   Future<void> _createTask() async {
     if (!_formKey.currentState!.validate()) {
@@ -382,51 +372,125 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
 
                     const SizedBox(height: 24),
 
-                    // Due Date
-                    const Text(
-                    'Срок выполнения',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
-                  ),
-                    const SizedBox(height: 12),
-                    GestureDetector(
-                      onTap: _selectDueDate,
-                      child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade300),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Ionicons.calendar_outline,
-                            color: AppTheme.primaryColor,
+                    // Recommended Time (if available)
+                    if (_suggestedTime != null) ...[
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppTheme.primaryColor.withOpacity(0.3),
                           ),
-                          const SizedBox(width: 12),
-                          Text(
-                            _dueDate == null
-                                ? 'Выберите дату'
-                                : _formatDate(_dueDate!),
-                            style: TextStyle(
-                              fontSize: 15,
-                              color: _dueDate == null
-                                  ? Colors.grey.shade600
-                                  : Colors.black87,
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Ionicons.time_outline,
+                              color: AppTheme.primaryColor,
+                              size: 20,
                             ),
-                          ),
-                          const Spacer(),
-                          if (_dueDate != null)
-                            IconButton(
-                              icon: const Icon(
-                                Ionicons.close_circle,
-                                color: Colors.grey,
-                                size: 20,
+                            const SizedBox(width: 12),
+                            Text(
+                              'Рекомендуемое время: ${_suggestedTime!.format(context)}',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.black87,
                               ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+
+                    // Deadline Checkbox
+                    CheckboxListTile(
+                      title: const Text(
+                        'Установить дедлайн',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      subtitle: _needsDeadline 
+                          ? const Text(
+                              'AI рекомендует установить дедлайн',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.orange,
+                              ),
+                            )
+                          : null,
+                      value: _dueDate != null,
+                      onChanged: (value) async {
+                        if (value == true) {
+                          final date = await showDatePicker(
+                            context: context,
+                            initialDate: DateTime.now(),
+                            firstDate: DateTime.now(),
+                            lastDate: DateTime.now().add(const Duration(days: 365)),
+                          );
+                          if (date != null) {
+                            final time = _suggestedTime ?? const TimeOfDay(hour: 9, minute: 0);
+                            final timeResult = await showTimePicker(
+                              context: context,
+                              initialTime: time,
+                            );
+                            if (timeResult != null) {
+                              setState(() {
+                                _dueDate = DateTime(
+                                  date.year,
+                                  date.month,
+                                  date.day,
+                                  timeResult.hour,
+                                  timeResult.minute,
+                                );
+                              });
+                            }
+                          }
+                        } else {
+                          setState(() {
+                            _dueDate = null;
+                          });
+                        }
+                      },
+                      activeColor: AppTheme.primaryColor,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+
+                    // Show selected due date
+                    if (_dueDate != null) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Ionicons.calendar_outline,
+                              color: AppTheme.primaryColor,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                '${_dueDate!.day}.${_dueDate!.month}.${_dueDate!.year} в ${_dueDate!.hour}:${_dueDate!.minute.toString().padLeft(2, '0')}',
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Ionicons.trash_outline),
+                              color: Colors.red,
                               onPressed: () {
                                 setState(() {
                                   _dueDate = null;
@@ -436,7 +500,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                           ],
                         ),
                       ),
-                    ),
+                    ],
 
                     const SizedBox(height: 32),
 
@@ -498,19 +562,5 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
     }
   }
 
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final tomorrow = today.add(const Duration(days: 1));
-    final dateOnly = DateTime(date.year, date.month, date.day);
-
-    if (dateOnly == today) {
-      return 'Сегодня';
-    } else if (dateOnly == tomorrow) {
-      return 'Завтра';
-    } else {
-      return '${date.day}.${date.month}.${date.year}';
-    }
-  }
 }
 

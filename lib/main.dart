@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+// Firebase будет инициализирован позже для Push Notifications
+// import 'package:firebase_core/firebase_core.dart';
 import 'package:memoir/injection_container.dart' as di;
 import 'package:memoir/core/theme/app_theme.dart';
 import 'package:memoir/core/widgets/widgets.dart';
@@ -13,8 +16,8 @@ import 'package:memoir/features/search/presentation/pages/search_page.dart';
 import 'package:memoir/core/network/dio_client.dart';
 import 'package:memoir/features/memories/data/datasources/memory_remote_datasource.dart';
 import 'package:memoir/core/services/auth_service.dart';
-import 'package:memoir/features/auth/presentation/pages/login_page.dart';
-import 'package:memoir/features/auth/presentation/pages/register_page.dart';
+import 'package:memoir/features/auth/presentation/pages/phone_login_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:memoir/features/stories/data/datasources/story_remote_datasource.dart';
 import 'package:memoir/features/stories/data/models/story_model.dart';
 import 'package:memoir/features/stories/presentation/widgets/stories_list.dart';
@@ -26,6 +29,12 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Load environment variables from .env file
+  await dotenv.load(fileName: ".env");
+  
+  // TODO: Initialize Firebase for Push Notifications (FCM) later
+  // await Firebase.initializeApp();
 
   // Настройка системных UI элементов
   SystemChrome.setSystemUIOverlayStyle(
@@ -48,9 +57,6 @@ class MemoirApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Инициализируем DioClient с navigation key
-    DioClient.initialize(navigatorKey);
-
     return MaterialApp(
       navigatorKey: navigatorKey, // Добавляем глобальный ключ
       title: 'Memoir',
@@ -61,8 +67,7 @@ class MemoirApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => const SplashScreen(),
-        '/login': (context) => const LoginPage(),
-        '/register': (context) => const RegisterPage(),
+        '/phone-login': (context) => const PhoneLoginPage(),
         '/home': (context) => const HomePage(),
       },
     );
@@ -114,14 +119,19 @@ class _SplashScreenState extends State<SplashScreen>
     await Future.delayed(const Duration(milliseconds: 2500));
 
     if (mounted) {
+      // Инициализируем DioClient с navigation key и SharedPreferences
+      await DioClient.initialize(navigatorKey);
+      
       // Проверяем авторизацию
-      final authService = AuthService(dio: DioClient.instance);
+      final prefs = await SharedPreferences.getInstance();
+      final dio = DioClient.instance; // Используем глобальный instance с auth interceptor
+      final authService = AuthService(dio, prefs);
       final isAuth = await authService.isAuthenticated();
 
       if (isAuth) {
         Navigator.of(context).pushReplacementNamed('/home');
       } else {
-        Navigator.of(context).pushReplacementNamed('/login');
+        Navigator.of(context).pushReplacementNamed('/phone-login');
       }
     }
   }

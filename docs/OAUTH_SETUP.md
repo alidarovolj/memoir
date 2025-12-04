@@ -110,7 +110,7 @@ keytool -list -v -keystore /path/to/your/keystore -alias your-alias
 
 **Xcode** → **Runner** → **General** → **Bundle Identifier**
 
-Например: `com.yourcompany.memoir`
+Например: `net.memoir-ai.app`
 
 ### 4. macOS Support (опционально)
 

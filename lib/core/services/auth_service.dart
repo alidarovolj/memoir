@@ -1,15 +1,17 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
 import 'package:memoir/core/config/api_config.dart';
+import 'dart:developer' as developer;
 
 class AuthService {
   static const String _tokenKey = 'auth_token';
   static const String _userIdKey = 'user_id';
-  static const String _emailKey = 'user_email';
+  static const String _phoneKey = 'user_phone';
   
   final Dio dio;
+  final SharedPreferences prefs;
   
-  AuthService({required this.dio});
+  AuthService(this.dio, this.prefs);
 
   // Регистрация
   Future<Map<String, dynamic>> register({
@@ -40,7 +42,42 @@ class AuthService {
     }
   }
 
-  // Вход
+  // Phone Authentication (Primary method)
+  Future<Map<String, dynamic>> authenticateWithPhone({
+    required String phoneNumber,
+    required String firebaseToken,
+  }) async {
+    try {
+      developer.log('🌐 [AUTH_SERVICE] Authenticating with phone: $phoneNumber');
+      
+      final response = await dio.post(
+        '${ApiConfig.apiV1}/auth/phone',
+        data: {
+          'phone_number': phoneNumber,
+          'firebase_token': firebaseToken,
+        },
+      );
+      
+      final token = response.data['access_token'];
+      final user = response.data['user'];
+      
+      developer.log('✅ [AUTH_SERVICE] Authentication successful');
+      developer.log('👤 [AUTH_SERVICE] User ID: ${user['id']}');
+      
+      // Save auth data
+      await _saveAuthDataPhone(token, user['id'], user['phone_number']);
+      
+      return {
+        'token': token,
+        'user': user,
+      };
+    } catch (e) {
+      developer.log('❌ [AUTH_SERVICE] Authentication error: $e');
+      rethrow;
+    }
+  }
+  
+  // Legacy email/password login (keep for backward compatibility)
   Future<Map<String, dynamic>> login({
     required String email,
     required String password,
@@ -49,14 +86,14 @@ class AuthService {
       final response = await dio.post(
         ApiConfig.login,
         data: {
-          'email': email, // Backend ожидает email в JSON
+          'email': email,
           'password': password,
         },
       );
       
       final token = response.data['access_token'];
       
-      // Получаем данные пользователя
+      // Get user data
       final userResponse = await dio.get(
         ApiConfig.me,
         options: Options(
@@ -65,7 +102,7 @@ class AuthService {
       );
       
       final user = userResponse.data;
-      await _saveAuthData(token, user['id'], user['email']);
+      await _saveAuthDataPhone(token, user['id'], user['phone_number'] ?? '');
       
       return {
         'token': token,
@@ -78,15 +115,14 @@ class AuthService {
 
   // Выход
   Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
     await prefs.remove(_userIdKey);
-    await prefs.remove(_emailKey);
+    await prefs.remove(_phoneKey);
+    developer.log('👋 [AUTH_SERVICE] Logged out');
   }
 
   // Получить токен
   Future<String?> getToken() async {
-    final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_tokenKey);
   }
 
@@ -98,24 +134,30 @@ class AuthService {
 
   // Получить текущего пользователя
   Future<Map<String, dynamic>?> getCurrentUser() async {
-    final prefs = await SharedPreferences.getInstance();
     final userId = prefs.getString(_userIdKey);
-    final email = prefs.getString(_emailKey);
+    final phone = prefs.getString(_phoneKey);
     
-    if (userId == null || email == null) return null;
+    if (userId == null) return null;
     
     return {
       'id': userId,
-      'email': email,
+      'phone_number': phone ?? '',
     };
   }
 
-  // Сохранить данные авторизации
-  Future<void> _saveAuthData(String token, String userId, String email) async {
-    final prefs = await SharedPreferences.getInstance();
+  // Сохранить данные авторизации с телефоном
+  Future<void> _saveAuthDataPhone(String token, String userId, String phoneNumber) async {
     await prefs.setString(_tokenKey, token);
     await prefs.setString(_userIdKey, userId);
-    await prefs.setString(_emailKey, email);
+    await prefs.setString(_phoneKey, phoneNumber);
+    developer.log('💾 [AUTH_SERVICE] Auth data saved');
+  }
+  
+  // Legacy method (для совместимости)
+  Future<void> _saveAuthData(String token, String userId, String email) async {
+    await prefs.setString(_tokenKey, token);
+    await prefs.setString(_userIdKey, userId);
+    developer.log('💾 [AUTH_SERVICE] Auth data saved (legacy)');
   }
 }
 

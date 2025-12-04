@@ -1,131 +1,270 @@
-# Memoir Backend
+# Memoir Backend API
 
-Backend API для приложения Personal Memory AI.
+**AI-powered Personal Memory Management System** - Backend API built with FastAPI, PostgreSQL, and OpenAI.
 
-## Технологический стек
+## 🚀 Tech Stack
 
-- **FastAPI** - современный async веб-фреймворк
-- **PostgreSQL** - основная база данных с расширением pgvector
-- **Redis** - кеширование и очереди задач
-- **Celery** - фоновые задачи для AI-обработки
-- **OpenAI API** - классификация и embeddings
+- **Framework**: FastAPI
+- **Database**: PostgreSQL 16 + pgvector extension
+- **Cache**: Redis
+- **Background Tasks**: Celery
+- **AI**: OpenAI API (GPT-4o-mini, text-embedding-3-small)
+- **Container**: Docker + Docker Compose
 
-## Установка и запуск
+## 📋 Features
 
-### С помощью Docker (рекомендуется)
+- ✅ JWT Authentication (30-day tokens)
+- ✅ Memory CRUD with AI classification
+- ✅ Smart Content Search (TMDB, Google Books, etc.)
+- ✅ Stories (Instagram-like, 7-day expiration)
+- ✅ Tasks & Planning with AI suggestions
+- ✅ Semantic search with embeddings
+- ✅ Background AI processing with Celery
 
-1. Скопируйте `.env.example` в `.env` и заполните необходимые переменные:
+## 🛠️ Local Development
+
+### Prerequisites
+
+- Docker & Docker Compose
+- Python 3.11+ (optional, for local dev)
+
+### Quick Start
+
+1. **Clone the repository**
+```bash
+git clone git@github.com:alidarovolj/memoir-python.git
+cd memoir-python
+```
+
+2. **Set up environment variables**
 ```bash
 cp .env.example .env
+nano .env  # Add your API keys
 ```
 
-2. Добавьте ваш OpenAI API ключ в `.env`:
-```
-OPENAI_API_KEY=sk-your-key-here
-```
-
-3. Запустите все сервисы:
+3. **Start all services**
 ```bash
 docker-compose up -d
 ```
 
-4. Примените миграции базы данных:
+4. **Run database migrations**
 ```bash
 docker-compose exec backend alembic upgrade head
 ```
 
-5. API будет доступен по адресу: http://localhost:8000
-
-### Локальная разработка (без Docker)
-
-1. Создайте виртуальное окружение:
-```bash
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# или
-venv\Scripts\activate  # Windows
-```
-
-2. Установите зависимости:
-```bash
-pip install -r requirements.txt
-```
-
-3. Запустите PostgreSQL и Redis локально
-
-4. Примените миграции:
-```bash
-alembic upgrade head
-```
-
-5. Запустите сервер:
-```bash
-uvicorn app.main:app --reload
-```
-
-## API Документация
-
-После запуска сервера документация доступна по адресам:
-- Swagger UI: http://localhost:8000/docs
+5. **API is ready!**
+- API: http://localhost:8000
+- Swagger Docs: http://localhost:8000/docs
 - ReDoc: http://localhost:8000/redoc
 
-## Структура проекта
+## 📁 Project Structure
 
 ```
-backend/
+.
 ├── app/
-│   ├── api/           # API endpoints
-│   ├── core/          # Настройки, безопасность
-│   ├── db/            # База данных
-│   ├── models/        # SQLAlchemy модели
-│   ├── schemas/       # Pydantic схемы
-│   ├── services/      # Бизнес-логика
-│   ├── tasks/         # Celery задачи
-│   └── utils/         # Утилиты
-├── alembic/           # Миграции БД
-├── tests/             # Тесты
-└── docker-compose.yml
+│   ├── api/              # API endpoints
+│   │   └── v1/          # API v1 routes
+│   ├── core/            # Core config & security
+│   ├── db/              # Database setup
+│   ├── models/          # SQLAlchemy models
+│   ├── schemas/         # Pydantic schemas
+│   ├── services/        # Business logic
+│   └── tasks/           # Celery tasks
+├── alembic/             # Database migrations
+├── tests/               # Tests
+├── docker-compose.yml   # Docker services
+├── Dockerfile          # Backend container
+└── requirements.txt    # Python dependencies
 ```
 
-## Миграции базы данных
+## 🔐 Environment Variables
 
-Создать новую миграцию:
+Required variables in `.env`:
+
+```env
+# Database
+DATABASE_URL=postgresql+asyncpg://memoir_user:memoir_pass@postgres:5432/memoir
+
+# Redis
+REDIS_URL=redis://redis:6379/0
+
+# JWT
+SECRET_KEY=your-secret-key-here
+JWT_SECRET_KEY=your-jwt-secret
+
+# OpenAI
+OPENAI_API_KEY=sk-...
+
+# External APIs
+TMDB_API_KEY=your-tmdb-key
+GOOGLE_BOOKS_KEY=your-google-books-key
+# ... other API keys
+```
+
+## 🧪 API Endpoints
+
+### Authentication
+- `POST /api/v1/auth/register` - Register new user
+- `POST /api/v1/auth/login` - Login
+- `GET /api/v1/auth/me` - Get current user
+
+### Memories
+- `GET /api/v1/memories` - List memories
+- `POST /api/v1/memories` - Create memory (AI classification in background)
+- `GET /api/v1/memories/{id}` - Get memory details
+- `PUT /api/v1/memories/{id}` - Update memory
+- `DELETE /api/v1/memories/{id}` - Delete memory
+
+### Stories
+- `GET /api/v1/stories` - List public stories
+- `POST /api/v1/stories` - Create story
+- `DELETE /api/v1/stories/{id}` - Delete story
+
+### Tasks
+- `GET /api/v1/tasks` - List tasks
+- `POST /api/v1/tasks` - Create task
+- `POST /api/v1/tasks/analyze` - AI analyze task
+
+### Smart Search
+- `POST /api/v1/smart-search` - Universal smart search
+
+## 🐳 Docker Services
+
+```yaml
+services:
+  postgres:    # PostgreSQL 16 + pgvector
+  redis:       # Redis 7
+  backend:     # FastAPI app
+  celery:      # Background worker
+  flower:      # Celery monitoring (optional)
+```
+
+## 🚀 Production Deployment
+
+### VPS Setup (Ubuntu 22.04 LTS)
+
+1. **Install Docker**
 ```bash
-alembic revision --autogenerate -m "Description"
+curl -fsSL https://get.docker.com | sh
+sudo apt install docker-compose-plugin -y
 ```
 
-Применить миграции:
+2. **Clone and configure**
 ```bash
-alembic upgrade head
+git clone git@github.com:alidarovolj/memoir-python.git
+cd memoir-python
+cp .env.example .env
+nano .env  # Add production values
 ```
 
-Откатить последнюю миграцию:
+3. **Start services**
 ```bash
-alembic downgrade -1
+docker-compose up -d
+docker-compose exec backend alembic upgrade head
 ```
 
-## Celery Workers
+4. **Setup Nginx (optional)**
+```nginx
+server {
+    listen 80;
+    server_name api.memoir-ai.net;
+    
+    location / {
+        proxy_pass http://localhost:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
 
-Запуск Celery worker:
+## 📊 Database Schema
+
+### Key Tables
+- `users` - User accounts
+- `memories` - User memories with AI metadata
+- `categories` - Predefined categories
+- `embeddings` - Vector embeddings for semantic search
+- `stories` - Instagram-like stories (7-day expiration)
+- `tasks` - User tasks with AI suggestions
+
+## 🤖 AI Features
+
+### Memory Classification
+- Automatic category detection
+- Tag generation
+- Entity extraction
+- Confidence scoring
+
+### Task Analysis
+- Smart time scope detection (daily/weekly/monthly/long-term)
+- Priority suggestion
+- Category assignment
+
+### Smart Search
+- Intent detection (movie, book, place, recipe)
+- External API integration (TMDB, Google Books, etc.)
+- Rich metadata fetching
+
+## 🧪 Testing
+
 ```bash
-celery -A app.tasks.celery_app worker --loglevel=info
+# Run tests
+docker-compose exec backend pytest
+
+# Run with coverage
+docker-compose exec backend pytest --cov=app
 ```
 
-Мониторинг с помощью Flower:
+## 📝 Database Migrations
+
 ```bash
-celery -A app.tasks.celery_app flower
-```
-Flower UI будет доступен по адресу: http://localhost:5555
+# Create new migration
+docker-compose exec backend alembic revision --autogenerate -m "description"
 
-## Тестирование
+# Apply migrations
+docker-compose exec backend alembic upgrade head
 
-Запуск тестов:
-```bash
-pytest
-```
-
-С coverage:
-```bash
-pytest --cov=app tests/
+# Rollback
+docker-compose exec backend alembic downgrade -1
 ```
 
+## 🔍 Monitoring
+
+- **Flower**: http://localhost:5555 (Celery monitoring)
+- **Logs**: `docker-compose logs -f backend`
+
+## 📦 Dependencies
+
+See `requirements.txt` for full list. Key packages:
+- fastapi==0.109.0
+- sqlalchemy==2.0.25
+- asyncpg==0.29.0
+- openai==1.10.0
+- celery==5.3.6
+- redis==5.0.1
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Open a Pull Request
+
+## 📄 License
+
+MIT License - see LICENSE file for details
+
+## 🔗 Related
+
+- **Flutter App**: [memoir-flutter](https://github.com/alidarovolj/memoir)
+- **API Docs**: http://localhost:8000/docs
+
+## 👤 Author
+
+**Alidarov Olzhas**
+- GitHub: [@alidarovolj](https://github.com/alidarovolj)
+
+## ⭐ Support
+
+Give a ⭐️ if this project helped you!

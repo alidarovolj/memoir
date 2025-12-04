@@ -62,3 +62,19 @@ class TaskModel with _$TaskModel {
       _$TaskModelFromJson(json);
 }
 
+@freezed
+class TaskAnalyzeResponse with _$TaskAnalyzeResponse {
+  const factory TaskAnalyzeResponse({
+    required TimeScope time_scope,
+    required TaskPriority priority,
+    String? suggested_time,  // Format: "HH:MM"
+    @Default(false) bool needs_deadline,
+    String? category,
+    required double confidence,
+    required String reasoning,
+  }) = _TaskAnalyzeResponse;
+
+  factory TaskAnalyzeResponse.fromJson(Map<String, dynamic> json) =>
+      _$TaskAnalyzeResponseFromJson(json);
+}
+

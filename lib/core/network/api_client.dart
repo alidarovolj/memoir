@@ -8,26 +8,25 @@ import 'package:memoir/core/config/app_config.dart';
 class ApiClient {
   late final Dio _dio;
   final SharedPreferences _prefs;
-  
+
   ApiClient(this._prefs) {
-    _dio = Dio(BaseOptions(
-      baseUrl: ApiConfig.baseUrl,
-      connectTimeout: const Duration(milliseconds: ApiConfig.connectTimeout),
-      receiveTimeout: const Duration(milliseconds: ApiConfig.receiveTimeout),
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-    ));
-    
-    // Add interceptors
-    _dio.interceptors.add(
-      InterceptorsWrapper(
-        onRequest: _onRequest,
-        onError: _onError,
+    _dio = Dio(
+      BaseOptions(
+        baseUrl: ApiConfig.baseUrl,
+        connectTimeout: Duration(milliseconds: ApiConfig.connectTimeout),
+        receiveTimeout: Duration(milliseconds: ApiConfig.receiveTimeout),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
       ),
     );
-    
+
+    // Add interceptors
+    _dio.interceptors.add(
+      InterceptorsWrapper(onRequest: _onRequest, onError: _onError),
+    );
+
     // Add logger in debug mode
     _dio.interceptors.add(
       PrettyDioLogger(
@@ -40,9 +39,9 @@ class ApiClient {
       ),
     );
   }
-  
+
   Dio get dio => _dio;
-  
+
   /// Add authorization header
   Future<void> _onRequest(
     RequestOptions options,
@@ -54,7 +53,7 @@ class ApiClient {
     }
     handler.next(options);
   }
-  
+
   /// Handle errors
   Future<void> _onError(
     DioException err,
@@ -75,48 +74,47 @@ class ApiClient {
         await _prefs.remove(AppConfig.refreshTokenKey);
       }
     }
-    
+
     handler.next(err);
   }
-  
+
   /// Refresh access token
   Future<bool> _refreshToken() async {
     final refreshToken = _prefs.getString(AppConfig.refreshTokenKey);
     if (refreshToken == null) return false;
-    
+
     try {
       final response = await _dio.post(
         ApiConfig.refresh,
         data: {'refresh_token': refreshToken},
       );
-      
+
       final newAccessToken = response.data['access_token'];
       final newRefreshToken = response.data['refresh_token'];
-      
+
       await _prefs.setString(AppConfig.accessTokenKey, newAccessToken);
       await _prefs.setString(AppConfig.refreshTokenKey, newRefreshToken);
-      
+
       return true;
     } catch (e) {
       return false;
     }
   }
-  
+
   /// Save tokens
   Future<void> saveTokens(String accessToken, String refreshToken) async {
     await _prefs.setString(AppConfig.accessTokenKey, accessToken);
     await _prefs.setString(AppConfig.refreshTokenKey, refreshToken);
   }
-  
+
   /// Clear tokens
   Future<void> clearTokens() async {
     await _prefs.remove(AppConfig.accessTokenKey);
     await _prefs.remove(AppConfig.refreshTokenKey);
   }
-  
+
   /// Check if authenticated
   bool isAuthenticated() {
     return _prefs.getString(AppConfig.accessTokenKey) != null;
   }
 }
-

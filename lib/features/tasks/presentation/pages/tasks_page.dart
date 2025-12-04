@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:memoir/features/tasks/data/models/task_model.dart';
 import 'package:memoir/features/tasks/data/datasources/task_remote_datasource.dart';
-import 'package:memoir/features/tasks/presentation/widgets/task_card.dart';
+import 'package:memoir/features/tasks/presentation/widgets/daily_timeline.dart';
+import 'package:memoir/features/tasks/presentation/widgets/kanban_board.dart';
 import 'package:memoir/features/tasks/presentation/pages/create_task_page.dart';
 import 'package:memoir/core/widgets/widgets.dart';
 import 'package:memoir/core/theme/app_theme.dart';
 import 'package:memoir/core/network/dio_client.dart';
-import 'package:memoir/core/utils/utils.dart';
+import 'package:memoir/core/utils/snackbar_utils.dart';
+import 'package:memoir/core/utils/error_messages.dart';
 import 'package:ionicons/ionicons.dart';
 import 'dart:developer';
 
@@ -71,7 +73,7 @@ class _TasksPageState extends State<TasksPage>
     try {
       final response = await _taskDataSource.getTasks(
         timeScope: _currentScope,
-        status: TaskStatus.pending, // Only show pending tasks
+        // Load all statuses for Kanban board
       );
 
       final items = response['items'] as List;
@@ -96,6 +98,7 @@ class _TasksPageState extends State<TasksPage>
     }
   }
 
+  // ignore: unused_element
   Future<void> _completeTask(TaskModel task) async {
     try {
       await _taskDataSource.completeTask(task.id);
@@ -110,6 +113,7 @@ class _TasksPageState extends State<TasksPage>
     }
   }
 
+  // ignore: unused_element
   Future<void> _deleteTask(TaskModel task) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -217,29 +221,17 @@ class _TasksPageState extends State<TasksPage>
                             buttonIcon: Ionicons.add_circle_outline,
                             onButtonPressed: _openCreateTask,
                           )
-                        : RefreshIndicator(
-                            onRefresh: _loadTasks,
-                            color: AppTheme.primaryColor,
-                            child: ListView.builder(
-                              padding: const EdgeInsets.all(16),
-                              itemCount: _tasks.length,
-                              itemBuilder: (context, index) {
-                                final task = _tasks[index];
-                                return TaskCard(
-                                  task: task,
-                                  onTap: () {
-                                    // TODO: Open task detail
-                                    SnackBarUtils.showInfo(
-                                      context,
-                                      'Детали задачи - в разработке',
-                                    );
-                                  },
-                                  onComplete: () => _completeTask(task),
-                                  onDelete: () => _deleteTask(task),
-                                );
-                              },
-                            ),
-                          ),
+                        : _currentScope == TimeScope.daily
+                            // Daily tasks: Timeline view with hours
+                            ? DailyTimeline(
+                                tasks: _tasks,
+                                onRefresh: _loadTasks,
+                              )
+                            // Other scopes: Kanban board with status columns
+                            : KanbanBoard(
+                                tasks: _tasks,
+                                onRefresh: _loadTasks,
+                              ),
               ),
             ],
           ),

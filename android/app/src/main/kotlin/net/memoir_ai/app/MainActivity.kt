@@ -1,4 +1,4 @@
-package com.example.memoir
+package net.memoir_ai.app
 
 import io.flutter.embedding.android.FlutterActivity
 

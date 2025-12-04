@@ -6,10 +6,7 @@ class AuthInterceptor extends Interceptor {
   final AuthService authService;
   final GlobalKey<NavigatorState> navigatorKey;
 
-  AuthInterceptor({
-    required this.authService,
-    required this.navigatorKey,
-  });
+  AuthInterceptor({required this.authService, required this.navigatorKey});
 
   @override
   void onRequest(
@@ -18,41 +15,44 @@ class AuthInterceptor extends Interceptor {
   ) async {
     // Получаем токен
     final token = await authService.getToken();
-    
+
     if (token != null && token.isNotEmpty) {
       // Добавляем токен в заголовки
       options.headers['Authorization'] = 'Bearer $token';
       print('🔐 Added auth token to request: ${options.path}');
     }
-    
+
     super.onRequest(options, handler);
   }
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
     // Если 401 или 403 - токен истек или недействителен
-    // НО не делаем logout если это страница логина/регистрации
+    // НО не делаем logout если это страница логина/регистрации/SMS auth
     if (err.response?.statusCode == 401 || err.response?.statusCode == 403) {
       final uri = err.requestOptions.uri.toString();
-      
+
       // Не делаем автоматический logout для auth endpoints
-      if (!uri.contains('/auth/login') && !uri.contains('/auth/register')) {
-        print('🔐 Token expired or invalid (${err.response?.statusCode}), logging out...');
-        
+      if (!uri.contains('/auth/login') &&
+          !uri.contains('/auth/register') &&
+          !uri.contains('/sms-auth/')) {
+        print(
+          '🔐 Token expired or invalid (${err.response?.statusCode}), logging out...',
+        );
+
         // Очищаем токен
         await authService.logout();
-        
+
         // Перенаправляем на страницу логина
         if (navigatorKey.currentState != null) {
           navigatorKey.currentState!.pushNamedAndRemoveUntil(
-            '/login',
+            '/phone-login',
             (route) => false,
           );
         }
       }
     }
-    
+
     super.onError(err, handler);
   }
 }
-

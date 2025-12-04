@@ -534,3 +534,308 @@ abstract class _TaskModel implements TaskModel {
   _$$TaskModelImplCopyWith<_$TaskModelImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
+
+TaskAnalyzeResponse _$TaskAnalyzeResponseFromJson(Map<String, dynamic> json) {
+  return _TaskAnalyzeResponse.fromJson(json);
+}
+
+/// @nodoc
+mixin _$TaskAnalyzeResponse {
+  TimeScope get time_scope => throw _privateConstructorUsedError;
+  TaskPriority get priority => throw _privateConstructorUsedError;
+  String? get suggested_time =>
+      throw _privateConstructorUsedError; // Format: "HH:MM"
+  bool get needs_deadline => throw _privateConstructorUsedError;
+  String? get category => throw _privateConstructorUsedError;
+  double get confidence => throw _privateConstructorUsedError;
+  String get reasoning => throw _privateConstructorUsedError;
+
+  /// Serializes this TaskAnalyzeResponse to a JSON map.
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+
+  /// Create a copy of TaskAnalyzeResponse
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  $TaskAnalyzeResponseCopyWith<TaskAnalyzeResponse> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $TaskAnalyzeResponseCopyWith<$Res> {
+  factory $TaskAnalyzeResponseCopyWith(
+    TaskAnalyzeResponse value,
+    $Res Function(TaskAnalyzeResponse) then,
+  ) = _$TaskAnalyzeResponseCopyWithImpl<$Res, TaskAnalyzeResponse>;
+  @useResult
+  $Res call({
+    TimeScope time_scope,
+    TaskPriority priority,
+    String? suggested_time,
+    bool needs_deadline,
+    String? category,
+    double confidence,
+    String reasoning,
+  });
+}
+
+/// @nodoc
+class _$TaskAnalyzeResponseCopyWithImpl<$Res, $Val extends TaskAnalyzeResponse>
+    implements $TaskAnalyzeResponseCopyWith<$Res> {
+  _$TaskAnalyzeResponseCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  /// Create a copy of TaskAnalyzeResponse
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? time_scope = null,
+    Object? priority = null,
+    Object? suggested_time = freezed,
+    Object? needs_deadline = null,
+    Object? category = freezed,
+    Object? confidence = null,
+    Object? reasoning = null,
+  }) {
+    return _then(
+      _value.copyWith(
+            time_scope: null == time_scope
+                ? _value.time_scope
+                : time_scope // ignore: cast_nullable_to_non_nullable
+                      as TimeScope,
+            priority: null == priority
+                ? _value.priority
+                : priority // ignore: cast_nullable_to_non_nullable
+                      as TaskPriority,
+            suggested_time: freezed == suggested_time
+                ? _value.suggested_time
+                : suggested_time // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            needs_deadline: null == needs_deadline
+                ? _value.needs_deadline
+                : needs_deadline // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            category: freezed == category
+                ? _value.category
+                : category // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            confidence: null == confidence
+                ? _value.confidence
+                : confidence // ignore: cast_nullable_to_non_nullable
+                      as double,
+            reasoning: null == reasoning
+                ? _value.reasoning
+                : reasoning // ignore: cast_nullable_to_non_nullable
+                      as String,
+          )
+          as $Val,
+    );
+  }
+}
+
+/// @nodoc
+abstract class _$$TaskAnalyzeResponseImplCopyWith<$Res>
+    implements $TaskAnalyzeResponseCopyWith<$Res> {
+  factory _$$TaskAnalyzeResponseImplCopyWith(
+    _$TaskAnalyzeResponseImpl value,
+    $Res Function(_$TaskAnalyzeResponseImpl) then,
+  ) = __$$TaskAnalyzeResponseImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({
+    TimeScope time_scope,
+    TaskPriority priority,
+    String? suggested_time,
+    bool needs_deadline,
+    String? category,
+    double confidence,
+    String reasoning,
+  });
+}
+
+/// @nodoc
+class __$$TaskAnalyzeResponseImplCopyWithImpl<$Res>
+    extends _$TaskAnalyzeResponseCopyWithImpl<$Res, _$TaskAnalyzeResponseImpl>
+    implements _$$TaskAnalyzeResponseImplCopyWith<$Res> {
+  __$$TaskAnalyzeResponseImplCopyWithImpl(
+    _$TaskAnalyzeResponseImpl _value,
+    $Res Function(_$TaskAnalyzeResponseImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of TaskAnalyzeResponse
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? time_scope = null,
+    Object? priority = null,
+    Object? suggested_time = freezed,
+    Object? needs_deadline = null,
+    Object? category = freezed,
+    Object? confidence = null,
+    Object? reasoning = null,
+  }) {
+    return _then(
+      _$TaskAnalyzeResponseImpl(
+        time_scope: null == time_scope
+            ? _value.time_scope
+            : time_scope // ignore: cast_nullable_to_non_nullable
+                  as TimeScope,
+        priority: null == priority
+            ? _value.priority
+            : priority // ignore: cast_nullable_to_non_nullable
+                  as TaskPriority,
+        suggested_time: freezed == suggested_time
+            ? _value.suggested_time
+            : suggested_time // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        needs_deadline: null == needs_deadline
+            ? _value.needs_deadline
+            : needs_deadline // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        category: freezed == category
+            ? _value.category
+            : category // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        confidence: null == confidence
+            ? _value.confidence
+            : confidence // ignore: cast_nullable_to_non_nullable
+                  as double,
+        reasoning: null == reasoning
+            ? _value.reasoning
+            : reasoning // ignore: cast_nullable_to_non_nullable
+                  as String,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$TaskAnalyzeResponseImpl implements _TaskAnalyzeResponse {
+  const _$TaskAnalyzeResponseImpl({
+    required this.time_scope,
+    required this.priority,
+    this.suggested_time,
+    this.needs_deadline = false,
+    this.category,
+    required this.confidence,
+    required this.reasoning,
+  });
+
+  factory _$TaskAnalyzeResponseImpl.fromJson(Map<String, dynamic> json) =>
+      _$$TaskAnalyzeResponseImplFromJson(json);
+
+  @override
+  final TimeScope time_scope;
+  @override
+  final TaskPriority priority;
+  @override
+  final String? suggested_time;
+  // Format: "HH:MM"
+  @override
+  @JsonKey()
+  final bool needs_deadline;
+  @override
+  final String? category;
+  @override
+  final double confidence;
+  @override
+  final String reasoning;
+
+  @override
+  String toString() {
+    return 'TaskAnalyzeResponse(time_scope: $time_scope, priority: $priority, suggested_time: $suggested_time, needs_deadline: $needs_deadline, category: $category, confidence: $confidence, reasoning: $reasoning)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$TaskAnalyzeResponseImpl &&
+            (identical(other.time_scope, time_scope) ||
+                other.time_scope == time_scope) &&
+            (identical(other.priority, priority) ||
+                other.priority == priority) &&
+            (identical(other.suggested_time, suggested_time) ||
+                other.suggested_time == suggested_time) &&
+            (identical(other.needs_deadline, needs_deadline) ||
+                other.needs_deadline == needs_deadline) &&
+            (identical(other.category, category) ||
+                other.category == category) &&
+            (identical(other.confidence, confidence) ||
+                other.confidence == confidence) &&
+            (identical(other.reasoning, reasoning) ||
+                other.reasoning == reasoning));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode => Object.hash(
+    runtimeType,
+    time_scope,
+    priority,
+    suggested_time,
+    needs_deadline,
+    category,
+    confidence,
+    reasoning,
+  );
+
+  /// Create a copy of TaskAnalyzeResponse
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$TaskAnalyzeResponseImplCopyWith<_$TaskAnalyzeResponseImpl> get copyWith =>
+      __$$TaskAnalyzeResponseImplCopyWithImpl<_$TaskAnalyzeResponseImpl>(
+        this,
+        _$identity,
+      );
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$TaskAnalyzeResponseImplToJson(this);
+  }
+}
+
+abstract class _TaskAnalyzeResponse implements TaskAnalyzeResponse {
+  const factory _TaskAnalyzeResponse({
+    required final TimeScope time_scope,
+    required final TaskPriority priority,
+    final String? suggested_time,
+    final bool needs_deadline,
+    final String? category,
+    required final double confidence,
+    required final String reasoning,
+  }) = _$TaskAnalyzeResponseImpl;
+
+  factory _TaskAnalyzeResponse.fromJson(Map<String, dynamic> json) =
+      _$TaskAnalyzeResponseImpl.fromJson;
+
+  @override
+  TimeScope get time_scope;
+  @override
+  TaskPriority get priority;
+  @override
+  String? get suggested_time; // Format: "HH:MM"
+  @override
+  bool get needs_deadline;
+  @override
+  String? get category;
+  @override
+  double get confidence;
+  @override
+  String get reasoning;
+
+  /// Create a copy of TaskAnalyzeResponse
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$TaskAnalyzeResponseImplCopyWith<_$TaskAnalyzeResponseImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
