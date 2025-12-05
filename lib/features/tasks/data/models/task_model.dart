@@ -44,6 +44,7 @@ class TaskModel with _$TaskModel {
     required String title,
     String? description,
     DateTime? due_date,
+    String? scheduled_time,  // Format: "HH:MM" (e.g. "08:00")
     DateTime? completed_at,
     required TaskStatus status,
     required TaskPriority priority,

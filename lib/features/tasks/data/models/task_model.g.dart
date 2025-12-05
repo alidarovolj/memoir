@@ -15,6 +15,7 @@ _$TaskModelImpl _$$TaskModelImplFromJson(Map<String, dynamic> json) =>
       due_date: json['due_date'] == null
           ? null
           : DateTime.parse(json['due_date'] as String),
+      scheduled_time: json['scheduled_time'] as String?,
       completed_at: json['completed_at'] == null
           ? null
           : DateTime.parse(json['completed_at'] as String),
@@ -38,6 +39,7 @@ Map<String, dynamic> _$$TaskModelImplToJson(_$TaskModelImpl instance) =>
       'title': instance.title,
       'description': instance.description,
       'due_date': instance.due_date?.toIso8601String(),
+      'scheduled_time': instance.scheduled_time,
       'completed_at': instance.completed_at?.toIso8601String(),
       'status': _$TaskStatusEnumMap[instance.status]!,
       'priority': _$TaskPriorityEnumMap[instance.priority]!,

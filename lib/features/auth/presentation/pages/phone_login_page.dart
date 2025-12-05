@@ -5,7 +5,6 @@ import 'package:memoir/core/widgets/widgets.dart';
 import 'package:memoir/core/utils/snackbar_utils.dart';
 import 'package:memoir/core/services/sms_auth_service.dart';
 import 'package:memoir/core/network/dio_client.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:memoir/features/auth/presentation/pages/phone_verify_page.dart';
 import 'dart:developer' as developer;
 
@@ -19,7 +18,7 @@ class PhoneLoginPage extends StatefulWidget {
 class _PhoneLoginPageState extends State<PhoneLoginPage> {
   final _phoneController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  
+
   bool _isLoading = false;
   String? _fullPhoneNumber;
   SmsAuthService? _smsAuthService;
@@ -43,7 +42,7 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
 
   Future<void> _sendCode() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     if (_fullPhoneNumber == null || _fullPhoneNumber!.isEmpty) {
       SnackBarUtils.showError(context, 'Введите номер телефона');
       return;
@@ -89,9 +88,12 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
       });
 
       developer.log('❌ [PHONE_LOGIN] Error: $e');
-      
+
       if (mounted) {
-        SnackBarUtils.showError(context, 'Не удалось отправить код. Попробуйте снова.');
+        SnackBarUtils.showError(
+          context,
+          'Не удалось отправить код. Попробуйте снова.',
+        );
       }
     }
   }
@@ -100,9 +102,7 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
-          gradient: AppTheme.lightBackgroundGradient,
-        ),
+        decoration: BoxDecoration(gradient: AppTheme.lightBackgroundGradient),
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
@@ -126,24 +126,23 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
                       color: Colors.white,
                     ),
                   ),
-                  
+
                   const SizedBox(height: 32),
-                  
+
                   // Title
                   ShaderMask(
-                    shaderCallback: (bounds) => AppTheme.primaryGradient.createShader(bounds),
+                    shaderCallback: (bounds) =>
+                        AppTheme.primaryGradient.createShader(bounds),
                     child: Text(
                       'Memoir',
-                      style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        color: Colors.white,
-                        fontSize: 42,
-                      ),
+                      style: Theme.of(context).textTheme.headlineLarge
+                          ?.copyWith(color: Colors.white, fontSize: 42),
                       textAlign: TextAlign.center,
                     ),
                   ),
-                  
+
                   const SizedBox(height: 8),
-                  
+
                   Text(
                     'Войдите с помощью номера телефона',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -151,30 +150,36 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  
+
                   const SizedBox(height: 48),
-                  
+
                   // Phone Input
                   GlassCard(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       child: IntlPhoneField(
                         controller: _phoneController,
                         decoration: InputDecoration(
                           labelText: 'Номер телефона',
-                          labelStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey.shade600,
-                          ),
+                          labelStyle: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: Colors.grey.shade600),
                           border: InputBorder.none,
                           enabledBorder: InputBorder.none,
                           focusedBorder: InputBorder.none,
                         ),
                         style: Theme.of(context).textTheme.bodyLarge,
                         initialCountryCode: 'KZ',
-                        dropdownTextStyle: Theme.of(context).textTheme.bodyMedium,
+                        dropdownTextStyle: Theme.of(
+                          context,
+                        ).textTheme.bodyMedium,
                         onChanged: (phone) {
                           _fullPhoneNumber = phone.completeNumber;
-                          developer.log('📱 [PHONE_LOGIN] Phone number: $_fullPhoneNumber');
+                          developer.log(
+                            '📱 [PHONE_LOGIN] Phone number: $_fullPhoneNumber',
+                          );
                         },
                         validator: (phone) {
                           if (phone == null || phone.number.isEmpty) {
@@ -188,18 +193,18 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 32),
-                  
+
                   // Send Code Button
                   GradientButton(
                     text: 'Получить код',
                     onPressed: _isLoading ? null : _sendCode,
                     isLoading: _isLoading,
                   ),
-                  
+
                   const SizedBox(height: 24),
-                  
+
                   // Info Text
                   Text(
                     'Мы отправим SMS с кодом подтверждения на ваш номер',
@@ -217,4 +222,3 @@ class _PhoneLoginPageState extends State<PhoneLoginPage> {
     );
   }
 }
-

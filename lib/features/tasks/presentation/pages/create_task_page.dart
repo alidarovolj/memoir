@@ -137,12 +137,19 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
     setState(() => _isLoading = true);
 
     try {
+      // Convert suggested time to string format "HH:MM"
+      String? scheduledTime;
+      if (_suggestedTime != null) {
+        scheduledTime = '${_suggestedTime!.hour.toString().padLeft(2, '0')}:${_suggestedTime!.minute.toString().padLeft(2, '0')}';
+      }
+      
       final taskData = {
         'title': _titleController.text.trim(),
         'description': _descriptionController.text.trim(),
         'priority': _getPriorityString(_priority),
         'time_scope': _getTimeScopeString(_timeScope),
         'due_date': _dueDate?.toIso8601String(),
+        'scheduled_time': scheduledTime,
         'status': 'pending',
       };
 

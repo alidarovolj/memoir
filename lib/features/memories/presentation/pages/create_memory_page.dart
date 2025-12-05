@@ -521,7 +521,7 @@ class _CreateMemoryPageState extends State<CreateMemoryPage>
                       _publishAsStory = value;
                     });
                   },
-            activeColor: AppTheme.primaryColor,
+            activeThumbColor: AppTheme.primaryColor,
             activeTrackColor: AppTheme.primaryColor.withOpacity(0.5),
           ),
         ],

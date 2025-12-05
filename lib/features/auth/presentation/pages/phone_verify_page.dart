@@ -46,8 +46,8 @@ class _PhoneVerifyPageState extends State<PhoneVerifyPage> {
 
   @override
   void dispose() {
-    _codeController.dispose();
     _timer?.cancel();
+    _codeController.dispose();
     super.dispose();
   }
 
@@ -55,20 +55,23 @@ class _PhoneVerifyPageState extends State<PhoneVerifyPage> {
     _resendCountdown = 60;
     _canResend = false;
 
+    _timer?.cancel(); // Cancel any existing timer
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) {
         timer.cancel();
         return;
       }
 
-      setState(() {
-        if (_resendCountdown > 0) {
-          _resendCountdown--;
-        } else {
-          _canResend = true;
-          timer.cancel();
-        }
-      });
+      if (_resendCountdown > 0) {
+        _resendCountdown--;
+      } else {
+        _canResend = true;
+        timer.cancel();
+      }
+
+      if (mounted) {
+        setState(() {});
+      }
     });
   }
 

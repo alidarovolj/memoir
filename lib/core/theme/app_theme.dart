@@ -9,20 +9,20 @@ class AppTheme {
   static const backgroundColor = Color(0xFF0F172A); // Dark Blue
   static const surfaceColor = Color(0xFF1E293B);
   static const cardColor = Color(0xFF334155);
-  
+
   // Градиенты
   static const primaryGradient = LinearGradient(
     colors: [Color(0xFF6366F1), Color(0xFFA855F7)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
-  
+
   static const accentGradient = LinearGradient(
     colors: [Color(0xFFA855F7), Color(0xFFEC4899)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
-  
+
   static const backgroundGradient = LinearGradient(
     colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
     begin: Alignment.topCenter,
@@ -37,15 +37,12 @@ class AppTheme {
         primary: primaryColor,
         secondary: secondaryColor,
         surface: surfaceColor,
-        background: backgroundColor,
       ),
       scaffoldBackgroundColor: backgroundColor,
       cardTheme: CardThemeData(
         color: cardColor.withOpacity(0.5),
         elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
@@ -56,9 +53,7 @@ class AppTheme {
         backgroundColor: primaryColor,
         foregroundColor: Colors.white,
         elevation: 8,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -75,7 +70,10 @@ class AppTheme {
           borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: primaryColor, width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 16,
+        ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -148,7 +146,6 @@ class AppTheme {
         primary: primaryColor,
         secondary: secondaryColor,
         surface: Colors.white,
-        background: Color(0xFFF8FAFC),
       ),
       scaffoldBackgroundColor: const Color(0xFFF8FAFC),
       cardTheme: CardThemeData(
@@ -156,10 +153,7 @@ class AppTheme {
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
-          side: BorderSide(
-            color: Colors.grey.shade200,
-            width: 1,
-          ),
+          side: BorderSide(color: Colors.grey.shade200, width: 1),
         ),
       ),
       appBarTheme: const AppBarTheme(
@@ -172,9 +166,7 @@ class AppTheme {
         backgroundColor: primaryColor,
         foregroundColor: Colors.white,
         elevation: 8,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -191,7 +183,10 @@ class AppTheme {
           borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: primaryColor, width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 16,
+        ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -207,4 +202,3 @@ class AppTheme {
     );
   }
 }
-

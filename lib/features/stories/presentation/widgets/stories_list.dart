@@ -153,7 +153,7 @@ class _StoriesListState extends State<StoriesList> {
                 }
               },
             );
-          }).toList(),
+          }),
         ],
       ),
     );

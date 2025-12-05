@@ -26,6 +26,8 @@ mixin _$TaskModel {
   String get title => throw _privateConstructorUsedError;
   String? get description => throw _privateConstructorUsedError;
   DateTime? get due_date => throw _privateConstructorUsedError;
+  String? get scheduled_time =>
+      throw _privateConstructorUsedError; // Format: "HH:MM" (e.g. "08:00")
   DateTime? get completed_at => throw _privateConstructorUsedError;
   TaskStatus get status => throw _privateConstructorUsedError;
   TaskPriority get priority => throw _privateConstructorUsedError;
@@ -60,6 +62,7 @@ abstract class $TaskModelCopyWith<$Res> {
     String title,
     String? description,
     DateTime? due_date,
+    String? scheduled_time,
     DateTime? completed_at,
     TaskStatus status,
     TaskPriority priority,
@@ -95,6 +98,7 @@ class _$TaskModelCopyWithImpl<$Res, $Val extends TaskModel>
     Object? title = null,
     Object? description = freezed,
     Object? due_date = freezed,
+    Object? scheduled_time = freezed,
     Object? completed_at = freezed,
     Object? status = null,
     Object? priority = null,
@@ -130,6 +134,10 @@ class _$TaskModelCopyWithImpl<$Res, $Val extends TaskModel>
                 ? _value.due_date
                 : due_date // ignore: cast_nullable_to_non_nullable
                       as DateTime?,
+            scheduled_time: freezed == scheduled_time
+                ? _value.scheduled_time
+                : scheduled_time // ignore: cast_nullable_to_non_nullable
+                      as String?,
             completed_at: freezed == completed_at
                 ? _value.completed_at
                 : completed_at // ignore: cast_nullable_to_non_nullable
@@ -199,6 +207,7 @@ abstract class _$$TaskModelImplCopyWith<$Res>
     String title,
     String? description,
     DateTime? due_date,
+    String? scheduled_time,
     DateTime? completed_at,
     TaskStatus status,
     TaskPriority priority,
@@ -233,6 +242,7 @@ class __$$TaskModelImplCopyWithImpl<$Res>
     Object? title = null,
     Object? description = freezed,
     Object? due_date = freezed,
+    Object? scheduled_time = freezed,
     Object? completed_at = freezed,
     Object? status = null,
     Object? priority = null,
@@ -268,6 +278,10 @@ class __$$TaskModelImplCopyWithImpl<$Res>
             ? _value.due_date
             : due_date // ignore: cast_nullable_to_non_nullable
                   as DateTime?,
+        scheduled_time: freezed == scheduled_time
+            ? _value.scheduled_time
+            : scheduled_time // ignore: cast_nullable_to_non_nullable
+                  as String?,
         completed_at: freezed == completed_at
             ? _value.completed_at
             : completed_at // ignore: cast_nullable_to_non_nullable
@@ -330,6 +344,7 @@ class _$TaskModelImpl implements _TaskModel {
     required this.title,
     this.description,
     this.due_date,
+    this.scheduled_time,
     this.completed_at,
     required this.status,
     required this.priority,
@@ -357,6 +372,9 @@ class _$TaskModelImpl implements _TaskModel {
   final String? description;
   @override
   final DateTime? due_date;
+  @override
+  final String? scheduled_time;
+  // Format: "HH:MM" (e.g. "08:00")
   @override
   final DateTime? completed_at;
   @override
@@ -392,7 +410,7 @@ class _$TaskModelImpl implements _TaskModel {
 
   @override
   String toString() {
-    return 'TaskModel(id: $id, user_id: $user_id, title: $title, description: $description, due_date: $due_date, completed_at: $completed_at, status: $status, priority: $priority, time_scope: $time_scope, category_id: $category_id, category_name: $category_name, related_memory_id: $related_memory_id, ai_suggested: $ai_suggested, ai_confidence: $ai_confidence, tags: $tags, created_at: $created_at, updated_at: $updated_at)';
+    return 'TaskModel(id: $id, user_id: $user_id, title: $title, description: $description, due_date: $due_date, scheduled_time: $scheduled_time, completed_at: $completed_at, status: $status, priority: $priority, time_scope: $time_scope, category_id: $category_id, category_name: $category_name, related_memory_id: $related_memory_id, ai_suggested: $ai_suggested, ai_confidence: $ai_confidence, tags: $tags, created_at: $created_at, updated_at: $updated_at)';
   }
 
   @override
@@ -407,6 +425,8 @@ class _$TaskModelImpl implements _TaskModel {
                 other.description == description) &&
             (identical(other.due_date, due_date) ||
                 other.due_date == due_date) &&
+            (identical(other.scheduled_time, scheduled_time) ||
+                other.scheduled_time == scheduled_time) &&
             (identical(other.completed_at, completed_at) ||
                 other.completed_at == completed_at) &&
             (identical(other.status, status) || other.status == status) &&
@@ -440,6 +460,7 @@ class _$TaskModelImpl implements _TaskModel {
     title,
     description,
     due_date,
+    scheduled_time,
     completed_at,
     status,
     priority,
@@ -475,6 +496,7 @@ abstract class _TaskModel implements TaskModel {
     required final String title,
     final String? description,
     final DateTime? due_date,
+    final String? scheduled_time,
     final DateTime? completed_at,
     required final TaskStatus status,
     required final TaskPriority priority,
@@ -502,6 +524,8 @@ abstract class _TaskModel implements TaskModel {
   String? get description;
   @override
   DateTime? get due_date;
+  @override
+  String? get scheduled_time; // Format: "HH:MM" (e.g. "08:00")
   @override
   DateTime? get completed_at;
   @override
