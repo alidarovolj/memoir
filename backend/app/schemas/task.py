@@ -91,3 +91,12 @@ class TaskAnalyzeResponse(BaseModel):
     confidence: float
     reasoning: str
 
+
+class TaskToMemoryConversion(BaseModel):
+    """Schema for converting a completed task to a memory"""
+    content: Optional[str] = None  # Additional content/notes
+    rating: Optional[float] = Field(None, ge=0, le=10)  # Rating for movies/books (0-10)
+    notes: Optional[str] = None  # Additional notes/thoughts
+    image_url: Optional[str] = None  # Optional image
+    backdrop_url: Optional[str] = None  # Optional backdrop
+

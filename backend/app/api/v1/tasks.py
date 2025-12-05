@@ -12,6 +12,7 @@ from app.schemas.task import (
     TaskCreate,
     TaskUpdate,
     TaskListResponse,
+    TaskToMemoryConversion,
 )
 from app.services.task_service import TaskService
 
@@ -179,4 +180,45 @@ async def delete_task(
         raise HTTPException(status_code=404, detail="Task not found")
 
     return None
+
+
+@router.post("/{task_id}/convert-to-memory")
+async def convert_task_to_memory(
+    task_id: UUID,
+    conversion_data: TaskToMemoryConversion,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Convert a completed task to a memory
+    
+    **Flow:**
+    1. Verify task exists and is completed
+    2. Create memory with task's content + additional notes
+    3. Link memory to task (related_task_id)
+    4. Process memory with AI (classification, embeddings)
+    
+    **Examples:**
+    - "Посмотреть Начало" → "Посмотрел Начало"
+    - "Прочитать 1984" → "Прочитал 1984"
+    - "Сходить в Парк Горького" → "Посетил Парк Горького"
+    
+    **Request body:**
+    - content: Additional content/notes about the completed task
+    - rating: Optional rating (0-10) for movies/books
+    - notes: Additional thoughts/impressions
+    - image_url: Optional image
+    - backdrop_url: Optional backdrop
+    """
+    memory = await TaskService.convert_to_memory(
+        db=db,
+        task_id=task_id,
+        user_id=current_user.id,
+        conversion_data=conversion_data,
+    )
+    
+    if not memory:
+        raise HTTPException(status_code=404, detail="Task not found or not completed")
+    
+    return memory
 
