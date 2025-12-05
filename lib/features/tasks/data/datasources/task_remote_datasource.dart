@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:memoir/features/tasks/data/models/task_model.dart';
+import 'package:memoir/features/tasks/data/models/task_suggestion_model.dart';
 import 'package:memoir/core/config/api_config.dart';
 import 'dart:developer';
 
@@ -19,6 +20,7 @@ abstract class TaskRemoteDataSource {
   Future<void> completeTask(String taskId);
   Future<void> deleteTask(String taskId);
   Future<Map<String, dynamic>> analyzeTask(String title);
+  Future<List<TaskSuggestionModel>> getSuggestedTasksFromMemory(String memoryId);
 }
 
 class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
@@ -177,6 +179,27 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
       return response.data;
     } catch (e) {
       log('❌ [TASKS_AI] Error analyzing task: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<List<TaskSuggestionModel>> getSuggestedTasksFromMemory(
+    String memoryId,
+  ) async {
+    try {
+      final response = await dio.post(
+        '${ApiConfig.tasksAI}/memories/$memoryId/suggest-tasks',
+      );
+      
+      final suggestions = (response.data as List)
+          .map((json) => TaskSuggestionModel.fromJson(json))
+          .toList();
+      
+      log('✨ [TASKS_AI] Got ${suggestions.length} suggestions for memory $memoryId');
+      return suggestions;
+    } catch (e) {
+      log('❌ [TASKS_AI] Error getting suggestions: $e');
       rethrow;
     }
   }

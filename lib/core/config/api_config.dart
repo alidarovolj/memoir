@@ -29,7 +29,8 @@ class ApiConfig {
   
   // Task endpoints
   static String get tasks => '$apiV1/tasks';
-  static String get tasksAnalyze => '$apiV1/tasks/analyze';
+  static String get tasksAI => '$apiV1/task-ai';
+  static String get tasksAnalyze => '$tasksAI/analyze';
   
   // Timeouts
   static int get connectTimeout => 
