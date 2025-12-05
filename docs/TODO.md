@@ -239,38 +239,39 @@
 
 ## 🟡 MEDIUM PRIORITY (Следующие 2-3 недели)
 
-### 4. Recurring Tasks (Повторяющиеся задачи)
+### 4. Recurring Tasks (Повторяющиеся задачи) ⏳ В РАБОТЕ (30%)
 
-#### Backend (2-3 дня)
-- [ ] **Добавить поля в Task модель**
+**Статус:** ⏳ База готова, нужна логика генерации + Frontend  
+**Начато:** 5 декабря 2025
+
+#### Backend (2-3 дня) - 50% готово ✅
+- [x] **Добавить поля в Task модель**
   ```python
   is_recurring = Column(Boolean, default=False)
   recurrence_rule = Column(String)  # RRULE format (RFC 5545)
   parent_task_id = Column(UUID, ForeignKey("tasks.id"))  # Для экземпляров
   ```
+  ✅ Реализовано в модели Task
+  ✅ Миграция применена
+  ✅ Schemas обновлены
 
-- [ ] **RecurrenceRule enum**
+- [ ] **RecurrenceRule поддержка**
   ```python
-  class RecurrenceRule(str, enum.Enum):
-      daily = "FREQ=DAILY"
-      weekly = "FREQ=WEEKLY"
-      monthly = "FREQ=MONTHLY"
-      weekdays = "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR"
-      custom = "custom"
+  # Поддерживаемые форматы:
+  # - "FREQ=DAILY" - каждый день
+  # - "FREQ=WEEKLY" - каждую неделю
+  # - "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR" - по будням
+  # - "FREQ=MONTHLY" - каждый месяц
   ```
 
-- [ ] **Celery task: generate_recurring_instances**
+- [ ] **Метод generate_recurring_instances**
   ```python
-  @celery_app.task
-  def generate_recurring_instances():
-      """
-      Запускается каждый день в 00:00
-      Создает экземпляры recurring tasks на следующие 7 дней
-      """
-      pass
+  # В TaskService или отдельный endpoint
+  # POST /api/v1/tasks/{task_id}/generate-instances
+  # Создает экземпляры на N дней вперед
   ```
 
-#### Frontend (2 дня)
+#### Frontend (2 дня) - 0% ⏳
 - [ ] **UI для настройки повторений**
   ```dart
   // В CreateTaskPage:
@@ -284,6 +285,22 @@
   // Badge "🔁" на TaskCard
   // В деталях показывать "Повторяется: каждый день"
   ```
+
+#### Структура:
+```
+Parent Task (Template)
+├─ is_recurring: true
+├─ recurrence_rule: "FREQ=DAILY"
+└─ parent_task_id: null
+
+Instance Tasks (Generated)
+├─ Instance 1 (today)
+│  └─ parent_task_id: parent.id
+├─ Instance 2 (tomorrow)
+│  └─ parent_task_id: parent.id
+└─ Instance 3 (day after)
+   └─ parent_task_id: parent.id
+```
 
 ---
 
