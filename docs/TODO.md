@@ -336,43 +336,63 @@ Generated Instances
 
 ---
 
-### 5. Subtasks (Подзадачи)
+### 5. Subtasks (Подзадачи) ✅ ГОТОВО!
 
-#### Backend (1-2 дня)
-- [ ] **Таблица subtasks**
-  ```sql
-  CREATE TABLE subtasks (
-      id UUID PRIMARY KEY,
-      parent_task_id UUID REFERENCES tasks(id),
-      title VARCHAR(500),
-      completed BOOLEAN DEFAULT false,
-      position INTEGER,  -- для сортировки
-      created_at TIMESTAMP,
-      updated_at TIMESTAMP
-  );
-  ```
+**Статус:** ✅ РЕАЛИЗОВАНО (100%)  
+**Дата завершения:** 5 декабря 2025
 
-- [ ] **CRUD endpoints для subtasks**
-  ```python
-  POST   /api/v1/tasks/{task_id}/subtasks
-  GET    /api/v1/tasks/{task_id}/subtasks
-  PUT    /api/v1/subtasks/{subtask_id}
-  DELETE /api/v1/subtasks/{subtask_id}
-  ```
+#### Backend (100%) ✅
+- [x] **Модель Subtask**
+  ✅ `backend/app/models/subtask.py` создана
+  - id, task_id, title, is_completed, order
+  - completed_at, created_at, updated_at
+  - Relationship с Task (cascade delete)
 
-#### Frontend (2 дня)
-- [ ] **SubtasksList widget**
-  ```dart
-  // В TaskDetailPage
-  // Список checkbox items
-  // Кнопка "+ Добавить подзадачу"
-  ```
+- [x] **Миграция** `add_subtasks_table` 
+  ✅ Применена
+  - Foreign key к tasks (ON DELETE CASCADE)
+  - Индекс на task_id для быстрого поиска
 
-- [ ] **Progress indicator**
-  ```dart
-  // На TaskCard: "3/5 выполнено"
-  // Progress bar
-  ```
+- [x] **Schemas** (`SubtaskBase`, `SubtaskCreate`, `SubtaskUpdate`, `SubtaskInDB`)
+  ✅ `backend/app/schemas/subtask.py`
+
+- [x] **CRUD endpoints** (`/api/v1/tasks/{task_id}/subtasks`)
+  ✅ Все реализованы:
+  - `POST /` - создать
+  - `GET /` - получить все (ordered by order)
+  - `PATCH /{subtask_id}` - обновить
+  - `DELETE /{subtask_id}` - удалить
+  - `POST /reorder` - переупорядочивание
+
+#### Frontend (100%) ✅
+- [x] **SubtaskModel** (freezed)
+  ✅ `lib/features/tasks/data/models/subtask_model.dart`
+
+- [x] **TaskRemoteDataSource** методы
+  ✅ getSubtasks(), createSubtask(), updateSubtask(), deleteSubtask()
+
+- [x] **SubtasksList widget**
+  ✅ `lib/features/tasks/presentation/widgets/subtasks_list.dart`
+  - Checkbox toggle, inline добавление
+  - Прогресс-бар "X/Y выполнено"
+
+- [x] **TaskDetailsPage**
+  ✅ `lib/features/tasks/presentation/pages/task_details_page.dart`
+  - Полноэкранная страница с SubtasksList
+
+- [x] **TaskCard** показывает прогресс
+  ✅ Мини прогресс-бар "2/5 выполнено"
+
+**Workflow:**
+```
+TaskCard → клик → TaskDetailsPage
+  → SubtasksList:
+     [✓] Собрать материалы
+     [✓] Создать структуру
+     [ ] Сделать слайды
+     [ ] Репетиция
+  → Progress: 2/4 (50%)
+```
 
 ---
 
