@@ -16,13 +16,30 @@
 
 ---
 
+### [TODO.md](TODO.md)
+**Конкретные задачи для разработки** 🔥 НОВЫЙ!
+- 🔥 HIGH PRIORITY - следующий спринт (AI-Powered Planning)
+- 🟡 MEDIUM PRIORITY - 2-3 недели (Recurring Tasks, Subtasks, Push Notifications)
+- 🟢 LOW PRIORITY - будущие версии
+- Детальные спецификации для каждой задачи
+- Code snippets и примеры реализации
+- Оценки времени разработки
+
+**Для кого:**
+- Разработчиков, которые хотят взять задачу в работу
+- Code reviewers
+- Project managers для планирования спринтов
+
+---
+
 ### [ROADMAP.md](ROADMAP.md)
 **План разработки и текущий прогресс**
 - ✅ Реализованные функции (подробно)
-- 🚧 Текущие задачи
+- 🚧 Текущие задачи (Phase 3.5: AI-Powered Planning)
 - 📅 Запланированные фичи
 - 📊 Прогресс по модулям
 - 🎯 Приоритеты на ближайшее время
+- Конкретные задачи с API спецификациями
 
 **Ключевые разделы:**
 - Phase 1-3: MVP, Smart Features, Planning (90-100% ✅)
@@ -79,7 +96,8 @@ memoir/
 │
 ├── docs/                        # 📚 Вся документация
 │   ├── INDEX.md                 # Этот файл (навигация)
-│   ├── ROADMAP.md              # План разработки
+│   ├── TODO.md                  # 🔥 Конкретные задачи для разработки
+│   ├── ROADMAP.md              # План разработки с прогрессом
 │   ├── ARCHITECTURE.md         # Техническая архитектура
 │   └── PLANNING_FEATURE.md     # Tasks/Planning система
 │
@@ -97,16 +115,25 @@ memoir/
 1. **[README.md](../README.md)** - общее представление о проекте
 2. **[ARCHITECTURE.md](ARCHITECTURE.md)** - понимание архитектуры
 3. **[ROADMAP.md](ROADMAP.md)** - что уже сделано и что планируется
+4. **[TODO.md](TODO.md)** - выбрать задачу для работы
+
+### Для работы над AI Planning:
+1. **[TODO.md](TODO.md)** → раздел "HIGH PRIORITY"
+2. **[PLANNING_FEATURE.md](PLANNING_FEATURE.md)** → Phase 3: AI Integration
+3. **Backend:** `backend/app/services/task_ai_service.py`
+4. **Frontend:** `lib/features/tasks/`
 
 ### Для работы над Tasks:
 1. **[PLANNING_FEATURE.md](PLANNING_FEATURE.md)** - полная спека фичи
-2. **Backend:** `backend/app/api/v1/tasks.py`, `backend/app/models/task.py`
-3. **Frontend:** `lib/features/tasks/`
+2. **[TODO.md](TODO.md)** - конкретные задачи
+3. **Backend:** `backend/app/api/v1/tasks.py`, `backend/app/models/task.py`
+4. **Frontend:** `lib/features/tasks/`
 
 ### Для понимания AI:
 1. **[ARCHITECTURE.md](ARCHITECTURE.md)** → раздел "AI Integration Architecture"
-2. **Backend:** `backend/app/services/ai_service.py`
-3. **[PLANNING_FEATURE.md](PLANNING_FEATURE.md)** → раздел "AI Промпты"
+2. **[TODO.md](TODO.md)** → AI-Powered features
+3. **Backend:** `backend/app/services/ai_service.py`
+4. **[PLANNING_FEATURE.md](PLANNING_FEATURE.md)** → раздел "AI Промпты"
 
 ---
 

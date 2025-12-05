@@ -519,21 +519,405 @@ Planning Page
 ### 🚧 ТЕКУЩИЙ ФОКУС: AI Integration (Phase 3)
 
 ### Phase 3: AI Integration (3-5 дней) ⏳ В РАБОТЕ
-- ⏳ **Suggest tasks from memories:**
-  - Backend endpoint готов
-  - Нужно: UI modal при создании воспоминания
-  - AI промпт для анализа воспоминаний
+
+#### 3.1 Suggest Tasks from Memories 🎯
+**Статус:** ⏳ В разработке  
+**Оценка:** 2-3 дня
+
+**Backend:**
+```python
+# POST /api/v1/memories/{memory_id}/suggest-tasks
+# backend/app/services/task_ai_service.py
+
+async def suggest_tasks_from_memory(
+    self,
+    memory: Memory,
+    limit: int = 3
+) -> List[TaskSuggestion]:
+    """
+    AI анализирует воспоминание и предлагает релевантные задачи
+    
+    Промпт для GPT-4o-mini:
+    "Пользователь сохранил воспоминание: {memory.title} - {memory.content}
+    Категория: {memory.category}
+    
+    Предложи 2-3 релевантные задачи:
+    - Фильмы → похожие фильмы того же жанра/режиссера
+    - Книги → другие книги автора или жанра
+    - Места → похожие места, рестораны
+    - Идеи → конкретные действия для реализации
+    
+    Верни JSON:
+    {
+      'suggestions': [
+        {
+          'title': 'Посмотреть Интерстеллар',
+          'description': 'Похожий научно-фантастический фильм от Кристофера Нолана',
+          'time_scope': 'weekly',
+          'priority': 'medium',
+          'confidence': 0.95,
+          'reasoning': 'Тот же режиссер и жанр'
+        }
+      ]
+    }"
+    
+    Возвращает:
+    - title: предлагаемая задача
+    - description: обоснование
+    - time_scope: когда лучше сделать
+    - priority: приоритет
+    - confidence: уверенность AI (0-1)
+    - reasoning: почему это релевантно
+    """
+    pass
+```
+
+**Frontend:**
+```dart
+// lib/features/memories/presentation/widgets/task_suggestions_modal.dart
+
+class TaskSuggestionsModal extends StatelessWidget {
+  final List<TaskSuggestion> suggestions;
+  final Function(TaskSuggestion) onTaskSelected;
   
-- ⏳ **Auto-categorize tasks:**
-  - Backend endpoint готов
-  - Нужно: Автоопределение категории при создании
+  // UI:
+  // - Заголовок "💡 AI предлагает задачи"
+  // - Список карточек с suggestions
+  // - Для каждой: title, description, confidence badge
+  // - Кнопка "Создать задачу"
+  // - Кнопка "Отклонить все"
+}
+
+// Интеграция в CreateMemoryPage:
+Future<void> _onMemorySaved(Memory memory) async {
+  await memoryService.createMemory(memory);
   
-- ⏳ **Task → Memory conversion:**
-  - Нужно: Endpoint для конвертации
-  - Нужно: UI flow при завершении задачи
+  // Показать loading
+  showDialog(context, LoadingDialog("AI анализирует..."));
   
-- ⏳ **Smart due date suggestions:**
-  - Нужно: AI анализ для оптимального времени
+  // Запросить suggestions
+  final suggestions = await taskService.getSuggestedTasks(memory.id);
+  
+  Navigator.pop(context); // Закрыть loading
+  
+  if (suggestions.isNotEmpty) {
+    _showTaskSuggestionsModal(suggestions);
+  }
+}
+```
+
+---
+
+#### 3.2 Task → Memory Conversion 🔄
+**Статус:** ⏳ Не начато  
+**Оценка:** 2 дня
+
+**Backend:**
+```python
+# POST /api/v1/tasks/{task_id}/convert-to-memory
+# backend/app/api/v1/tasks.py
+
+@router.post("/{task_id}/convert-to-memory", response_model=Memory)
+async def convert_task_to_memory(
+    task_id: str,
+    conversion_data: TaskToMemoryConversion,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Memory:
+    """
+    Конвертирует выполненную задачу в воспоминание
+    
+    Логика:
+    1. Проверить task.status == completed
+    2. Трансформировать title:
+       - "Посмотреть Начало" → "Посмотрел Начало"
+       - "Прочитать 1984" → "Прочитал 1984"
+    3. Добавить content из conversion_data
+    4. Сохранить category (если была)
+    5. Связать с original task (related_task_id)
+    6. Запустить AI обработку (classification, embeddings)
+    
+    Примеры трансформации:
+    - "Посмотреть X" → "Посмотрел X"
+    - "Прочитать X" → "Прочитал X"
+    - "Посетить X" → "Посетил X"
+    - "Купить X" → "Купил X"
+    
+    Возвращает: созданное воспоминание
+    """
+    pass
+
+class TaskToMemoryConversion(BaseModel):
+    additional_content: Optional[str] = None  # Доп. заметки
+    rating: Optional[float] = None            # Оценка 1-5 (для фильмов/книг)
+    images: Optional[List[str]] = None        # URL изображений
+```
+
+**Frontend:**
+```dart
+// lib/features/tasks/presentation/widgets/complete_task_dialog.dart
+
+Future<bool?> showCompleteTaskDialog(
+  BuildContext context,
+  Task task,
+) async {
+  return showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text('Завершить задачу?'),
+      content: Column(
+        children: [
+          Text(task.title),
+          SizedBox(height: 16),
+          
+          // Если категория подходит для conversion
+          if (task.category in ['movies', 'books', 'places'])
+            CheckboxListTile(
+              title: Text('Создать воспоминание'),
+              subtitle: Text('Сохранить как выполненное'),
+              value: _createMemory,
+              onChanged: (value) => setState(() => _createMemory = value),
+            ),
+          
+          // Если выбрано создание воспоминания
+          if (_createMemory) ...[
+            TextField(
+              decoration: InputDecoration(
+                labelText: 'Заметки (опционально)',
+                hintText: 'Что понравилось/не понравилось',
+              ),
+              controller: _notesController,
+            ),
+            
+            // Для фильмов/книг - рейтинг
+            if (task.category in ['movies', 'books'])
+              RatingBar(
+                onRatingUpdate: (rating) => _rating = rating,
+              ),
+          ],
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: Text('Отмена'),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.pop(context, true),
+          child: Text('Завершить'),
+        ),
+      ],
+    ),
+  );
+}
+```
+
+---
+
+#### 3.3 Smart Task Scheduling ⏰
+**Статус:** ⏳ Не начато  
+**Оценка:** 2 дня
+
+**Backend:**
+```python
+# POST /api/v1/tasks/suggest-schedule
+# backend/app/services/task_ai_service.py
+
+async def suggest_task_schedule(
+    self,
+    title: str,
+    description: Optional[str] = None,
+) -> ScheduleSuggestion:
+    """
+    AI определяет оптимальное время для задачи
+    
+    Промпт для GPT:
+    "Проанализируй задачу: '{title}'
+    Описание: '{description}'
+    
+    Определи:
+    1. Срочность (due_date)
+       - Срочно → today/tomorrow
+       - Средне → this week
+       - Не срочно → this month
+    
+    2. Оптимальное время (scheduled_time)
+       - Утренние задачи (09:00-12:00)
+       - Дневные (12:00-18:00)
+       - Вечерние (18:00-23:00)
+    
+    3. Приоритет
+       - urgent: требует немедленного внимания
+       - high: важно, но не горит
+       - medium: обычная задача
+       - low: можно отложить
+    
+    4. Time scope
+       - daily: сделать сегодня
+       - weekly: на этой неделе
+       - monthly: в этом месяце
+       - long_term: долгосрочная цель
+    
+    Примеры:
+    - 'Купить молоко' → today, 10:00, high, daily
+    - 'Посмотреть фильм' → this weekend, 20:00, medium, weekly
+    - 'Прочитать книгу' → this month, 19:00, low, monthly
+    - 'Выучить Python' → 3 months, 10:00, medium, long_term
+    
+    Верни JSON с обоснованием"
+    """
+    pass
+
+class ScheduleSuggestion(BaseModel):
+    due_date: date
+    scheduled_time: Optional[str]  # "HH:MM"
+    priority: TaskPriority
+    time_scope: TimeScope
+    confidence: float
+    reasoning: str
+```
+
+**Frontend:**
+```dart
+// lib/features/tasks/presentation/pages/create_task_page.dart
+
+// При вводе title/description показывать AI suggestions
+
+class _CreateTaskPageState extends State<CreateTaskPage> {
+  Timer? _debounceTimer;
+  ScheduleSuggestion? _aiSuggestion;
+  bool _loadingSuggestion = false;
+  
+  void _onTitleChanged(String value) {
+    // Debounce 500ms
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(Duration(milliseconds: 500), () {
+      _getAISuggestion();
+    });
+  }
+  
+  Future<void> _getAISuggestion() async {
+    if (_titleController.text.length < 5) return;
+    
+    setState(() => _loadingSuggestion = true);
+    
+    final suggestion = await taskService.getSuggestedSchedule(
+      title: _titleController.text,
+      description: _descriptionController.text,
+    );
+    
+    setState(() {
+      _aiSuggestion = suggestion;
+      _loadingSuggestion = false;
+    });
+  }
+  
+  Widget _buildAISuggestionCard() {
+    if (_aiSuggestion == null) return SizedBox.shrink();
+    
+    return Card(
+      color: AppTheme.primaryColor.withOpacity(0.1),
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Ionicons.bulb_outline, color: AppTheme.primaryColor),
+                SizedBox(width: 8),
+                Text('AI предлагает', style: TextStyle(fontWeight: FontWeight.bold)),
+              ],
+            ),
+            SizedBox(height: 8),
+            Text('📅 ${_formatDate(_aiSuggestion!.dueDate)}'),
+            Text('⏰ ${_aiSuggestion!.scheduledTime ?? "Любое время"}'),
+            Text('🎯 Приоритет: ${_getPriorityLabel(_aiSuggestion!.priority)}'),
+            Text('📊 Уверенность: ${(_aiSuggestion!.confidence * 100).toInt()}%'),
+            SizedBox(height: 8),
+            Text(
+              _aiSuggestion!.reasoning,
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            ),
+            SizedBox(height: 8),
+            ElevatedButton(
+              onPressed: _applyAISuggestion,
+              child: Text('Применить'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  void _applyAISuggestion() {
+    setState(() {
+      _dueDate = _aiSuggestion!.dueDate;
+      _scheduledTime = _aiSuggestion!.scheduledTime;
+      _priority = _aiSuggestion!.priority;
+      _timeScope = _aiSuggestion!.timeScope;
+    });
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('AI рекомендации применены')),
+    );
+  }
+}
+```
+
+---
+
+#### 3.4 Auto-categorize Tasks 🏷️
+**Статус:** ⏳ Endpoint готов, нужна интеграция  
+**Оценка:** 1 день
+
+**Backend (уже готово):**
+```python
+# POST /api/v1/task-ai/categorize
+# backend/app/services/task_ai_service.py
+
+async def auto_categorize_task(
+    self,
+    title: str,
+    description: Optional[str] = None,
+) -> CategorySuggestion:
+    """Автоматическое определение категории задачи"""
+    # Уже реализовано
+    pass
+```
+
+**Frontend (нужно добавить):**
+```dart
+// Автоматическое определение категории при создании
+
+class _CreateTaskPageState extends State<CreateTaskPage> {
+  Category? _selectedCategory;
+  
+  Future<void> _autoDetectCategory() async {
+    if (_titleController.text.isEmpty) return;
+    
+    final suggestion = await taskService.getCategorySuggestion(
+      title: _titleController.text,
+      description: _descriptionController.text,
+    );
+    
+    if (suggestion.confidence > 0.7) {
+      // Автоматически применить если уверенность > 70%
+      setState(() {
+        _selectedCategory = suggestion.category;
+      });
+      
+      // Показать subtle notification
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Категория определена: ${suggestion.category.displayName}'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+}
+```
 
 ### Phase 4: Advanced Features (опционально) 🔮
 - ⏳ Recurring tasks (повторяющиеся задачи)
