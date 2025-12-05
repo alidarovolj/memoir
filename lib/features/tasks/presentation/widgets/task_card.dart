@@ -108,8 +108,9 @@ class TaskCard extends StatelessWidget {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: _getPriorityColor(task.priority)
-                            .withOpacity(0.1),
+                        color: _getPriorityColor(
+                          task.priority,
+                        ).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -141,13 +142,16 @@ class TaskCard extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text(
                     task.description!,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade600,
-                    ),
+                    style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
+                ],
+
+                // Subtasks progress
+                if (task.subtasks.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  _buildSubtasksProgress(),
                 ],
 
                 const SizedBox(height: 12),
@@ -163,8 +167,9 @@ class TaskCard extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: _getDueDateColor(task.due_date!)
-                              .withOpacity(0.1),
+                          color: _getDueDateColor(
+                            task.due_date!,
+                          ).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Row(
@@ -333,6 +338,75 @@ class TaskCard extends StatelessWidget {
     }
   }
 
+  Widget _buildSubtasksProgress() {
+    final completedCount = task.subtasks.where((s) => s.is_completed).length;
+    final totalCount = task.subtasks.length;
+    final progress = completedCount / totalCount;
+
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Ionicons.list_outline,
+            size: 14,
+            color: Colors.grey.shade600,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Подзадачи',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                    Text(
+                      '$completedCount/$totalCount',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: completedCount == totalCount
+                            ? Colors.green
+                            : AppTheme.primaryColor,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(3),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 4,
+                    backgroundColor: Colors.grey.shade300,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      completedCount == totalCount
+                          ? Colors.green
+                          : AppTheme.primaryColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   String _formatDueDate(DateTime dueDate) {
     final now = DateTime.now();
     final difference = dueDate.difference(now);
@@ -350,4 +424,3 @@ class TaskCard extends StatelessWidget {
     }
   }
 }
-

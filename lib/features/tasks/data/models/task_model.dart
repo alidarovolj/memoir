@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'subtask_model.dart';
 
 part 'task_model.freezed.dart';
 part 'task_model.g.dart';
@@ -44,7 +45,7 @@ class TaskModel with _$TaskModel {
     required String title,
     String? description,
     DateTime? due_date,
-    String? scheduled_time,  // Format: "HH:MM" (e.g. "08:00")
+    String? scheduled_time, // Format: "HH:MM" (e.g. "08:00")
     DateTime? completed_at,
     required TaskStatus status,
     required TaskPriority priority,
@@ -56,8 +57,9 @@ class TaskModel with _$TaskModel {
     double? ai_confidence,
     List<String>? tags,
     @Default(false) bool is_recurring,
-    String? recurrence_rule,  // RRULE format (e.g. "FREQ=DAILY")
+    String? recurrence_rule, // RRULE format (e.g. "FREQ=DAILY")
     String? parent_task_id,
+    @Default([]) List<SubtaskModel> subtasks,
     required DateTime created_at,
     required DateTime updated_at,
   }) = _TaskModel;
@@ -71,7 +73,7 @@ class TaskAnalyzeResponse with _$TaskAnalyzeResponse {
   const factory TaskAnalyzeResponse({
     required TimeScope time_scope,
     required TaskPriority priority,
-    String? suggested_time,  // Format: "HH:MM"
+    String? suggested_time, // Format: "HH:MM"
     @Default(false) bool needs_deadline,
     String? category,
     required double confidence,
@@ -81,4 +83,3 @@ class TaskAnalyzeResponse with _$TaskAnalyzeResponse {
   factory TaskAnalyzeResponse.fromJson(Map<String, dynamic> json) =>
       _$TaskAnalyzeResponseFromJson(json);
 }
-

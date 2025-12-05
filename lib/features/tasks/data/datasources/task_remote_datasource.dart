@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:memoir/features/tasks/data/models/task_model.dart';
 import 'package:memoir/features/tasks/data/models/task_suggestion_model.dart';
+import 'package:memoir/features/tasks/data/models/subtask_model.dart';
 import 'package:memoir/core/config/api_config.dart';
 import 'dart:developer';
 
@@ -27,6 +28,12 @@ abstract class TaskRemoteDataSource {
     String taskId,
     Map<String, dynamic> conversionData,
   );
+  
+  // Subtasks
+  Future<List<SubtaskModel>> getSubtasks(String taskId);
+  Future<SubtaskModel> createSubtask(String taskId, Map<String, dynamic> subtaskData);
+  Future<SubtaskModel> updateSubtask(String taskId, String subtaskId, Map<String, dynamic> updates);
+  Future<void> deleteSubtask(String taskId, String subtaskId);
 }
 
 class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
@@ -234,6 +241,80 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
       return response.data;
     } catch (e) {
       log('❌ [TASKS] Error converting task to memory: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<List<SubtaskModel>> getSubtasks(String taskId) async {
+    try {
+      final response = await dio.get(
+        '${ApiConfig.tasks}/$taskId/subtasks',
+      );
+
+      final subtasks = (response.data as List)
+          .map((json) => SubtaskModel.fromJson(json))
+          .toList();
+
+      log('✅ [SUBTASKS] Fetched ${subtasks.length} subtasks for task $taskId');
+      return subtasks;
+    } catch (e) {
+      log('❌ [SUBTASKS] Error fetching subtasks: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<SubtaskModel> createSubtask(
+    String taskId,
+    Map<String, dynamic> subtaskData,
+  ) async {
+    try {
+      final response = await dio.post(
+        '${ApiConfig.tasks}/$taskId/subtasks',
+        data: subtaskData,
+      );
+
+      final subtask = SubtaskModel.fromJson(response.data);
+      log('✅ [SUBTASKS] Created subtask: ${subtask.title}');
+      return subtask;
+    } catch (e) {
+      log('❌ [SUBTASKS] Error creating subtask: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<SubtaskModel> updateSubtask(
+    String taskId,
+    String subtaskId,
+    Map<String, dynamic> updates,
+  ) async {
+    try {
+      final response = await dio.patch(
+        '${ApiConfig.tasks}/$taskId/subtasks/$subtaskId',
+        data: updates,
+      );
+
+      final subtask = SubtaskModel.fromJson(response.data);
+      log('✅ [SUBTASKS] Updated subtask: ${subtask.id}');
+      return subtask;
+    } catch (e) {
+      log('❌ [SUBTASKS] Error updating subtask: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> deleteSubtask(String taskId, String subtaskId) async {
+    try {
+      await dio.delete(
+        '${ApiConfig.tasks}/$taskId/subtasks/$subtaskId',
+      );
+
+      log('✅ [SUBTASKS] Deleted subtask: $subtaskId');
+    } catch (e) {
+      log('❌ [SUBTASKS] Error deleting subtask: $e');
       rethrow;
     }
   }

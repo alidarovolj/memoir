@@ -77,6 +77,7 @@ class Task(Base):
     category = relationship("Category")
     related_memory = relationship("Memory", foreign_keys="[Task.related_memory_id]")
     parent_task = relationship("Task", remote_side="[Task.id]", foreign_keys="[Task.parent_task_id]", backref="recurring_instances")
+    subtasks = relationship("Subtask", back_populates="task", cascade="all, delete-orphan", order_by="Subtask.order")
 
     def __repr__(self):
         return f"<Task {self.id} - {self.title} ({self.status})>"

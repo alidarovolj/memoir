@@ -33,7 +33,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
   bool _isAnalyzing = false;
   bool _showAdvancedFields = false;
   String? _aiReasoning;
-  
+
   // Recurring
   bool _isRecurring = false;
   String _recurrenceRule = 'FREQ=DAILY'; // Default: daily
@@ -702,12 +702,12 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                               ),
                             ],
                           ),
-                          
+
                           if (_isRecurring) ...[
                             const SizedBox(height: 16),
                             const Divider(),
                             const SizedBox(height: 16),
-                            
+
                             const Text(
                               'Частота повторения',
                               style: TextStyle(
@@ -717,7 +717,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                               ),
                             ),
                             const SizedBox(height: 12),
-                            
+
                             Wrap(
                               spacing: 8,
                               runSpacing: 8,

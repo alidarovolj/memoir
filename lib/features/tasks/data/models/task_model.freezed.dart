@@ -42,6 +42,7 @@ mixin _$TaskModel {
   String? get recurrence_rule =>
       throw _privateConstructorUsedError; // RRULE format (e.g. "FREQ=DAILY")
   String? get parent_task_id => throw _privateConstructorUsedError;
+  List<SubtaskModel> get subtasks => throw _privateConstructorUsedError;
   DateTime get created_at => throw _privateConstructorUsedError;
   DateTime get updated_at => throw _privateConstructorUsedError;
 
@@ -80,6 +81,7 @@ abstract class $TaskModelCopyWith<$Res> {
     bool is_recurring,
     String? recurrence_rule,
     String? parent_task_id,
+    List<SubtaskModel> subtasks,
     DateTime created_at,
     DateTime updated_at,
   });
@@ -119,6 +121,7 @@ class _$TaskModelCopyWithImpl<$Res, $Val extends TaskModel>
     Object? is_recurring = null,
     Object? recurrence_rule = freezed,
     Object? parent_task_id = freezed,
+    Object? subtasks = null,
     Object? created_at = null,
     Object? updated_at = null,
   }) {
@@ -200,6 +203,10 @@ class _$TaskModelCopyWithImpl<$Res, $Val extends TaskModel>
                 ? _value.parent_task_id
                 : parent_task_id // ignore: cast_nullable_to_non_nullable
                       as String?,
+            subtasks: null == subtasks
+                ? _value.subtasks
+                : subtasks // ignore: cast_nullable_to_non_nullable
+                      as List<SubtaskModel>,
             created_at: null == created_at
                 ? _value.created_at
                 : created_at // ignore: cast_nullable_to_non_nullable
@@ -243,6 +250,7 @@ abstract class _$$TaskModelImplCopyWith<$Res>
     bool is_recurring,
     String? recurrence_rule,
     String? parent_task_id,
+    List<SubtaskModel> subtasks,
     DateTime created_at,
     DateTime updated_at,
   });
@@ -281,6 +289,7 @@ class __$$TaskModelImplCopyWithImpl<$Res>
     Object? is_recurring = null,
     Object? recurrence_rule = freezed,
     Object? parent_task_id = freezed,
+    Object? subtasks = null,
     Object? created_at = null,
     Object? updated_at = null,
   }) {
@@ -362,6 +371,10 @@ class __$$TaskModelImplCopyWithImpl<$Res>
             ? _value.parent_task_id
             : parent_task_id // ignore: cast_nullable_to_non_nullable
                   as String?,
+        subtasks: null == subtasks
+            ? _value._subtasks
+            : subtasks // ignore: cast_nullable_to_non_nullable
+                  as List<SubtaskModel>,
         created_at: null == created_at
             ? _value.created_at
             : created_at // ignore: cast_nullable_to_non_nullable
@@ -398,9 +411,11 @@ class _$TaskModelImpl implements _TaskModel {
     this.is_recurring = false,
     this.recurrence_rule,
     this.parent_task_id,
+    final List<SubtaskModel> subtasks = const [],
     required this.created_at,
     required this.updated_at,
-  }) : _tags = tags;
+  }) : _tags = tags,
+       _subtasks = subtasks;
 
   factory _$TaskModelImpl.fromJson(Map<String, dynamic> json) =>
       _$$TaskModelImplFromJson(json);
@@ -454,6 +469,15 @@ class _$TaskModelImpl implements _TaskModel {
   // RRULE format (e.g. "FREQ=DAILY")
   @override
   final String? parent_task_id;
+  final List<SubtaskModel> _subtasks;
+  @override
+  @JsonKey()
+  List<SubtaskModel> get subtasks {
+    if (_subtasks is EqualUnmodifiableListView) return _subtasks;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_subtasks);
+  }
+
   @override
   final DateTime created_at;
   @override
@@ -461,7 +485,7 @@ class _$TaskModelImpl implements _TaskModel {
 
   @override
   String toString() {
-    return 'TaskModel(id: $id, user_id: $user_id, title: $title, description: $description, due_date: $due_date, scheduled_time: $scheduled_time, completed_at: $completed_at, status: $status, priority: $priority, time_scope: $time_scope, category_id: $category_id, category_name: $category_name, related_memory_id: $related_memory_id, ai_suggested: $ai_suggested, ai_confidence: $ai_confidence, tags: $tags, is_recurring: $is_recurring, recurrence_rule: $recurrence_rule, parent_task_id: $parent_task_id, created_at: $created_at, updated_at: $updated_at)';
+    return 'TaskModel(id: $id, user_id: $user_id, title: $title, description: $description, due_date: $due_date, scheduled_time: $scheduled_time, completed_at: $completed_at, status: $status, priority: $priority, time_scope: $time_scope, category_id: $category_id, category_name: $category_name, related_memory_id: $related_memory_id, ai_suggested: $ai_suggested, ai_confidence: $ai_confidence, tags: $tags, is_recurring: $is_recurring, recurrence_rule: $recurrence_rule, parent_task_id: $parent_task_id, subtasks: $subtasks, created_at: $created_at, updated_at: $updated_at)';
   }
 
   @override
@@ -502,6 +526,7 @@ class _$TaskModelImpl implements _TaskModel {
                 other.recurrence_rule == recurrence_rule) &&
             (identical(other.parent_task_id, parent_task_id) ||
                 other.parent_task_id == parent_task_id) &&
+            const DeepCollectionEquality().equals(other._subtasks, _subtasks) &&
             (identical(other.created_at, created_at) ||
                 other.created_at == created_at) &&
             (identical(other.updated_at, updated_at) ||
@@ -531,6 +556,7 @@ class _$TaskModelImpl implements _TaskModel {
     is_recurring,
     recurrence_rule,
     parent_task_id,
+    const DeepCollectionEquality().hash(_subtasks),
     created_at,
     updated_at,
   ]);
@@ -570,6 +596,7 @@ abstract class _TaskModel implements TaskModel {
     final bool is_recurring,
     final String? recurrence_rule,
     final String? parent_task_id,
+    final List<SubtaskModel> subtasks,
     required final DateTime created_at,
     required final DateTime updated_at,
   }) = _$TaskModelImpl;
@@ -615,6 +642,8 @@ abstract class _TaskModel implements TaskModel {
   String? get recurrence_rule; // RRULE format (e.g. "FREQ=DAILY")
   @override
   String? get parent_task_id;
+  @override
+  List<SubtaskModel> get subtasks;
   @override
   DateTime get created_at;
   @override

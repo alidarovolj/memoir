@@ -4,6 +4,7 @@ import 'package:memoir/features/tasks/data/datasources/task_remote_datasource.da
 import 'package:memoir/features/tasks/presentation/widgets/daily_timeline.dart';
 import 'package:memoir/features/tasks/presentation/widgets/kanban_board.dart';
 import 'package:memoir/features/tasks/presentation/pages/create_task_page.dart';
+import 'package:memoir/features/tasks/presentation/pages/task_details_page.dart';
 import 'package:memoir/core/widgets/widgets.dart';
 import 'package:memoir/core/theme/app_theme.dart';
 import 'package:memoir/core/network/dio_client.dart';
@@ -96,6 +97,18 @@ class _TasksPageState extends State<TasksPage>
         );
       }
     }
+  }
+
+  Future<void> _openTaskDetails(TaskModel task) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TaskDetailsPage(
+          task: task,
+          onTaskUpdated: _loadTasks,
+        ),
+      ),
+    );
   }
 
   // ignore: unused_element
@@ -226,11 +239,13 @@ class _TasksPageState extends State<TasksPage>
                             ? DailyTimeline(
                                 tasks: _tasks,
                                 onRefresh: _loadTasks,
+                                onTaskTap: _openTaskDetails,
                               )
                             // Other scopes: Kanban board with status columns
                             : KanbanBoard(
                                 tasks: _tasks,
                                 onRefresh: _loadTasks,
+                                onTaskTap: _openTaskDetails,
                               ),
               ),
             ],

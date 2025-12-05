@@ -1,10 +1,13 @@
 """Pydantic schemas for Task"""
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, TYPE_CHECKING
 from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.models.task import TaskStatus, TaskPriority, TimeScope
+
+if TYPE_CHECKING:
+    from app.schemas.subtask import SubtaskInDB
 
 
 class TaskBase(BaseModel):
@@ -60,6 +63,7 @@ class TaskInDB(TaskBase):
 class Task(TaskInDB):
     """Task schema for API responses"""
     category_name: Optional[str] = None
+    subtasks: List["SubtaskInDB"] = []
 
     class Config:
         from_attributes = True
@@ -103,4 +107,9 @@ class TaskToMemoryConversion(BaseModel):
     notes: Optional[str] = None  # Additional notes/thoughts
     image_url: Optional[str] = None  # Optional image
     backdrop_url: Optional[str] = None  # Optional backdrop
+
+
+# Resolve forward references
+from app.schemas.subtask import SubtaskInDB  # noqa: E402
+Task.model_rebuild()
 
