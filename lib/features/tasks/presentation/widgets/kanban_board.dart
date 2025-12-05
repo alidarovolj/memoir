@@ -1,17 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:memoir/features/tasks/data/models/task_model.dart';
 import 'package:memoir/features/tasks/presentation/widgets/task_card.dart';
+import 'package:memoir/features/tasks/presentation/widgets/complete_task_dialog.dart';
 import 'package:memoir/core/theme/app_theme.dart';
 import 'package:ionicons/ionicons.dart';
 
 class KanbanBoard extends StatelessWidget {
   final List<TaskModel> tasks;
   final VoidCallback onRefresh;
+  final Function(TaskModel task)? onTaskTap;
+  final Function(TaskModel task, bool convertToMemory, Map<String, dynamic>? memoryData)? onTaskComplete;
+  final Function(TaskModel task)? onTaskDelete;
 
   const KanbanBoard({
     super.key,
     required this.tasks,
     required this.onRefresh,
+    this.onTaskTap,
+    this.onTaskComplete,
+    this.onTaskDelete,
   });
 
   @override
@@ -171,12 +178,37 @@ class KanbanBoard extends StatelessWidget {
                   child: TaskCard(
                     task: task,
                     onTap: () {
-                      // TODO: Open task details
+                      if (onTaskTap != null) {
+                        onTaskTap!(task);
+                      }
+                    },
+                    onComplete: task.status != TaskStatus.completed
+                        ? () => _handleTaskComplete(context, task)
+                        : null,
+                    onDelete: () {
+                      if (onTaskDelete != null) {
+                        onTaskDelete!(task);
+                      }
                     },
                     compact: true, // Compact mode for Kanban
                   ),
                 )),
         ],
+      ),
+    );
+  }
+
+  Future<void> _handleTaskComplete(BuildContext context, TaskModel task) async {
+    // Show dialog to ask if user wants to convert task to memory
+    await showDialog(
+      context: context,
+      builder: (context) => CompleteTaskDialog(
+        task: task,
+        onConfirm: (convertToMemory, memoryData) {
+          if (onTaskComplete != null) {
+            onTaskComplete!(task, convertToMemory, memoryData);
+          }
+        },
       ),
     );
   }

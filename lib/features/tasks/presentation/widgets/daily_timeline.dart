@@ -1,16 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:memoir/features/tasks/data/models/task_model.dart';
+import 'package:memoir/features/tasks/presentation/widgets/complete_task_dialog.dart';
 import 'package:memoir/core/theme/app_theme.dart';
 import 'package:ionicons/ionicons.dart';
 
 class DailyTimeline extends StatelessWidget {
   final List<TaskModel> tasks;
   final VoidCallback onRefresh;
+  final Function(TaskModel task)? onTaskTap;
+  final Function(TaskModel task, bool convertToMemory, Map<String, dynamic>? memoryData)? onTaskComplete;
+  final Function(TaskModel task)? onTaskDelete;
 
   const DailyTimeline({
     super.key,
     required this.tasks,
     required this.onRefresh,
+    this.onTaskTap,
+    this.onTaskComplete,
+    this.onTaskDelete,
   });
 
   @override
@@ -249,34 +256,65 @@ class DailyTimeline extends StatelessWidget {
                 ),
               ),
 
-              // Priority badge
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: priorityColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: priorityColor.withOpacity(0.3)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (isUrgent)
-                      Icon(
-                        Ionicons.alert_circle,
-                        size: 14,
-                        color: priorityColor,
-                      ),
-                    if (isUrgent) const SizedBox(width: 4),
-                    Text(
-                      _getPriorityLabel(task.priority),
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: priorityColor,
-                      ),
+              // Actions
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Priority badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: priorityColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: priorityColor.withOpacity(0.3)),
                     ),
-                  ],
-                ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (isUrgent)
+                          Icon(
+                            Ionicons.alert_circle,
+                            size: 14,
+                            color: priorityColor,
+                          ),
+                        if (isUrgent) const SizedBox(width: 4),
+                        Text(
+                          _getPriorityLabel(task.priority),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: priorityColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  // Complete button
+                  if (task.status != TaskStatus.completed)
+                    IconButton(
+                      icon: const Icon(Ionicons.checkmark_circle_outline),
+                      iconSize: 20,
+                      color: Colors.green,
+                      onPressed: () => _handleTaskComplete(context, task),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  
+                  // Delete button
+                  IconButton(
+                    icon: const Icon(Ionicons.trash_outline),
+                    iconSize: 18,
+                    color: Colors.red,
+                    onPressed: () {
+                      if (onTaskDelete != null) {
+                        onTaskDelete!(task);
+                      }
+                    },
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
               ),
             ],
           ),
@@ -333,5 +371,20 @@ class DailyTimeline extends StatelessWidget {
       case TaskPriority.urgent:
         return Colors.red;
     }
+  }
+
+  Future<void> _handleTaskComplete(BuildContext context, TaskModel task) async {
+    // Show dialog to ask if user wants to convert task to memory
+    await showDialog(
+      context: context,
+      builder: (context) => CompleteTaskDialog(
+        task: task,
+        onConfirm: (convertToMemory, memoryData) {
+          if (onTaskComplete != null) {
+            onTaskComplete!(task, convertToMemory, memoryData);
+          }
+        },
+      ),
+    );
   }
 }

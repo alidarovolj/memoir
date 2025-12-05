@@ -23,6 +23,10 @@ abstract class TaskRemoteDataSource {
   Future<List<TaskSuggestionModel>> getSuggestedTasksFromMemory(
     String memoryId,
   );
+  Future<Map<String, dynamic>> convertTaskToMemory(
+    String taskId,
+    Map<String, dynamic> conversionData,
+  );
 }
 
 class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
@@ -211,6 +215,25 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
       return suggestions;
     } catch (e) {
       log('❌ [TASKS_AI] Error getting suggestions: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> convertTaskToMemory(
+    String taskId,
+    Map<String, dynamic> conversionData,
+  ) async {
+    try {
+      final response = await dio.post(
+        '${ApiConfig.tasks}/$taskId/convert-to-memory',
+        data: conversionData,
+      );
+
+      log('✅ [TASKS] Task converted to memory: $taskId');
+      return response.data;
+    } catch (e) {
+      log('❌ [TASKS] Error converting task to memory: $e');
       rethrow;
     }
   }
