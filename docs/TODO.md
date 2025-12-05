@@ -67,60 +67,88 @@
 
 ---
 
-### 2. Task → Memory Conversion 🔄
+### 2. Task → Memory Conversion 🔄 ✅ ГОТОВО!
 
-#### Backend (1 день)
-- [ ] **Endpoint: POST /api/v1/tasks/{task_id}/convert-to-memory**
-  ```python
-  @router.post("/tasks/{task_id}/convert-to-memory")
-  async def convert_task_to_memory(
-      task_id: str,
-      conversion_data: TaskToMemoryConversion,
-      db: AsyncSession = Depends(get_db),
-      current_user: User = Depends(get_current_user),
-  ) -> Memory:
-      """
-      Конвертирует выполненную задачу в воспоминание
-      
-      Логика:
-      1. Проверить что task.status == completed
-      2. Создать Memory на основе Task
-      3. Связать Memory с Task (related_task_id)
-      4. AI обрабатывает новое воспоминание
-      
-      Примеры:
-      - "Посмотреть Начало" → "Посмотрел Начало"
-      - "Прочитать 1984" → "Прочитал 1984"
-      """
-      pass
-  ```
+**Статус:** ✅ Реализовано и работает!  
+**Дата завершения:** 5 декабря 2025
 
-- [ ] **Schema TaskToMemoryConversion**
-  ```python
-  class TaskToMemoryConversion(BaseModel):
-      content: Optional[str] = None  # Дополнительный контент
-      rating: Optional[float] = None  # Оценка (для фильмов/книг)
-      notes: Optional[str] = None     # Заметки
-  ```
+#### Backend ✅
+- [x] **Endpoint: POST /api/v1/tasks/{task_id}/convert-to-memory**
+  - Проверяет что task.status == completed
+  - Создает Memory на основе Task  
+  - Связывает Memory с Task (related_task_id)
+  - Автоматическая конвертация глаголов (Посмотреть→Посмотрел)
+  - Добавляет notes, rating в память
 
-#### Frontend (1 день)
-- [ ] **Диалог при завершении задачи**
-  ```dart
-  // lib/features/tasks/presentation/widgets/complete_task_dialog.dart
-  Future<void> _showCompleteTaskDialog(Task task) async {
-    // Опции:
-    // 1. [✓] Просто завершить
-    // 2. [✓] Завершить + создать воспоминание
-    //    - TextField для доп. контента
-    //    - Rating stars (если фильм/книга)
-  }
-  ```
+- [x] **Schema TaskToMemoryConversion**
+  - content: Дополнительный контент/заметки
+  - rating: Оценка 0-10 (для фильмов/книг)
+  - notes: Дополнительные мысли
+  - image_url, backdrop_url: Опциональные изображения
 
-- [ ] **Auto-suggest conversion для категорий**
-  ```dart
-  // Если task.category в [movies, books, places]
-  // → автоматически предлагать создать воспоминание
-  ```
+- [x] **Миграция базы данных**
+  - Добавлено поле related_task_id в таблицу memories
+  - Foreign key: memories.related_task_id → tasks.id
+
+- [x] **Метод TaskService.convert_to_memory()**
+  - Полная реализация с error handling
+  - Простой словарь для конвертации глаголов
+  - Генерация memory_metadata
+
+#### Frontend ✅
+- [x] **CompleteTaskDialog**
+  - Красивый UI с gradient кнопками
+  - Checkbox "Создать воспоминание"
+  - TextField для заметок
+  - Rating stars (5 звезд = 10/10)
+  - Auto-detect категорий фильмов/книг для rating
+
+- [x] **Интеграция в KanbanBoard**
+  - Callbacks: onTaskComplete, onTaskDelete, onTaskTap
+  - Показывает диалог при клике на ✓
+  
+- [x] **Интеграция в DailyTimeline**
+  - Кнопки завершения/удаления для каждой задачи
+  - Показывает диалог при завершении
+
+- [x] **TaskRemoteDataSource**
+  - Метод convertTaskToMemory(taskId, conversionData)
+  - POST /api/v1/tasks/{id}/convert-to-memory
+
+#### Как работает:
+```
+1. Пользователь кликает ✓ на задаче "Посмотреть Начало"
+2. Открывается красивый диалог:
+   ┌─────────────────────────────────────┐
+   │ ✓ Завершить задачу?                 │
+   │   Посмотреть Начало                 │
+   │                                     │
+   │ ☑ Создать воспоминание ✨            │
+   │   Сохранить выполненную задачу      │
+   │                                     │
+   │ ┌─────────────────────────────────┐ │
+   │ │ Заметки:                        │ │
+   │ │ Отличный фильм, сюжет...        │ │
+   │ └─────────────────────────────────┘ │
+   │                                     │
+   │ Оценка: ★★★★★ (10/10)               │
+   │                                     │
+   │   [Отмена]      [Завершить] ✓       │
+   └─────────────────────────────────────┘
+
+3. Backend:
+   - Task: "Посмотреть Начало" → status=completed
+   - Memory: "Посмотрел Начало" (автоконвертация)
+   - Связь: memory.related_task_id = task.id
+   
+4. Результат: ✅ Задача завершена + 📝 Воспоминание создано
+```
+
+#### Примеры конвертации:
+- "Посмотреть Начало" → "Посмотрел Начало" ✅
+- "Прочитать 1984" → "Прочитал 1984" ✅
+- "Сходить в парк" → "Сходил в парк" ✅
+- "Купить молоко" → "Купил молоко" ✅
 
 ---
 
