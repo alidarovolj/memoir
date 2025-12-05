@@ -11,10 +11,7 @@ import 'dart:developer';
 class CreateTaskPage extends StatefulWidget {
   final TimeScope initialTimeScope;
 
-  const CreateTaskPage({
-    super.key,
-    this.initialTimeScope = TimeScope.daily,
-  });
+  const CreateTaskPage({super.key, this.initialTimeScope = TimeScope.daily});
 
   @override
   State<CreateTaskPage> createState() => _CreateTaskPageState();
@@ -62,7 +59,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
 
     try {
       final result = await _taskDataSource.analyzeTask(title);
-      
+
       if (mounted) {
         setState(() {
           // Map strings to enums
@@ -70,7 +67,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
           _priority = _parsePriority(result['priority']);
           _aiReasoning = result['reasoning'];
           _needsDeadline = result['needs_deadline'] ?? false;
-          
+
           // Parse suggested time
           if (result['suggested_time'] != null) {
             final timeParts = result['suggested_time'].split(':');
@@ -81,15 +78,17 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
               );
             }
           }
-          
+
           // Parse suggested due date
           _suggestedDueDate = result['suggested_due_date'];
-          
+
           _isAnalyzing = false;
           _showAdvancedFields = true; // Show all fields after AI analysis
         });
 
-        log('✨ [AI] Task analyzed: time_scope=${result['time_scope']}, priority=${result['priority']}, time=${result['suggested_time']}, due_date=${result['suggested_due_date']}, needs_deadline=${result['needs_deadline']}');
+        log(
+          '✨ [AI] Task analyzed: time_scope=${result['time_scope']}, priority=${result['priority']}, time=${result['suggested_time']}, due_date=${result['suggested_due_date']}, needs_deadline=${result['needs_deadline']}',
+        );
       }
     } catch (e) {
       log('❌ [AI] Error analyzing task: $e');
@@ -134,7 +133,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
 
   DateTime? _parseSuggestedDueDate(String? suggestedDueDate) {
     if (suggestedDueDate == null) return null;
-    
+
     final now = DateTime.now();
     switch (suggestedDueDate) {
       case 'today':
@@ -153,7 +152,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
 
   String _formatSuggestedDueDate(String? suggestedDueDate) {
     if (suggestedDueDate == null) return '';
-    
+
     switch (suggestedDueDate) {
       case 'today':
         return 'Сегодня';
@@ -179,7 +178,6 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
     }
   }
 
-
   Future<void> _createTask() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -191,9 +189,10 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
       // Convert suggested time to string format "HH:MM"
       String? scheduledTime;
       if (_suggestedTime != null) {
-        scheduledTime = '${_suggestedTime!.hour.toString().padLeft(2, '0')}:${_suggestedTime!.minute.toString().padLeft(2, '0')}';
+        scheduledTime =
+            '${_suggestedTime!.hour.toString().padLeft(2, '0')}:${_suggestedTime!.minute.toString().padLeft(2, '0')}';
       }
-      
+
       final taskData = {
         'title': _titleController.text.trim(),
         'description': _descriptionController.text.trim(),
@@ -279,7 +278,9 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                             ? const SizedBox(
                                 width: 20,
                                 height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               )
                             : Icon(
                                 Ionicons.sparkles,
@@ -371,23 +372,23 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                     Wrap(
                       spacing: 8,
                       children: TaskPriority.values.map((priority) {
-                      final isSelected = _priority == priority;
-                      return ChoiceChip(
-                        label: Text(_getPriorityLabel(priority)),
-                        selected: isSelected,
-                        onSelected: (selected) {
-                          if (selected) {
-                            setState(() {
-                              _priority = priority;
-                            });
-                          }
-                        },
-                        selectedColor: _getPriorityColor(priority),
-                        backgroundColor: Colors.grey.shade200,
-                        labelStyle: TextStyle(
-                          color: isSelected ? Colors.white : Colors.black87,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        final isSelected = _priority == priority;
+                        return ChoiceChip(
+                          label: Text(_getPriorityLabel(priority)),
+                          selected: isSelected,
+                          onSelected: (selected) {
+                            if (selected) {
+                              setState(() {
+                                _priority = priority;
+                              });
+                            }
+                          },
+                          selectedColor: _getPriorityColor(priority),
+                          backgroundColor: Colors.grey.shade200,
+                          labelStyle: TextStyle(
+                            color: isSelected ? Colors.white : Colors.black87,
+                            fontWeight: FontWeight.w600,
+                          ),
                         );
                       }).toList(),
                     ),
@@ -396,34 +397,34 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
 
                     // Time Scope
                     const Text(
-                    'Временной масштаб',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      'Временной масштаб',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
                     ),
-                  ),
                     const SizedBox(height: 12),
                     Wrap(
                       spacing: 8,
                       children: TimeScope.values.map((scope) {
-                      final isSelected = _timeScope == scope;
-                      return ChoiceChip(
-                        label: Text(_getTimeScopeLabel(scope)),
-                        selected: isSelected,
-                        onSelected: (selected) {
-                          if (selected) {
-                            setState(() {
-                              _timeScope = scope;
-                            });
-                          }
-                        },
-                        selectedColor: AppTheme.primaryColor,
-                        backgroundColor: Colors.grey.shade200,
-                        labelStyle: TextStyle(
-                          color: isSelected ? Colors.white : Colors.black87,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        final isSelected = _timeScope == scope;
+                        return ChoiceChip(
+                          label: Text(_getTimeScopeLabel(scope)),
+                          selected: isSelected,
+                          onSelected: (selected) {
+                            if (selected) {
+                              setState(() {
+                                _timeScope = scope;
+                              });
+                            }
+                          },
+                          selectedColor: AppTheme.primaryColor,
+                          backgroundColor: Colors.grey.shade200,
+                          labelStyle: TextStyle(
+                            color: isSelected ? Colors.white : Colors.black87,
+                            fontWeight: FontWeight.w600,
+                          ),
                         );
                       }).toList(),
                     ),
@@ -542,7 +543,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                           color: Colors.black87,
                         ),
                       ),
-                      subtitle: _needsDeadline 
+                      subtitle: _needsDeadline
                           ? const Text(
                               'AI рекомендует установить дедлайн',
                               style: TextStyle(
@@ -558,10 +559,14 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                             context: context,
                             initialDate: DateTime.now(),
                             firstDate: DateTime.now(),
-                            lastDate: DateTime.now().add(const Duration(days: 365)),
+                            lastDate: DateTime.now().add(
+                              const Duration(days: 365),
+                            ),
                           );
                           if (date != null) {
-                            final time = _suggestedTime ?? const TimeOfDay(hour: 9, minute: 0);
+                            final time =
+                                _suggestedTime ??
+                                const TimeOfDay(hour: 9, minute: 0);
                             final timeResult = await showTimePicker(
                               context: context,
                               initialTime: time,
@@ -631,7 +636,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
 
                     const SizedBox(height: 32),
 
-                      // Create button
+                    // Create button
                     SizedBox(
                       width: double.infinity,
                       child: GradientButton(
@@ -688,6 +693,4 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
         return 'Долгосрочно';
     }
   }
-
 }
-

@@ -19,6 +19,9 @@ class TaskBase(BaseModel):
     category_id: Optional[UUID] = None
     related_memory_id: Optional[UUID] = None
     tags: Optional[List[str]] = None
+    is_recurring: bool = False
+    recurrence_rule: Optional[str] = None  # RRULE format (RFC 5545)
+    parent_task_id: Optional[UUID] = None  # For recurring instances
 
 
 class TaskCreate(TaskBase):

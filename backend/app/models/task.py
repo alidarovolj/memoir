@@ -63,6 +63,11 @@ class Task(Base):
     ai_confidence = Column(Float, nullable=True)
     tags = Column(ARRAY(String), nullable=True)
 
+    # Recurring
+    is_recurring = Column(Boolean, default=False, nullable=False)
+    recurrence_rule = Column(String(100), nullable=True)  # RRULE format (RFC 5545)
+    parent_task_id = Column(UUID(as_uuid=True), ForeignKey("tasks.id", ondelete="CASCADE"), nullable=True)  # For recurring instances
+
     # Metadata
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
@@ -71,6 +76,7 @@ class Task(Base):
     user = relationship("User", back_populates="tasks")
     category = relationship("Category")
     related_memory = relationship("Memory", foreign_keys="[Task.related_memory_id]")
+    parent_task = relationship("Task", remote_side="[Task.id]", foreign_keys="[Task.parent_task_id]", backref="recurring_instances")
 
     def __repr__(self):
         return f"<Task {self.id} - {self.title} ({self.status})>"
