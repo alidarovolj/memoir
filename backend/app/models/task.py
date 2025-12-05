@@ -70,7 +70,7 @@ class Task(Base):
     # Relationships
     user = relationship("User", back_populates="tasks")
     category = relationship("Category")
-    related_memory = relationship("Memory")
+    related_memory = relationship("Memory", foreign_keys="[Task.related_memory_id]")
 
     def __repr__(self):
         return f"<Task {self.id} - {self.title} ({self.status})>"

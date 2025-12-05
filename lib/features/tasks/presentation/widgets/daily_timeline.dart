@@ -8,7 +8,12 @@ class DailyTimeline extends StatelessWidget {
   final List<TaskModel> tasks;
   final VoidCallback onRefresh;
   final Function(TaskModel task)? onTaskTap;
-  final Function(TaskModel task, bool convertToMemory, Map<String, dynamic>? memoryData)? onTaskComplete;
+  final Function(
+    TaskModel task,
+    bool convertToMemory,
+    Map<String, dynamic>? memoryData,
+  )?
+  onTaskComplete;
   final Function(TaskModel task)? onTaskDelete;
 
   const DailyTimeline({
@@ -262,7 +267,10 @@ class DailyTimeline extends StatelessWidget {
                 children: [
                   // Priority badge
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: priorityColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(6),
@@ -289,7 +297,7 @@ class DailyTimeline extends StatelessWidget {
                       ],
                     ),
                   ),
-                  
+
                   // Complete button
                   if (task.status != TaskStatus.completed)
                     IconButton(
@@ -300,7 +308,7 @@ class DailyTimeline extends StatelessWidget {
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                     ),
-                  
+
                   // Delete button
                   IconButton(
                     icon: const Icon(Ionicons.trash_outline),

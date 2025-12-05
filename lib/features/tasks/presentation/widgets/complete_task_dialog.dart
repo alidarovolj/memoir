@@ -7,7 +7,8 @@ import 'package:ionicons/ionicons.dart';
 /// Dialog shown when completing a task, offering to convert it to a memory
 class CompleteTaskDialog extends StatefulWidget {
   final TaskModel task;
-  final Function(bool convertToMemory, Map<String, dynamic>? memoryData) onConfirm;
+  final Function(bool convertToMemory, Map<String, dynamic>? memoryData)
+  onConfirm;
 
   const CompleteTaskDialog({
     super.key,
@@ -193,7 +194,8 @@ class _CompleteTaskDialogState extends State<CompleteTaskDialog> {
                       Row(
                         children: List.generate(5, (index) {
                           final starValue = (index + 1) * 2.0;
-                          final isSelected = _rating != null && _rating! >= starValue;
+                          final isSelected =
+                              _rating != null && _rating! >= starValue;
                           return GestureDetector(
                             onTap: () {
                               setState(() {
@@ -201,7 +203,9 @@ class _CompleteTaskDialogState extends State<CompleteTaskDialog> {
                               });
                             },
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                              ),
                               child: Icon(
                                 isSelected
                                     ? Ionicons.star
@@ -279,10 +283,7 @@ class _CompleteTaskDialogState extends State<CompleteTaskDialog> {
     Map<String, dynamic>? memoryData;
 
     if (_convertToMemory) {
-      memoryData = {
-        'notes': _notesController.text.trim(),
-        'rating': _rating,
-      };
+      memoryData = {'notes': _notesController.text.trim(), 'rating': _rating};
     }
 
     widget.onConfirm(_convertToMemory, memoryData);

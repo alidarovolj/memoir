@@ -9,7 +9,12 @@ class KanbanBoard extends StatelessWidget {
   final List<TaskModel> tasks;
   final VoidCallback onRefresh;
   final Function(TaskModel task)? onTaskTap;
-  final Function(TaskModel task, bool convertToMemory, Map<String, dynamic>? memoryData)? onTaskComplete;
+  final Function(
+    TaskModel task,
+    bool convertToMemory,
+    Map<String, dynamic>? memoryData,
+  )?
+  onTaskComplete;
   final Function(TaskModel task)? onTaskDelete;
 
   const KanbanBoard({
@@ -24,9 +29,15 @@ class KanbanBoard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Group tasks by status
-    final pendingTasks = tasks.where((t) => t.status == TaskStatus.pending).toList();
-    final inProgressTasks = tasks.where((t) => t.status == TaskStatus.inProgress).toList();
-    final completedTasks = tasks.where((t) => t.status == TaskStatus.completed).toList();
+    final pendingTasks = tasks
+        .where((t) => t.status == TaskStatus.pending)
+        .toList();
+    final inProgressTasks = tasks
+        .where((t) => t.status == TaskStatus.inProgress)
+        .toList();
+    final completedTasks = tasks
+        .where((t) => t.status == TaskStatus.completed)
+        .toList();
 
     return RefreshIndicator(
       onRefresh: () async => onRefresh(),
@@ -102,9 +113,7 @@ class KanbanBoard extends StatelessWidget {
             decoration: BoxDecoration(
               color: color.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: color.withOpacity(0.3),
-              ),
+              border: Border.all(color: color.withOpacity(0.3)),
             ),
             child: Row(
               children: [
@@ -122,7 +131,10 @@ class KanbanBoard extends StatelessWidget {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: color,
                     borderRadius: BorderRadius.circular(10),
@@ -156,43 +168,38 @@ class KanbanBoard extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  Icon(
-                    icon,
-                    size: 32,
-                    color: Colors.grey.shade300,
-                  ),
+                  Icon(icon, size: 32, color: Colors.grey.shade300),
                   const SizedBox(height: 8),
                   Text(
                     'Нет задач',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey.shade400,
-                    ),
+                    style: TextStyle(fontSize: 13, color: Colors.grey.shade400),
                   ),
                 ],
               ),
             )
           else
-            ...tasks.map((task) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: TaskCard(
-                    task: task,
-                    onTap: () {
-                      if (onTaskTap != null) {
-                        onTaskTap!(task);
-                      }
-                    },
-                    onComplete: task.status != TaskStatus.completed
-                        ? () => _handleTaskComplete(context, task)
-                        : null,
-                    onDelete: () {
-                      if (onTaskDelete != null) {
-                        onTaskDelete!(task);
-                      }
-                    },
-                    compact: true, // Compact mode for Kanban
-                  ),
-                )),
+            ...tasks.map(
+              (task) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: TaskCard(
+                  task: task,
+                  onTap: () {
+                    if (onTaskTap != null) {
+                      onTaskTap!(task);
+                    }
+                  },
+                  onComplete: task.status != TaskStatus.completed
+                      ? () => _handleTaskComplete(context, task)
+                      : null,
+                  onDelete: () {
+                    if (onTaskDelete != null) {
+                      onTaskDelete!(task);
+                    }
+                  },
+                  compact: true, // Compact mode for Kanban
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -213,6 +220,3 @@ class KanbanBoard extends StatelessWidget {
     );
   }
 }
-
-
-

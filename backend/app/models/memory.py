@@ -43,7 +43,7 @@ class Memory(Base):
     # Relationships
     user = relationship("User", back_populates="memories")
     category = relationship("Category", back_populates="memories")
-    related_task = relationship("Task", foreign_keys=[related_task_id])
+    related_task = relationship("Task", foreign_keys="[Memory.related_task_id]")
     embedding = relationship("Embedding", back_populates="memory", uselist=False, cascade="all, delete-orphan")
 
     def __repr__(self):
