@@ -86,6 +86,7 @@ class TaskAnalyzeResponse(BaseModel):
     time_scope: TimeScope
     priority: TaskPriority
     suggested_time: Optional[str] = None  # Format: "HH:MM"
+    suggested_due_date: Optional[str] = None  # "today", "tomorrow", "this_week", "this_month"
     needs_deadline: bool = False
     category: Optional[str] = None
     confidence: float

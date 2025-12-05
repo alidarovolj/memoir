@@ -30,6 +30,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
   late TimeScope _timeScope;
   DateTime? _dueDate;
   TimeOfDay? _suggestedTime;
+  String? _suggestedDueDate; // "today", "tomorrow", "this_week", "this_month"
   bool _needsDeadline = false;
   bool _isLoading = false;
   bool _isAnalyzing = false;
@@ -81,11 +82,14 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
             }
           }
           
+          // Parse suggested due date
+          _suggestedDueDate = result['suggested_due_date'];
+          
           _isAnalyzing = false;
           _showAdvancedFields = true; // Show all fields after AI analysis
         });
 
-        log('✨ [AI] Task analyzed: time_scope=${result['time_scope']}, priority=${result['priority']}, time=${result['suggested_time']}, needs_deadline=${result['needs_deadline']}');
+        log('✨ [AI] Task analyzed: time_scope=${result['time_scope']}, priority=${result['priority']}, time=${result['suggested_time']}, due_date=${result['suggested_due_date']}, needs_deadline=${result['needs_deadline']}');
       }
     } catch (e) {
       log('❌ [AI] Error analyzing task: $e');
@@ -125,6 +129,53 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
         return TaskPriority.urgent;
       default:
         return TaskPriority.medium;
+    }
+  }
+
+  DateTime? _parseSuggestedDueDate(String? suggestedDueDate) {
+    if (suggestedDueDate == null) return null;
+    
+    final now = DateTime.now();
+    switch (suggestedDueDate) {
+      case 'today':
+        return DateTime(now.year, now.month, now.day, 23, 59);
+      case 'tomorrow':
+        final tomorrow = now.add(const Duration(days: 1));
+        return DateTime(tomorrow.year, tomorrow.month, tomorrow.day, 23, 59);
+      case 'this_week':
+        return now.add(const Duration(days: 7));
+      case 'this_month':
+        return now.add(const Duration(days: 30));
+      default:
+        return null;
+    }
+  }
+
+  String _formatSuggestedDueDate(String? suggestedDueDate) {
+    if (suggestedDueDate == null) return '';
+    
+    switch (suggestedDueDate) {
+      case 'today':
+        return 'Сегодня';
+      case 'tomorrow':
+        return 'Завтра';
+      case 'this_week':
+        return 'На этой неделе';
+      case 'this_month':
+        return 'В этом месяце';
+      default:
+        return suggestedDueDate;
+    }
+  }
+
+  void _applySuggestedDueDate() {
+    if (_suggestedDueDate != null) {
+      final suggestedDate = _parseSuggestedDueDate(_suggestedDueDate);
+      if (suggestedDate != null) {
+        setState(() {
+          _dueDate = suggestedDate;
+        });
+      }
     }
   }
 
@@ -400,10 +451,79 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                             const SizedBox(width: 12),
                             Text(
                               'Рекомендуемое время: ${_suggestedTime!.format(context)}',
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w500,
                                 color: Colors.black87,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+
+                    // Suggested Due Date (if available)
+                    if (_suggestedDueDate != null) ...[
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          gradient: AppTheme.primaryGradient.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppTheme.primaryColor.withOpacity(0.3),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Ionicons.calendar,
+                              color: AppTheme.primaryColor,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'AI предлагает выполнить:',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.black54,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    _formatSuggestedDueDate(_suggestedDueDate),
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            ElevatedButton(
+                              onPressed: _applySuggestedDueDate,
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                backgroundColor: AppTheme.primaryColor,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: const Text(
+                                'Применить',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
                           ],

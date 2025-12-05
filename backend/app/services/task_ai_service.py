@@ -43,11 +43,24 @@ class TaskAIService:
    - Примеры: "08:00" (утренние задачи), "12:00" (обеденные), "20:00" (вечерние)
    - Для weekly/monthly/long_term - null
 
-4. **needs_deadline** (требуется ли строгий дедлайн):
+4. **suggested_due_date** (рекомендуемая дата выполнения):
+   - Для daily задач: "today" или "tomorrow"
+   - Для weekly задач: "this_week" (в течение 7 дней)
+   - Для monthly задач: "this_month" (в течение 30 дней)
+   - Для urgent задач: "today"
+   - null - если нет конкретного срока
+   
+   Примеры:
+   - "Купить молоко" → "today"
+   - "Посмотреть фильм" → "this_week"
+   - "Оплатить интернет" → конкретная дата если известно, иначе "this_month"
+   - "Почистить зубы" → null (регулярная задача)
+
+5. **needs_deadline** (требуется ли строгий дедлайн):
    - true - если задача имеет конкретный срок (оплата счетов, встречи, дедлайны)
    - false - для регулярных задач без строгого срока (чистка зубов, зарядка)
 
-5. **category** (категория, если применимо):
+6. **category** (категория, если применимо):
    - "movies" - фильмы, сериалы
    - "books" - книги, чтение
    - "places" - места для посещения
@@ -57,18 +70,19 @@ class TaskAIService:
    - null - если не подходит ни одна категория
 
 Примеры:
-- "Почистить зубы" → daily, medium, "08:00", false, null
-- "Посмотреть Начало" → weekly, medium, null, false, movies
-- "Купить молоко" → daily, high, "18:00", false, products
-- "Оплатить интернет" → monthly, high, "10:00", true, null
-- "Позвонить маме" → daily, high, "19:00", false, null
-- "Убраться в квартире" → weekly, medium, null, false, null
+- "Почистить зубы" → daily, medium, "08:00", null, false, null
+- "Посмотреть Начало" → weekly, medium, null, "this_week", false, movies
+- "Купить молоко" → daily, high, "18:00", "today", false, products
+- "Оплатить интернет" → monthly, high, "10:00", "this_month", true, null
+- "Позвонить маме" → daily, high, "19:00", "today", false, null
+- "Убраться в квартире" → weekly, medium, null, "this_week", false, null
 
 Верни ТОЛЬКО валидный JSON без дополнительного текста:
 {
   "time_scope": "daily",
   "priority": "medium",
   "suggested_time": "08:00",
+  "suggested_due_date": "today",
   "needs_deadline": false,
   "category": "movies",
   "confidence": 0.95,
@@ -95,6 +109,7 @@ class TaskAIService:
                 "time_scope": result.get("time_scope", "daily"),
                 "priority": result.get("priority", "medium"),
                 "suggested_time": result.get("suggested_time"),
+                "suggested_due_date": result.get("suggested_due_date"),
                 "needs_deadline": result.get("needs_deadline", False),
                 "category": result.get("category"),
                 "confidence": result.get("confidence", 0.8),
@@ -108,6 +123,7 @@ class TaskAIService:
                 "time_scope": "daily",
                 "priority": "medium",
                 "suggested_time": None,
+                "suggested_due_date": None,
                 "needs_deadline": False,
                 "category": None,
                 "confidence": 0.5,
