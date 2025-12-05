@@ -6,83 +6,64 @@
 
 ## 🔥 HIGH PRIORITY (Следующий спринт)
 
-### 1. AI-Powered Task Suggestions 🤖
+### 1. AI-Powered Task Suggestions 🤖 ✅ ГОТОВО!
 
-#### Backend (1-2 дня)
-- [ ] **Endpoint: POST /api/v1/memories/{memory_id}/suggest-tasks**
-  ```python
-  # backend/app/api/v1/task_ai.py
-  @router.post("/memories/{memory_id}/suggest-tasks")
-  async def suggest_tasks_from_memory(
-      memory_id: str,
-      db: AsyncSession = Depends(get_db),
-      current_user: User = Depends(get_current_user),
-  ) -> List[TaskSuggestion]:
-      """AI предлагает задачи на основе воспоминания"""
-      pass
-  ```
+**Статус:** ✅ Реализовано и работает!  
+**Дата завершения:** 5 декабря 2025
 
-- [ ] **Метод TaskAIService.suggest_tasks_from_memory()**
-  ```python
-  # backend/app/services/task_ai_service.py
-  async def suggest_tasks_from_memory(
-      self,
-      memory: Memory,
-      limit: int = 3
-  ) -> List[Dict[str, Any]]:
-      """
-      Промпт для GPT:
-      - Если фильм → предложить похожие фильмы
-      - Если книга → другие книги автора/жанра
-      - Если место → похожие места
-      - Если идея → конкретные действия
-      
-      Возвращает: [
-        {
-          "title": "Посмотреть Интерстеллар",
-          "description": "Похожий научно-фантастический фильм",
-          "time_scope": "weekly",
-          "priority": "medium",
-          "confidence": 0.95
-        }
-      ]
-      """
-      pass
-  ```
+#### Backend ✅
+- [x] **Endpoint: POST /api/v1/task-ai/memories/{memory_id}/suggest-tasks**
+  - Принимает memory_id
+  - Загружает воспоминание с категорией
+  - Вызывает AI service
+  - Возвращает список suggestions
 
-#### Frontend (1 день)
-- [ ] **Modal окно с AI suggestions**
-  ```dart
-  // lib/features/memories/presentation/widgets/task_suggestions_modal.dart
-  class TaskSuggestionsModal extends StatelessWidget {
-    final List<TaskSuggestion> suggestions;
-    final Function(TaskSuggestion) onTaskSelected;
-    
-    // UI: список карточек с AI suggestions
-    // Кнопка "Создать задачу" для каждого предложения
-  }
-  ```
+- [x] **Метод TaskAIService.suggest_tasks_from_memory()**
+  - AI промпт для всех категорий (movies, books, places, ideas, recipes, products)
+  - Генерирует 2-3 релевантных предложения
+  - Возвращает title, description, time_scope, priority, confidence, reasoning
+  - Graceful error handling
 
-- [ ] **Интеграция в CreateMemoryPage**
-  ```dart
-  // Показывать modal после создания воспоминания
-  Future<void> _onMemorySaved(Memory memory) async {
-    await memoryService.createMemory(memory);
-    
-    // Запросить AI suggestions
-    final suggestions = await taskService.getSuggestedTasks(memory.id);
-    
-    if (suggestions.isNotEmpty) {
-      _showTaskSuggestionsModal(suggestions);
-    }
-  }
-  ```
+#### Frontend ✅
+- [x] **TaskSuggestionModel (freezed)**
+  - Модель с json_serializable
+  - Поля: title, description, timeScope, priority, confidence, reasoning, category
 
-- [ ] **Badge с количеством AI suggestions**
-  ```dart
-  // На Memory Card показывать badge если есть AI suggestions
-  // "💡 3 suggested tasks"
-  ```
+- [x] **TaskSuggestionsModal - красивый UI**
+  - Draggable bottom sheet
+  - Карточки для каждого suggestion
+  - Confidence badges (AI уверенность)
+  - Metadata chips (time_scope, priority, category)
+  - Reasoning text (почему предложено)
+  - Кнопка "Создать задачу" для каждой карточки
+  - Кнопка "Отклонить все"
+
+- [x] **Интеграция в main.dart**
+  - Показывается автоматически после создания воспоминания
+  - Задержка 500ms для лучшего UX
+  - One-click создание задачи
+  - Graceful error handling (не ломает UX если AI failed)
+
+#### Как работает:
+```
+1. Пользователь создает воспоминание "Посмотрел Начало"
+2. Backend сохраняет память
+3. Frontend запрашивает AI suggestions
+4. AI анализирует: категория=movies, содержание=фильм Нолана
+5. AI предлагает:
+   - "Посмотреть Интерстеллар" (тот же режиссер)
+   - "Посмотреть Престиж" (тот же режиссер)
+   - "Посмотреть Помни" (похожий жанр)
+6. Показывается красивый modal
+7. Клик "Создать задачу" → задача создается мгновенно
+8. SnackBar: "✅ Задача создана!"
+```
+
+#### Что можно улучшить в будущем:
+- [ ] Badge на Memory Card с количеством доступных suggestions
+- [ ] Кеширование suggestions (не запрашивать повторно)
+- [ ] Возможность отклонить конкретный suggestion навсегда
+- [ ] Analytics: какие suggestions пользователи принимают чаще
 
 ---
 
