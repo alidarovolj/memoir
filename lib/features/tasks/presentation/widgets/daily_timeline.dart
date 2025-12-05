@@ -46,7 +46,11 @@ class DailyTimeline extends StatelessWidget {
     for (final task in tasks) {
       int hour;
 
-      if (task.due_date != null) {
+      if (task.scheduled_time != null) {
+        // Use scheduled_time (format: "HH:MM")
+        final timeParts = task.scheduled_time!.split(':');
+        hour = int.parse(timeParts[0]);
+      } else if (task.due_date != null) {
         // Use actual due date hour
         hour = task.due_date!.hour;
       } else {
