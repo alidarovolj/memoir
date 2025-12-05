@@ -12,5 +12,5 @@ api_router.include_router(search.router, prefix="/search", tags=["search"])
 api_router.include_router(smart_search.router, prefix="/smart-search", tags=["smart-search"])
 api_router.include_router(stories.router, prefix="/stories", tags=["stories"])
 api_router.include_router(tasks.router, prefix="/tasks", tags=["tasks"])
-api_router.include_router(task_ai.router, prefix="/tasks", tags=["tasks-ai"])
+api_router.include_router(task_ai.router, prefix="/task-ai", tags=["task-ai"])
 
