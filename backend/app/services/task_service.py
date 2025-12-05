@@ -94,6 +94,7 @@ class TaskService:
             title=task_data.title,
             description=task_data.description,
             due_date=task_data.due_date,
+            scheduled_time=task_data.scheduled_time,
             status=task_data.status,
             priority=task_data.priority,
             time_scope=task_data.time_scope,

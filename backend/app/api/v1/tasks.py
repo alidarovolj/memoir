@@ -59,6 +59,7 @@ async def get_tasks(
             "title": task.title,
             "description": task.description,
             "due_date": task.due_date,
+            "scheduled_time": task.scheduled_time,
             "completed_at": task.completed_at,
             "status": task.status,
             "priority": task.priority,

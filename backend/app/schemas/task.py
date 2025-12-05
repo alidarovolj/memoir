@@ -12,6 +12,7 @@ class TaskBase(BaseModel):
     title: str = Field(..., max_length=500)
     description: Optional[str] = None
     due_date: Optional[datetime] = None
+    scheduled_time: Optional[str] = Field(None, max_length=5, pattern=r"^\d{2}:\d{2}$")  # Format: "HH:MM"
     status: TaskStatus = TaskStatus.pending
     priority: TaskPriority = TaskPriority.medium
     time_scope: TimeScope = TimeScope.daily
@@ -30,6 +31,7 @@ class TaskUpdate(BaseModel):
     title: Optional[str] = Field(None, max_length=500)
     description: Optional[str] = None
     due_date: Optional[datetime] = None
+    scheduled_time: Optional[str] = Field(None, max_length=5, pattern=r"^\d{2}:\d{2}$")
     status: Optional[TaskStatus] = None
     priority: Optional[TaskPriority] = None
     time_scope: Optional[TimeScope] = None

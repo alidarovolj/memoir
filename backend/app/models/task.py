@@ -46,6 +46,7 @@ class Task(Base):
 
     # Timing
     due_date = Column(DateTime(timezone=True), nullable=True)
+    scheduled_time = Column(String(5), nullable=True)  # Format: "HH:MM" (e.g. "08:00")
     completed_at = Column(DateTime(timezone=True), nullable=True)
 
     # Status
