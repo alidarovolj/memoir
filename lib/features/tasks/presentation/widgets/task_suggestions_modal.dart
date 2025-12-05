@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:memoir/core/theme/app_theme.dart';
 import 'package:memoir/features/tasks/data/models/task_suggestion_model.dart';
-import 'package:memoir/features/tasks/data/models/task_model.dart';
 
 class TaskSuggestionsModal extends StatelessWidget {
   final List<TaskSuggestionModel> suggestions;
@@ -66,10 +65,7 @@ class TaskSuggestionsModal extends StatelessWidget {
                       ),
                       Text(
                         'На основе вашего воспоминания',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey,
-                        ),
+                        style: TextStyle(fontSize: 14, color: Colors.grey),
                       ),
                     ],
                   ),
@@ -116,10 +112,7 @@ class TaskSuggestionsModal extends StatelessWidget {
                     ),
                     child: const Text(
                       'Отклонить все',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey,
-                      ),
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
                     ),
                   ),
                 ),
@@ -178,10 +171,7 @@ class TaskSuggestionsModal extends StatelessWidget {
                 // Description
                 Text(
                   suggestion.description,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                 ),
 
                 const SizedBox(height: 12),
@@ -247,8 +237,9 @@ class TaskSuggestionsModal extends StatelessWidget {
                 Navigator.pop(context);
                 onTaskSelected(suggestion);
               },
-              borderRadius:
-                  const BorderRadius.vertical(bottom: Radius.circular(16)),
+              borderRadius: const BorderRadius.vertical(
+                bottom: Radius.circular(16),
+              ),
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 child: Row(
@@ -289,11 +280,7 @@ class TaskSuggestionsModal extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Ionicons.sparkles,
-            size: 14,
-            color: AppTheme.primaryColor,
-          ),
+          Icon(Ionicons.sparkles, size: 14, color: AppTheme.primaryColor),
           const SizedBox(width: 4),
           Text(
             '$percentage%',

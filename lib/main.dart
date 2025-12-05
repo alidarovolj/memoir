@@ -23,16 +23,20 @@ import 'package:memoir/features/stories/data/models/story_model.dart';
 import 'package:memoir/features/stories/presentation/widgets/stories_list.dart';
 import 'package:memoir/features/tasks/presentation/pages/tasks_page.dart';
 import 'package:memoir/features/memories/presentation/pages/edit_memory_page.dart';
+import 'package:memoir/features/tasks/data/datasources/task_remote_datasource.dart';
+import 'package:memoir/features/tasks/data/models/task_model.dart';
+import 'package:memoir/features/tasks/data/models/task_suggestion_model.dart';
+import 'package:memoir/features/tasks/presentation/widgets/task_suggestions_modal.dart';
 
 // Global navigation key для навигации из interceptor
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Load environment variables from .env file
   await dotenv.load(fileName: ".env");
-  
+
   // TODO: Initialize Firebase for Push Notifications (FCM) later
   // await Firebase.initializeApp();
 
@@ -121,10 +125,11 @@ class _SplashScreenState extends State<SplashScreen>
     if (mounted) {
       // Инициализируем DioClient с navigation key и SharedPreferences
       await DioClient.initialize(navigatorKey);
-      
+
       // Проверяем авторизацию
       final prefs = await SharedPreferences.getInstance();
-      final dio = DioClient.instance; // Используем глобальный instance с auth interceptor
+      final dio = DioClient
+          .instance; // Используем глобальный instance с auth interceptor
       final authService = AuthService(dio, prefs);
       final isAuth = await authService.isAuthenticated();
 
@@ -231,6 +236,7 @@ class _HomePageState extends State<HomePage>
 
   late MemoryRemoteDataSource _memoryDataSource;
   late StoryRemoteDataSource _storyDataSource;
+  late TaskRemoteDataSource _taskDataSource;
   List<Map<String, dynamic>> _memories = [];
   List<StoryModel> _stories = [];
   bool _isLoading = false;
@@ -247,6 +253,7 @@ class _HomePageState extends State<HomePage>
 
     _memoryDataSource = MemoryRemoteDataSourceImpl(dio: DioClient.instance);
     _storyDataSource = StoryRemoteDataSourceImpl(dio: DioClient.instance);
+    _taskDataSource = TaskRemoteDataSourceImpl(dio: DioClient.instance);
     _loadMemories();
     _loadStories();
   }
@@ -344,6 +351,30 @@ class _HomePageState extends State<HomePage>
             'Воспоминание создано!\nAI классифицирует его в фоне...',
           );
         }
+
+        // 🔥 NEW: Get AI task suggestions after creating memory
+        print('💡 [HOME] Fetching AI task suggestions...');
+        try {
+          final suggestions = await _taskDataSource.getSuggestedTasksFromMemory(
+            response['id'],
+          );
+
+          if (suggestions.isNotEmpty && mounted) {
+            print('✨ [HOME] Got ${suggestions.length} AI suggestions');
+            // Show suggestions modal
+            await Future.delayed(
+              const Duration(milliseconds: 500),
+            ); // Небольшая задержка для UX
+            if (mounted) {
+              _showTaskSuggestionsModal(suggestions);
+            }
+          } else {
+            print('ℹ️ [HOME] No AI suggestions returned');
+          }
+        } catch (suggestionError) {
+          print('⚠️ [HOME] Error fetching suggestions: $suggestionError');
+          // Не показываем ошибку пользователю - это не критично
+        }
       }
     } catch (e, stackTrace) {
       print('❌ [HOME] Error creating memory: $e');
@@ -355,6 +386,59 @@ class _HomePageState extends State<HomePage>
           context,
           'Не удалось создать воспоминание: $message',
         );
+      }
+    }
+  }
+
+  void _showTaskSuggestionsModal(List<TaskSuggestionModel> suggestions) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.5,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (context, scrollController) {
+          return TaskSuggestionsModal(
+            suggestions: suggestions,
+            onTaskSelected: (suggestion) {
+              // Создать задачу из suggestion
+              _createTaskFromSuggestion(suggestion);
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _createTaskFromSuggestion(TaskSuggestionModel suggestion) async {
+    try {
+      print('📋 [HOME] Creating task from AI suggestion: ${suggestion.title}');
+
+      final taskData = {
+        'title': suggestion.title,
+        'description': suggestion.description,
+        'priority': suggestion.priority,
+        'time_scope': suggestion.timeScope,
+        'status': 'pending',
+        'ai_suggested': true,
+        'ai_confidence': suggestion.confidence,
+      };
+
+      await _taskDataSource.createTask(taskData);
+
+      if (mounted) {
+        SnackBarUtils.showSuccess(
+          context,
+          '✅ Задача "${suggestion.title}" создана!',
+        );
+      }
+    } catch (e) {
+      print('❌ [HOME] Error creating task from suggestion: $e');
+      if (mounted) {
+        SnackBarUtils.showError(context, 'Не удалось создать задачу');
       }
     }
   }

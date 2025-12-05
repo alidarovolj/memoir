@@ -20,7 +20,9 @@ abstract class TaskRemoteDataSource {
   Future<void> completeTask(String taskId);
   Future<void> deleteTask(String taskId);
   Future<Map<String, dynamic>> analyzeTask(String title);
-  Future<List<TaskSuggestionModel>> getSuggestedTasksFromMemory(String memoryId);
+  Future<List<TaskSuggestionModel>> getSuggestedTasksFromMemory(
+    String memoryId,
+  );
 }
 
 class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
@@ -64,7 +66,11 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
       log('📋 [TASKS] Fetched ${response.data['items'].length} tasks');
       return response.data;
     } catch (e, stackTrace) {
-      log('❌ [TASKS] Error fetching tasks: $e', error: e, stackTrace: stackTrace);
+      log(
+        '❌ [TASKS] Error fetching tasks: $e',
+        error: e,
+        stackTrace: stackTrace,
+      );
       rethrow;
     }
   }
@@ -98,7 +104,10 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
     Map<String, dynamic> taskData,
   ) async {
     try {
-      final response = await dio.put('${ApiConfig.tasks}/$taskId', data: taskData);
+      final response = await dio.put(
+        '${ApiConfig.tasks}/$taskId',
+        data: taskData,
+      );
       log('✅ [TASKS] Task updated: $taskId');
       return TaskModel.fromJson(response.data);
     } catch (e) {
@@ -191,12 +200,14 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
       final response = await dio.post(
         '${ApiConfig.tasksAI}/memories/$memoryId/suggest-tasks',
       );
-      
+
       final suggestions = (response.data as List)
           .map((json) => TaskSuggestionModel.fromJson(json))
           .toList();
-      
-      log('✨ [TASKS_AI] Got ${suggestions.length} suggestions for memory $memoryId');
+
+      log(
+        '✨ [TASKS_AI] Got ${suggestions.length} suggestions for memory $memoryId',
+      );
       return suggestions;
     } catch (e) {
       log('❌ [TASKS_AI] Error getting suggestions: $e');
@@ -204,4 +215,3 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
     }
   }
 }
-
