@@ -402,35 +402,39 @@ Results: [Interstellar, Gravity, Martian, ...]
 │     users       │
 ├─────────────────┤
 │ id (UUID) PK    │
-│ email           │
+│ phone_number    │
+│ firebase_uid    │
 │ username        │
-│ hashed_password │
+│ email           │
 │ created_at      │
 │ updated_at      │
 └────────┬────────┘
          │
          │ 1:N
-         │
-┌────────▼────────────────┐
-│      memories           │
-├─────────────────────────┤
-│ id (UUID) PK            │
-│ user_id (UUID) FK       │────┐
-│ category_id (UUID) FK   │    │
-│ title                   │    │
-│ content                 │    │
-│ source_type (ENUM)      │    │
-│ source_url              │    │
-│ metadata (JSONB)        │    │
-│ ai_confidence (FLOAT)   │    │
-│ tags (ARRAY)            │    │
-│ created_at              │    │
-│ updated_at              │    │
-└─────────┬───────────────┘    │
-          │                     │
-          │ 1:1                 │ N:1
-          │                     │
-┌─────────▼───────────┐   ┌────▼───────────┐
+         ├───────────────────────┐
+         │                       │
+┌────────▼────────────────┐      │
+│      memories           │      │
+├─────────────────────────┤      │
+│ id (UUID) PK            │      │
+│ user_id (UUID) FK       │────┐ │
+│ category_id (UUID) FK   │    │ │
+│ title                   │    │ │
+│ content                 │    │ │
+│ source_type (ENUM)      │    │ │
+│ source_url              │    │ │
+│ image_url               │    │ │
+│ backdrop_url            │    │ │
+│ memory_metadata (JSONB) │    │ │
+│ ai_confidence (FLOAT)   │    │ │
+│ tags (ARRAY)            │    │ │
+│ created_at              │    │ │
+│ updated_at              │    │ │
+└─────────┬───────────────┘    │ │
+          │                     │ │
+          │ 1:1                 │ │
+          │                     │ │
+┌─────────▼───────────┐   ┌────▼─┼──────────┐
 │   embeddings        │   │   categories   │
 ├─────────────────────┤   ├────────────────┤
 │ id (UUID) PK        │   │ id (UUID) PK   │
@@ -440,6 +444,40 @@ Results: [Interstellar, Gravity, Martian, ...]
 │ created_at          │   │ color          │
 └─────────────────────┘   │ created_at     │
                           └────────────────┘
+                                 │
+                                 │ N:1
+                          ┌──────▼─────────────┐
+                          │      tasks         │
+                          ├────────────────────┤
+                          │ id (UUID) PK       │
+                          │ user_id (UUID) FK  │◄─┐
+                          │ category_id FK     │──┘
+                          │ title              │
+                          │ description        │
+                          │ due_date           │
+                          │ scheduled_time     │
+                          │ completed_at       │
+                          │ status (ENUM)      │
+                          │ priority (ENUM)    │
+                          │ time_scope (ENUM)  │
+                          │ related_memory_id  │
+                          │ ai_suggested       │
+                          │ ai_confidence      │
+                          │ tags (ARRAY)       │
+                          │ created_at         │
+                          │ updated_at         │
+                          └────────────────────┘
+
+          ┌─────────────────────┐
+          │      stories        │
+          ├─────────────────────┤
+          │ id (UUID) PK        │
+          │ user_id (UUID) FK   │
+          │ memory_id (UUID) FK │
+          │ is_public           │
+          │ created_at          │
+          │ expires_at          │
+          └─────────────────────┘
 ```
 
 ### Indexes
@@ -686,34 +724,55 @@ CREATE INDEX idx_embeddings_vector ON embeddings
 
 ## 🛣️ Roadmap
 
-### Phase 1: MVP (текущая) ✅
-- Backend API
-- AI классификация
-- Базовая Flutter структура
+### ✅ Phase 1: MVP (ЗАВЕРШЕНО)
+- ✅ Backend API (FastAPI)
+- ✅ AI классификация (GPT-4o-mini)
+- ✅ Vector Search (pgvector)
+- ✅ Базовая Flutter структура (Clean Architecture)
+- ✅ Аутентификация (JWT + SMS + Google Sign-In)
 
-### Phase 2: UI Completion ⏳
-- Полноценные Auth screens
-- Home page с memories
-- Create/Edit flows
-- Search UI
+### ✅ Phase 2: Smart Features (ЗАВЕРШЕНО)
+- ✅ Семантический поиск
+- ✅ Stories feature (временные публичные воспоминания)
+- ✅ Banner carousel (автопролистывание)
+- ✅ External API integration (TMDB, Google Books)
+- ✅ AI Intent Detection
+- ✅ Smart Content Search
 
-### Phase 3: Advanced Features ⏳
-- Image upload + OCR
-- Voice notes + transcription
-- Share sheet integration
-- Push notifications
+### ✅ Phase 3: Planning System (90% ЗАВЕРШЕНО)
+- ✅ Core tasks functionality
+- ✅ Kanban board (drag & drop между колонками)
+- ✅ Daily timeline (временные слоты)
+- ✅ Monthly calendar view
+- ✅ Time management (due dates, scheduled time)
+- ✅ CRUD операции для задач
+- ⏳ AI Task suggestions (в разработке)
 
-### Phase 4: Optimization ⏳
-- Offline-first
-- Advanced caching
-- Performance tuning
-- Comprehensive testing
+### 🎯 Phase 4: AI-Powered Workflow (СЛЕДУЮЩИЙ)
+- ⏳ Task suggestions from memories
+- ⏳ Memory conversion from tasks
+- ⏳ Smart scheduling
+- ⏳ AI automation
 
-### Phase 5: Production ⏳
-- CI/CD pipeline
-- Production deployment
-- Monitoring & alerting
-- User analytics
+### 📋 Phase 5: Advanced Features
+- ⏳ Recurring tasks
+- ⏳ Subtasks
+- ⏳ Push notifications
+- ⏳ Offline mode
+- ⏳ Image upload + OCR
+- ⏳ Voice notes + transcription
+
+### 🧪 Phase 6: Testing & Optimization
+- ⏳ Comprehensive testing (unit, widget, integration)
+- ⏳ Performance optimization
+- ⏳ Code coverage >80%
+- ⏳ CI/CD pipeline
+
+### 🚀 Phase 7: Production Ready
+- ⏳ Production deployment (Cloud)
+- ⏳ Monitoring & alerting
+- ⏳ User analytics
+- ⏳ App Store / Google Play deployment
 
 ---
 

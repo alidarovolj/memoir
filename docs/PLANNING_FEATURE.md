@@ -464,47 +464,84 @@ Planning Page
 ## 📊 Приоритизация разработки
 
 ### ✅ РЕАЛИЗОВАНО:
+
+#### Core Features
 - ✅ Stories Feature (создание, просмотр, группировка, автопрогресс)
 - ✅ Smart Content Search (TMDB, Google Books, AI Intent Detection)
 - ✅ Banner Carousel (автопролистывание, индикаторы)
-- ✅ OAuth (Google, Apple Sign In)
-- ✅ Memory Cards с изображениями
-- ✅ **Planning Feature Phase 1 & 2 (Core Tasks + Time Management):**
-  - ✅ Backend: Task модель, API endpoints, миграция БД
-  - ✅ Flutter: Models, DataSource, UI (TasksPage, CreateTaskPage, TaskCard)
-  - ✅ Вкладки: Daily/Weekly/Monthly/Long-term
-  - ✅ CRUD операции: создание, завершение, удаление задач
-  - ✅ Приоритеты (low, medium, high, urgent)
-  - ✅ Due dates с календарем
-  - ✅ Интеграция с Bottom Navigation
+- ✅ SMS Authentication (SMS Traffic)
+- ✅ Google Sign In (Firebase)
+- ✅ Memory Cards с изображениями и backdrop
+- ✅ AI Classification (GPT-4o-mini)
+- ✅ Vector Search (pgvector)
 
-### 🚧 ТЕКУЩИЙ ФОКУС: AI Integration
+#### Planning Feature - Phase 1 & 2 (ЗАВЕРШЕНО) ✅
 
-### Phase 1: Core Tasks (1 неделя) ✅ ГОТОВО
-- ✅ Модель Task в backend
-- ✅ CRUD endpoints для задач
-- ✅ UI для списка задач
-- ✅ Создание/редактирование задач
-- ✅ Статусы и фильтры
+**Backend:**
+- ✅ Task модель с полями:
+  - id, user_id, title, description
+  - due_date, scheduled_time (HH:MM формат)
+  - completed_at, status, priority, time_scope
+  - category_id, related_memory_id
+  - ai_suggested, ai_confidence, tags
+- ✅ CRUD API endpoints (/api/v1/tasks)
+- ✅ Миграция БД с добавлением scheduled_time
+- ✅ TaskService для бизнес-логики
+- ✅ TaskAIService endpoints (готовы для AI интеграции)
 
-### Phase 2: Time Management (1 неделя) ✅ ГОТОВО
-- ✅ Daily planner
-- ✅ Weekly planner
-- ✅ Monthly view
-- ✅ Due dates и календарь
-- ⏳ Push notifications (опционально)
+**Flutter:**
+- ✅ Task Models (freezed + json_serializable)
+- ✅ Remote DataSource с Dio
+- ✅ Repository pattern
+- ✅ Tasks Page с вкладками:
+  - ✅ **Kanban Board** (3 колонки: Запланировано, В работе, Выполнено)
+  - ✅ **Daily Timeline** (временные слоты: Утро, День, Вечер)
+  - ✅ **Monthly View** (календарь на месяц)
+- ✅ Create Task Page с полями:
+  - ✅ Title и description
+  - ✅ Priority selector (low, medium, high, urgent)
+  - ✅ Due date picker (календарь)
+  - ✅ Time scope (daily, weekly, monthly, long_term)
+  - ✅ Scheduled time picker
+- ✅ Task Card с цветовыми индикаторами
+- ✅ Drag & Drop:
+  - ✅ Между колонками Kanban
+  - ✅ Между временными слотами Timeline
+- ✅ CRUD операции:
+  - ✅ Создание задач
+  - ✅ Завершение задач (status → completed)
+  - ✅ Удаление задач
+- ✅ Интеграция с Bottom Navigation
+- ✅ Счетчики задач по статусам
+- ✅ Pull-to-refresh
+- ✅ Empty states
 
-### Phase 3: AI Integration (3-5 дней)
-- ⏳ Suggest tasks from memories
-- ⏳ Auto-categorize tasks
-- ⏳ Task → Memory conversion
-- ⏳ Smart due date suggestions
+### 🚧 ТЕКУЩИЙ ФОКУС: AI Integration (Phase 3)
 
-### Phase 4: Advanced Features (опционально)
-- ⏳ Recurring tasks
-- ⏳ Subtasks
-- ⏳ Time tracking
-- ⏳ Productivity analytics
+### Phase 3: AI Integration (3-5 дней) ⏳ В РАБОТЕ
+- ⏳ **Suggest tasks from memories:**
+  - Backend endpoint готов
+  - Нужно: UI modal при создании воспоминания
+  - AI промпт для анализа воспоминаний
+  
+- ⏳ **Auto-categorize tasks:**
+  - Backend endpoint готов
+  - Нужно: Автоопределение категории при создании
+  
+- ⏳ **Task → Memory conversion:**
+  - Нужно: Endpoint для конвертации
+  - Нужно: UI flow при завершении задачи
+  
+- ⏳ **Smart due date suggestions:**
+  - Нужно: AI анализ для оптимального времени
+
+### Phase 4: Advanced Features (опционально) 🔮
+- ⏳ Recurring tasks (повторяющиеся задачи)
+- ⏳ Subtasks (подзадачи)
+- ⏳ Time tracking (отслеживание времени)
+- ⏳ Productivity analytics (статистика)
+- ⏳ Task templates (шаблоны задач)
+- ⏳ Smart reminders (умные напоминания)
 
 ---
 
