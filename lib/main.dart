@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-// Firebase будет инициализирован позже для Push Notifications
-// import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:memoir/injection_container.dart' as di;
 import 'package:memoir/core/theme/app_theme.dart';
 import 'package:memoir/core/widgets/widgets.dart';
@@ -16,6 +15,7 @@ import 'package:memoir/features/search/presentation/pages/search_page.dart';
 import 'package:memoir/core/network/dio_client.dart';
 import 'package:memoir/features/memories/data/datasources/memory_remote_datasource.dart';
 import 'package:memoir/core/services/auth_service.dart';
+import 'package:memoir/core/services/notification_service.dart';
 import 'package:memoir/features/auth/presentation/pages/phone_login_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:memoir/features/stories/data/datasources/story_remote_datasource.dart';
@@ -37,8 +37,11 @@ void main() async {
   // Load environment variables from .env file
   await dotenv.load(fileName: ".env");
 
-  // TODO: Initialize Firebase for Push Notifications (FCM) later
-  // await Firebase.initializeApp();
+  // Initialize Firebase for Push Notifications
+  await Firebase.initializeApp();
+
+  // Initialize Notification Service
+  await NotificationService().initialize();
 
   // Настройка системных UI элементов
   SystemChrome.setSystemUIOverlayStyle(

@@ -24,10 +24,10 @@ dependencies:
   google_fonts: ^6.1.0
   ionicons: ^0.2.2
   
-  # Firebase (только для будущих Push Notifications)
+  # Firebase
   firebase_core: ^2.27.0
-  # firebase_auth больше не используется (заменён на SMS Traffic)
-  # firebase_messaging будет добавлен позже для push notifications
+  firebase_messaging: ^14.7.9
+  flutter_local_notifications: ^16.3.2
   
   # Phone Input
   intl_phone_field: ^3.2.0

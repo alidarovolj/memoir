@@ -5,7 +5,7 @@ import 'package:memoir/features/tasks/data/models/subtask_model.dart';
 import 'package:memoir/features/tasks/data/datasources/task_remote_datasource.dart';
 import 'package:memoir/features/tasks/presentation/widgets/subtasks_list.dart';
 import 'package:memoir/core/theme/app_theme.dart';
-import 'package:memoir/core/di/service_locator.dart';
+import 'package:memoir/core/network/dio_client.dart';
 import 'package:memoir/core/utils/snackbar_utils.dart';
 import 'dart:developer';
 
@@ -13,11 +13,7 @@ class TaskDetailsPage extends StatefulWidget {
   final TaskModel task;
   final VoidCallback? onTaskUpdated;
 
-  const TaskDetailsPage({
-    super.key,
-    required this.task,
-    this.onTaskUpdated,
-  });
+  const TaskDetailsPage({super.key, required this.task, this.onTaskUpdated});
 
   @override
   State<TaskDetailsPage> createState() => _TaskDetailsPageState();
@@ -31,7 +27,7 @@ class _TaskDetailsPageState extends State<TaskDetailsPage> {
   @override
   void initState() {
     super.initState();
-    _taskDataSource = getIt<TaskRemoteDataSource>();
+    _taskDataSource = TaskRemoteDataSourceImpl(dio: DioClient.instance);
     _subtasks = List.from(widget.task.subtasks);
     _loadSubtasks();
   }
@@ -62,18 +58,14 @@ class _TaskDetailsPageState extends State<TaskDetailsPage> {
       setState(() {
         final index = _subtasks.indexWhere((s) => s.id == subtaskId);
         if (index != -1) {
-          _subtasks[index] = _subtasks[index].copyWith(
-            is_completed: newState,
-          );
+          _subtasks[index] = _subtasks[index].copyWith(is_completed: newState);
         }
       });
 
       // API call
-      await _taskDataSource.updateSubtask(
-        widget.task.id,
-        subtaskId,
-        {'is_completed': newState},
-      );
+      await _taskDataSource.updateSubtask(widget.task.id, subtaskId, {
+        'is_completed': newState,
+      });
 
       widget.onTaskUpdated?.call();
     } catch (e) {
@@ -109,14 +101,11 @@ class _TaskDetailsPageState extends State<TaskDetailsPage> {
 
   Future<void> _addSubtask(String title) async {
     try {
-      final subtask = await _taskDataSource.createSubtask(
-        widget.task.id,
-        {
-          'title': title,
-          'is_completed': false,
-          'order': _subtasks.length,
-        },
-      );
+      final subtask = await _taskDataSource.createSubtask(widget.task.id, {
+        'title': title,
+        'is_completed': false,
+        'order': _subtasks.length,
+      });
 
       setState(() {
         _subtasks.add(subtask);
@@ -335,7 +324,7 @@ class _TaskDetailsPageState extends State<TaskDetailsPage> {
     switch (status) {
       case TaskStatus.pending:
         return Ionicons.ellipse_outline;
-      case TaskStatus.in_progress:
+      case TaskStatus.inProgress:
         return Ionicons.play_circle_outline;
       case TaskStatus.completed:
         return Ionicons.checkmark_circle;
@@ -348,7 +337,7 @@ class _TaskDetailsPageState extends State<TaskDetailsPage> {
     switch (status) {
       case TaskStatus.pending:
         return 'Ожидает';
-      case TaskStatus.in_progress:
+      case TaskStatus.inProgress:
         return 'В работе';
       case TaskStatus.completed:
         return 'Завершено';
@@ -361,7 +350,7 @@ class _TaskDetailsPageState extends State<TaskDetailsPage> {
     switch (status) {
       case TaskStatus.pending:
         return Colors.grey;
-      case TaskStatus.in_progress:
+      case TaskStatus.inProgress:
         return Colors.blue;
       case TaskStatus.completed:
         return Colors.green;

@@ -28,11 +28,18 @@ abstract class TaskRemoteDataSource {
     String taskId,
     Map<String, dynamic> conversionData,
   );
-  
+
   // Subtasks
   Future<List<SubtaskModel>> getSubtasks(String taskId);
-  Future<SubtaskModel> createSubtask(String taskId, Map<String, dynamic> subtaskData);
-  Future<SubtaskModel> updateSubtask(String taskId, String subtaskId, Map<String, dynamic> updates);
+  Future<SubtaskModel> createSubtask(
+    String taskId,
+    Map<String, dynamic> subtaskData,
+  );
+  Future<SubtaskModel> updateSubtask(
+    String taskId,
+    String subtaskId,
+    Map<String, dynamic> updates,
+  );
   Future<void> deleteSubtask(String taskId, String subtaskId);
 }
 
@@ -248,9 +255,7 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
   @override
   Future<List<SubtaskModel>> getSubtasks(String taskId) async {
     try {
-      final response = await dio.get(
-        '${ApiConfig.tasks}/$taskId/subtasks',
-      );
+      final response = await dio.get('${ApiConfig.tasks}/$taskId/subtasks');
 
       final subtasks = (response.data as List)
           .map((json) => SubtaskModel.fromJson(json))
@@ -308,9 +313,7 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
   @override
   Future<void> deleteSubtask(String taskId, String subtaskId) async {
     try {
-      await dio.delete(
-        '${ApiConfig.tasks}/$taskId/subtasks/$subtaskId',
-      );
+      await dio.delete('${ApiConfig.tasks}/$taskId/subtasks/$subtaskId');
 
       log('✅ [SUBTASKS] Deleted subtask: $subtaskId');
     } catch (e) {

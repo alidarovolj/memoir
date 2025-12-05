@@ -120,10 +120,7 @@ class _SubtasksListState extends State<SubtasksList> {
             ...widget.subtasks.map((subtask) => _buildSubtaskItem(subtask)),
 
           // Add new subtask
-          if (_isAdding)
-            _buildAddSubtaskField()
-          else
-            _buildAddButton(),
+          if (_isAdding) _buildAddSubtaskField() else _buildAddButton(),
         ],
       ),
     );
@@ -153,11 +150,7 @@ class _SubtasksListState extends State<SubtasksList> {
                 ),
               ),
               child: subtask.is_completed
-                  ? const Icon(
-                      Icons.check,
-                      size: 16,
-                      color: Colors.white,
-                    )
+                  ? const Icon(Icons.check, size: 16, color: Colors.white)
                   : null,
             ),
           ),
@@ -265,10 +258,7 @@ class _SubtasksListState extends State<SubtasksList> {
       ),
       label: const Text(
         'Добавить подзадачу',
-        style: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-        ),
+        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
       ),
       style: TextButton.styleFrom(
         foregroundColor: AppTheme.primaryColor,

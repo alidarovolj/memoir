@@ -34,11 +34,8 @@ class SubtaskCreate with _$SubtaskCreate {
 
 @freezed
 class SubtaskUpdate with _$SubtaskUpdate {
-  const factory SubtaskUpdate({
-    String? title,
-    bool? is_completed,
-    int? order,
-  }) = _SubtaskUpdate;
+  const factory SubtaskUpdate({String? title, bool? is_completed, int? order}) =
+      _SubtaskUpdate;
 
   factory SubtaskUpdate.fromJson(Map<String, dynamic> json) =>
       _$SubtaskUpdateFromJson(json);

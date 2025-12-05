@@ -6,7 +6,7 @@ from typing import List
 from uuid import UUID
 from datetime import datetime
 
-from app.database import get_db
+from app.db.session import get_db
 from app.models.user import User
 from app.models.task import Task
 from app.models.subtask import Subtask

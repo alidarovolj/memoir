@@ -394,6 +394,17 @@ TaskCard → клик → TaskDetailsPage
   → Progress: 2/4 (50%)
 ```
 
+#### Исправления и улучшения ✅
+- [x] **Исправлены импорты в task_details_page.dart**
+  - ✅ Заменен несуществующий импорт `service_locator.dart` → `dio_client.dart`
+  - ✅ Исправлена инициализация DataSource: `getIt<T>()` → `TaskRemoteDataSourceImpl(dio: DioClient.instance)`
+  - ✅ Исправлены все `TaskStatus.in_progress` → `TaskStatus.inProgress` (camelCase naming)
+
+- [x] **Исправлены импорты в backend**
+  - ✅ `backend/app/api/v1/subtasks.py`: `app.database` → `app.db.session`
+  - ✅ `backend/app/models/subtask.py`: `app.database` → `app.db.base`
+  - ✅ Backend успешно запускается и работает на порту 8000
+
 ---
 
 ### 6. Push Notifications 🔔
@@ -562,5 +573,6 @@ TaskCard → клик → TaskDetailsPage
 
 ---
 
-**Последнее обновление:** 5 декабря 2025  
-**Текущий фокус:** AI-Powered Task Suggestions 🤖
+**Последнее обновление:** 5 декабря 2025 (14:30)  
+**Текущий статус:** ✅ Все основные фичи реализованы! (AI Suggestions, Task→Memory, Recurring, Subtasks)  
+**Следующий фокус:** Push Notifications 🔔
