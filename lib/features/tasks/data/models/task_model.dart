@@ -55,6 +55,9 @@ class TaskModel with _$TaskModel {
     required bool ai_suggested,
     double? ai_confidence,
     List<String>? tags,
+    @Default(false) bool is_recurring,
+    String? recurrence_rule,  // RRULE format (e.g. "FREQ=DAILY")
+    String? parent_task_id,
     required DateTime created_at,
     required DateTime updated_at,
   }) = _TaskModel;

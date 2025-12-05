@@ -213,6 +213,44 @@ class TaskCard extends StatelessWidget {
 
                     const Spacer(),
 
+                    // Recurring badge
+                    if (task.is_recurring)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.purple.shade100,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: Colors.purple.shade300,
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Ionicons.repeat,
+                              size: 10,
+                              color: Colors.purple.shade700,
+                            ),
+                            const SizedBox(width: 3),
+                            Text(
+                              '🔁',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.purple.shade700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                    if (task.is_recurring && task.ai_suggested)
+                      const SizedBox(width: 4),
+
                     // AI suggested badge
                     if (task.ai_suggested)
                       Container(

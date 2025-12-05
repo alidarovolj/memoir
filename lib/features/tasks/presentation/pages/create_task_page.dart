@@ -33,6 +33,10 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
   bool _isAnalyzing = false;
   bool _showAdvancedFields = false;
   String? _aiReasoning;
+  
+  // Recurring
+  bool _isRecurring = false;
+  String _recurrenceRule = 'FREQ=DAILY'; // Default: daily
 
   @override
   void initState() {
@@ -201,6 +205,8 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
         'due_date': _dueDate?.toIso8601String(),
         'scheduled_time': scheduledTime,
         'status': 'pending',
+        'is_recurring': _isRecurring,
+        'recurrence_rule': _isRecurring ? _recurrenceRule : null,
       };
 
       log('📋 [CREATE_TASK] Creating task: $taskData');
@@ -634,6 +640,115 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                       ),
                     ],
 
+                    const SizedBox(height: 24),
+
+                    // Recurring Task Toggle
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: _isRecurring
+                              ? AppTheme.primaryColor
+                              : Colors.grey.shade300,
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                _isRecurring
+                                    ? Ionicons.repeat
+                                    : Ionicons.repeat_outline,
+                                color: _isRecurring
+                                    ? AppTheme.primaryColor
+                                    : Colors.grey,
+                                size: 24,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Повторяющаяся задача',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                    Text(
+                                      'Автоматически создавать задачу по расписанию',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Switch(
+                                value: _isRecurring,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _isRecurring = value;
+                                  });
+                                },
+                                activeColor: AppTheme.primaryColor,
+                              ),
+                            ],
+                          ),
+                          
+                          if (_isRecurring) ...[
+                            const SizedBox(height: 16),
+                            const Divider(),
+                            const SizedBox(height: 16),
+                            
+                            const Text(
+                              'Частота повторения',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                _buildRecurrenceChip(
+                                  'Ежедневно',
+                                  'FREQ=DAILY',
+                                  Ionicons.calendar,
+                                ),
+                                _buildRecurrenceChip(
+                                  'По будням',
+                                  'FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR',
+                                  Ionicons.briefcase,
+                                ),
+                                _buildRecurrenceChip(
+                                  'Еженедельно',
+                                  'FREQ=WEEKLY',
+                                  Ionicons.calendar_outline,
+                                ),
+                                _buildRecurrenceChip(
+                                  'Ежемесячно',
+                                  'FREQ=MONTHLY',
+                                  Ionicons.calendar_number,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+
                     const SizedBox(height: 32),
 
                     // Create button
@@ -651,6 +766,39 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildRecurrenceChip(String label, String rule, IconData icon) {
+    final isSelected = _recurrenceRule == rule;
+    return ChoiceChip(
+      label: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 16,
+            color: isSelected ? Colors.white : Colors.black87,
+          ),
+          const SizedBox(width: 6),
+          Text(label),
+        ],
+      ),
+      selected: isSelected,
+      onSelected: (selected) {
+        if (selected) {
+          setState(() {
+            _recurrenceRule = rule;
+          });
+        }
+      },
+      selectedColor: AppTheme.primaryColor,
+      backgroundColor: Colors.grey.shade200,
+      labelStyle: TextStyle(
+        color: isSelected ? Colors.white : Colors.black87,
+        fontWeight: FontWeight.w600,
+        fontSize: 13,
       ),
     );
   }

@@ -28,6 +28,9 @@ _$TaskModelImpl _$$TaskModelImplFromJson(Map<String, dynamic> json) =>
       ai_suggested: json['ai_suggested'] as bool,
       ai_confidence: (json['ai_confidence'] as num?)?.toDouble(),
       tags: (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList(),
+      is_recurring: json['is_recurring'] as bool? ?? false,
+      recurrence_rule: json['recurrence_rule'] as String?,
+      parent_task_id: json['parent_task_id'] as String?,
       created_at: DateTime.parse(json['created_at'] as String),
       updated_at: DateTime.parse(json['updated_at'] as String),
     );
@@ -50,6 +53,9 @@ Map<String, dynamic> _$$TaskModelImplToJson(_$TaskModelImpl instance) =>
       'ai_suggested': instance.ai_suggested,
       'ai_confidence': instance.ai_confidence,
       'tags': instance.tags,
+      'is_recurring': instance.is_recurring,
+      'recurrence_rule': instance.recurrence_rule,
+      'parent_task_id': instance.parent_task_id,
       'created_at': instance.created_at.toIso8601String(),
       'updated_at': instance.updated_at.toIso8601String(),
     };

@@ -38,6 +38,10 @@ mixin _$TaskModel {
   bool get ai_suggested => throw _privateConstructorUsedError;
   double? get ai_confidence => throw _privateConstructorUsedError;
   List<String>? get tags => throw _privateConstructorUsedError;
+  bool get is_recurring => throw _privateConstructorUsedError;
+  String? get recurrence_rule =>
+      throw _privateConstructorUsedError; // RRULE format (e.g. "FREQ=DAILY")
+  String? get parent_task_id => throw _privateConstructorUsedError;
   DateTime get created_at => throw _privateConstructorUsedError;
   DateTime get updated_at => throw _privateConstructorUsedError;
 
@@ -73,6 +77,9 @@ abstract class $TaskModelCopyWith<$Res> {
     bool ai_suggested,
     double? ai_confidence,
     List<String>? tags,
+    bool is_recurring,
+    String? recurrence_rule,
+    String? parent_task_id,
     DateTime created_at,
     DateTime updated_at,
   });
@@ -109,6 +116,9 @@ class _$TaskModelCopyWithImpl<$Res, $Val extends TaskModel>
     Object? ai_suggested = null,
     Object? ai_confidence = freezed,
     Object? tags = freezed,
+    Object? is_recurring = null,
+    Object? recurrence_rule = freezed,
+    Object? parent_task_id = freezed,
     Object? created_at = null,
     Object? updated_at = null,
   }) {
@@ -178,6 +188,18 @@ class _$TaskModelCopyWithImpl<$Res, $Val extends TaskModel>
                 ? _value.tags
                 : tags // ignore: cast_nullable_to_non_nullable
                       as List<String>?,
+            is_recurring: null == is_recurring
+                ? _value.is_recurring
+                : is_recurring // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            recurrence_rule: freezed == recurrence_rule
+                ? _value.recurrence_rule
+                : recurrence_rule // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            parent_task_id: freezed == parent_task_id
+                ? _value.parent_task_id
+                : parent_task_id // ignore: cast_nullable_to_non_nullable
+                      as String?,
             created_at: null == created_at
                 ? _value.created_at
                 : created_at // ignore: cast_nullable_to_non_nullable
@@ -218,6 +240,9 @@ abstract class _$$TaskModelImplCopyWith<$Res>
     bool ai_suggested,
     double? ai_confidence,
     List<String>? tags,
+    bool is_recurring,
+    String? recurrence_rule,
+    String? parent_task_id,
     DateTime created_at,
     DateTime updated_at,
   });
@@ -253,6 +278,9 @@ class __$$TaskModelImplCopyWithImpl<$Res>
     Object? ai_suggested = null,
     Object? ai_confidence = freezed,
     Object? tags = freezed,
+    Object? is_recurring = null,
+    Object? recurrence_rule = freezed,
+    Object? parent_task_id = freezed,
     Object? created_at = null,
     Object? updated_at = null,
   }) {
@@ -322,6 +350,18 @@ class __$$TaskModelImplCopyWithImpl<$Res>
             ? _value._tags
             : tags // ignore: cast_nullable_to_non_nullable
                   as List<String>?,
+        is_recurring: null == is_recurring
+            ? _value.is_recurring
+            : is_recurring // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        recurrence_rule: freezed == recurrence_rule
+            ? _value.recurrence_rule
+            : recurrence_rule // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        parent_task_id: freezed == parent_task_id
+            ? _value.parent_task_id
+            : parent_task_id // ignore: cast_nullable_to_non_nullable
+                  as String?,
         created_at: null == created_at
             ? _value.created_at
             : created_at // ignore: cast_nullable_to_non_nullable
@@ -355,6 +395,9 @@ class _$TaskModelImpl implements _TaskModel {
     required this.ai_suggested,
     this.ai_confidence,
     final List<String>? tags,
+    this.is_recurring = false,
+    this.recurrence_rule,
+    this.parent_task_id,
     required this.created_at,
     required this.updated_at,
   }) : _tags = tags;
@@ -404,13 +447,21 @@ class _$TaskModelImpl implements _TaskModel {
   }
 
   @override
+  @JsonKey()
+  final bool is_recurring;
+  @override
+  final String? recurrence_rule;
+  // RRULE format (e.g. "FREQ=DAILY")
+  @override
+  final String? parent_task_id;
+  @override
   final DateTime created_at;
   @override
   final DateTime updated_at;
 
   @override
   String toString() {
-    return 'TaskModel(id: $id, user_id: $user_id, title: $title, description: $description, due_date: $due_date, scheduled_time: $scheduled_time, completed_at: $completed_at, status: $status, priority: $priority, time_scope: $time_scope, category_id: $category_id, category_name: $category_name, related_memory_id: $related_memory_id, ai_suggested: $ai_suggested, ai_confidence: $ai_confidence, tags: $tags, created_at: $created_at, updated_at: $updated_at)';
+    return 'TaskModel(id: $id, user_id: $user_id, title: $title, description: $description, due_date: $due_date, scheduled_time: $scheduled_time, completed_at: $completed_at, status: $status, priority: $priority, time_scope: $time_scope, category_id: $category_id, category_name: $category_name, related_memory_id: $related_memory_id, ai_suggested: $ai_suggested, ai_confidence: $ai_confidence, tags: $tags, is_recurring: $is_recurring, recurrence_rule: $recurrence_rule, parent_task_id: $parent_task_id, created_at: $created_at, updated_at: $updated_at)';
   }
 
   @override
@@ -445,6 +496,12 @@ class _$TaskModelImpl implements _TaskModel {
             (identical(other.ai_confidence, ai_confidence) ||
                 other.ai_confidence == ai_confidence) &&
             const DeepCollectionEquality().equals(other._tags, _tags) &&
+            (identical(other.is_recurring, is_recurring) ||
+                other.is_recurring == is_recurring) &&
+            (identical(other.recurrence_rule, recurrence_rule) ||
+                other.recurrence_rule == recurrence_rule) &&
+            (identical(other.parent_task_id, parent_task_id) ||
+                other.parent_task_id == parent_task_id) &&
             (identical(other.created_at, created_at) ||
                 other.created_at == created_at) &&
             (identical(other.updated_at, updated_at) ||
@@ -453,7 +510,7 @@ class _$TaskModelImpl implements _TaskModel {
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     runtimeType,
     id,
     user_id,
@@ -471,9 +528,12 @@ class _$TaskModelImpl implements _TaskModel {
     ai_suggested,
     ai_confidence,
     const DeepCollectionEquality().hash(_tags),
+    is_recurring,
+    recurrence_rule,
+    parent_task_id,
     created_at,
     updated_at,
-  );
+  ]);
 
   /// Create a copy of TaskModel
   /// with the given fields replaced by the non-null parameter values.
@@ -507,6 +567,9 @@ abstract class _TaskModel implements TaskModel {
     required final bool ai_suggested,
     final double? ai_confidence,
     final List<String>? tags,
+    final bool is_recurring,
+    final String? recurrence_rule,
+    final String? parent_task_id,
     required final DateTime created_at,
     required final DateTime updated_at,
   }) = _$TaskModelImpl;
@@ -546,6 +609,12 @@ abstract class _TaskModel implements TaskModel {
   double? get ai_confidence;
   @override
   List<String>? get tags;
+  @override
+  bool get is_recurring;
+  @override
+  String? get recurrence_rule; // RRULE format (e.g. "FREQ=DAILY")
+  @override
+  String? get parent_task_id;
   @override
   DateTime get created_at;
   @override
