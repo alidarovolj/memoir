@@ -30,10 +30,13 @@ class AuthInterceptor extends Interceptor {
     // Если 401 или 403 - токен истек или недействителен
     // Если 404 с "User not found" - пользователь удален или база пересоздана
     // НО не делаем logout если это страница логина/регистрации/SMS auth
-    if (err.response?.statusCode == 401 || 
+    if (err.response?.statusCode == 401 ||
         err.response?.statusCode == 403 ||
-        (err.response?.statusCode == 404 && 
-         err.response?.data?['detail']?.toString().contains('User not found') == true)) {
+        (err.response?.statusCode == 404 &&
+            err.response?.data?['detail']?.toString().contains(
+                  'User not found',
+                ) ==
+                true)) {
       final uri = err.requestOptions.uri.toString();
 
       // Не делаем автоматический logout для auth endpoints

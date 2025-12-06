@@ -47,6 +47,7 @@ class _PhoneVerifyPageState extends State<PhoneVerifyPage> {
   @override
   void dispose() {
     _timer?.cancel();
+    _timer = null;
     _codeController.dispose();
     super.dispose();
   }
@@ -104,6 +105,8 @@ class _PhoneVerifyPageState extends State<PhoneVerifyPage> {
       await prefs.setString('auth_token', response['access_token']);
       await prefs.setString('user_id', response['user']['id']);
       await prefs.setString('user_phone', response['user']['phone_number']);
+
+      if (!mounted) return;
 
       setState(() {
         _isLoading = false;
