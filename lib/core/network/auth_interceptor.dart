@@ -28,8 +28,12 @@ class AuthInterceptor extends Interceptor {
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
     // Если 401 или 403 - токен истек или недействителен
+    // Если 404 с "User not found" - пользователь удален или база пересоздана
     // НО не делаем logout если это страница логина/регистрации/SMS auth
-    if (err.response?.statusCode == 401 || err.response?.statusCode == 403) {
+    if (err.response?.statusCode == 401 || 
+        err.response?.statusCode == 403 ||
+        (err.response?.statusCode == 404 && 
+         err.response?.data?['detail']?.toString().contains('User not found') == true)) {
       final uri = err.requestOptions.uri.toString();
 
       // Не делаем автоматический logout для auth endpoints
@@ -37,7 +41,7 @@ class AuthInterceptor extends Interceptor {
           !uri.contains('/auth/register') &&
           !uri.contains('/sms-auth/')) {
         print(
-          '🔐 Token expired or invalid (${err.response?.statusCode}), logging out...',
+          '🔐 Authentication error (${err.response?.statusCode}): ${err.response?.data?['detail'] ?? 'Unknown'}, logging out...',
         );
 
         // Очищаем токен
