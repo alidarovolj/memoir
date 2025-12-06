@@ -32,6 +32,12 @@ target 'Runner' do
   use_modular_headers!
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+  
+  # Disable modular headers for Firebase to fix the issue
+  pod 'Firebase', :modular_headers => false
+  pod 'FirebaseCore', :modular_headers => false
+  pod 'FirebaseMessaging', :modular_headers => false
+  
   target 'RunnerTests' do
     inherit! :search_paths
   end
@@ -46,5 +52,10 @@ post_install do |installer|
       config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
     end
+  end
+  
+  # Also apply to the main project
+  installer.pods_project.build_configurations.each do |config|
+    config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
   end
 end
