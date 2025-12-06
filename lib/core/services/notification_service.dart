@@ -58,9 +58,29 @@ class NotificationService {
       // Initialize local notifications
       await _initializeLocalNotifications();
 
+      // Get APNS token first on iOS (required for FCM to work)
+      try {
+        final apnsToken = await _firebaseMessaging.getAPNSToken();
+        if (apnsToken != null) {
+          log('🍎 APNS Token obtained: ${apnsToken.substring(0, 20)}...');
+        } else {
+          log('⚠️ APNS token not available (normal on simulator)');
+        }
+      } catch (e) {
+        log('⚠️ APNS token not available: $e (normal on simulator)');
+      }
+
       // Get FCM token
-      _fcmToken = await _firebaseMessaging.getToken();
-      log('🔑 FCM Token obtained: ${_fcmToken?.substring(0, 20)}...');
+      try {
+        _fcmToken = await _firebaseMessaging.getToken();
+        if (_fcmToken != null) {
+          log('🔑 FCM Token obtained: ${_fcmToken!.substring(0, 20)}...');
+        } else {
+          log('⚠️ FCM token not available yet');
+        }
+      } catch (e) {
+        log('⚠️ Could not get FCM token: $e (will retry on token refresh)');
+      }
 
       // Send token to backend
       if (_fcmToken != null) {
