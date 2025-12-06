@@ -312,7 +312,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
             ),
           ),
         ),
-        activeColor: AppTheme.primaryColor,
+        activeThumbColor: AppTheme.primaryColor,
       ),
     );
   }

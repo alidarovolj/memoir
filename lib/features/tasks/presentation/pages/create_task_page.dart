@@ -698,7 +698,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                                     _isRecurring = value;
                                   });
                                 },
-                                activeColor: AppTheme.primaryColor,
+                                activeThumbColor: AppTheme.primaryColor,
                               ),
                             ],
                           ),

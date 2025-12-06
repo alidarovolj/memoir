@@ -24,7 +24,6 @@ import 'package:memoir/features/stories/presentation/widgets/stories_list.dart';
 import 'package:memoir/features/tasks/presentation/pages/tasks_page.dart';
 import 'package:memoir/features/memories/presentation/pages/edit_memory_page.dart';
 import 'package:memoir/features/tasks/data/datasources/task_remote_datasource.dart';
-import 'package:memoir/features/tasks/data/models/task_model.dart';
 import 'package:memoir/features/tasks/data/models/task_suggestion_model.dart';
 import 'package:memoir/features/tasks/presentation/widgets/task_suggestions_modal.dart';
 
