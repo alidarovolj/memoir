@@ -4,6 +4,7 @@ import 'package:memoir/features/tasks/data/models/task_model.dart';
 import 'package:memoir/features/tasks/data/models/subtask_model.dart';
 import 'package:memoir/features/tasks/data/datasources/task_remote_datasource.dart';
 import 'package:memoir/features/tasks/presentation/widgets/subtasks_list.dart';
+import 'package:memoir/features/tasks/presentation/widgets/task_timer_widget.dart';
 import 'package:memoir/core/theme/app_theme.dart';
 import 'package:memoir/core/network/dio_client.dart';
 import 'package:memoir/core/utils/snackbar_utils.dart';
@@ -187,6 +188,17 @@ class _TaskDetailsPageState extends State<TaskDetailsPage> {
 
                   // Task Meta
                   _buildMetaRow(),
+
+                  const SizedBox(height: 24),
+
+                  // Time Tracker
+                  TaskTimerWidget(
+                    taskId: widget.task.id,
+                    onTimerStateChanged: () {
+                      // Refresh task data when timer state changes
+                      widget.onTaskUpdated?.call();
+                    },
+                  ),
 
                   const SizedBox(height: 32),
 

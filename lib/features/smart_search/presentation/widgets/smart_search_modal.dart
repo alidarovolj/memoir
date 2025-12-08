@@ -12,11 +12,13 @@ import 'dart:async';
 class SmartSearchModal extends StatefulWidget {
   final String initialQuery;
   final Function(ContentResult)? onResultSelected;
+  final ScrollController? scrollController;
 
   const SmartSearchModal({
     super.key,
     required this.initialQuery,
     this.onResultSelected,
+    this.scrollController,
   });
 
   @override
@@ -35,9 +37,11 @@ class _SmartSearchModalState extends State<SmartSearchModal> {
   @override
   void initState() {
     super.initState();
-    _searchDataSource = SmartSearchRemoteDataSourceImpl(dio: DioClient.instance);
+    _searchDataSource = SmartSearchRemoteDataSourceImpl(
+      dio: DioClient.instance,
+    );
     _searchController.text = widget.initialQuery;
-    
+
     // Perform initial search
     if (widget.initialQuery.isNotEmpty) {
       _performSearch(widget.initialQuery);
@@ -113,7 +117,7 @@ class _SmartSearchModalState extends State<SmartSearchModal> {
   }
 
   Future<void> _selectResult(ContentResult result) async {
-    // If it's a TMDB movie, fetch full details
+    // If it's a TMDB movie, try to fetch full details
     if (result.source == 'tmdb' && result.externalId != null) {
       try {
         final details = await _searchDataSource.getContentDetails(
@@ -121,23 +125,35 @@ class _SmartSearchModalState extends State<SmartSearchModal> {
           source: result.source,
           contentType: result.type,
         );
-        
+
         final detailedResult = ContentResult.fromJson(details);
+
+        // Check if detailed result has meaningful data (non-empty title)
+        // If not, use the original result from search
+        final resultToReturn = (detailedResult.title.isEmpty)
+            ? result
+            : detailedResult;
+
         if (mounted) {
-          Navigator.of(context).pop(detailedResult);
+          // Use rootNavigator to ensure we close the modal bottom sheet
+          Navigator.of(context, rootNavigator: true).pop(resultToReturn);
         }
       } catch (e) {
         if (mounted) {
-          SnackBarUtils.showError(context, 'Не удалось загрузить детали');
+          // On error, return the original result instead of showing error
+          Navigator.of(context, rootNavigator: true).pop(result);
         }
       }
     } else {
       // Return the result as-is
-      if (widget.onResultSelected != null) {
-        widget.onResultSelected!(result);
-        Navigator.of(context).pop();
-      } else {
-        Navigator.of(context).pop(result);
+      if (mounted) {
+        if (widget.onResultSelected != null) {
+          widget.onResultSelected!(result);
+          Navigator.of(context, rootNavigator: true).pop();
+        } else {
+          // Use rootNavigator to ensure we close the modal bottom sheet
+          Navigator.of(context, rootNavigator: true).pop(result);
+        }
       }
     }
   }
@@ -195,13 +211,14 @@ class _SmartSearchModalState extends State<SmartSearchModal> {
                       child: Text(
                         'Умный поиск контента',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                     IconButton(
                       icon: const Icon(Ionicons.close_outline),
-                      onPressed: () => Navigator.of(context).pop(),
+                      onPressed: () =>
+                          Navigator.of(context, rootNavigator: true).pop(),
                     ),
                   ],
                 ),
@@ -267,9 +284,7 @@ class _SmartSearchModalState extends State<SmartSearchModal> {
           ),
 
           // Results
-          Expanded(
-            child: _buildResults(),
-          ),
+          Expanded(child: _buildResults()),
         ],
       ),
     );
@@ -288,7 +303,8 @@ class _SmartSearchModalState extends State<SmartSearchModal> {
             'Для "${_searchResponse!.intent}" поиск не нужен.\nПросто сохраните как есть.',
         buttonText: 'Создать заметку',
         buttonIcon: Ionicons.checkmark_circle_outline,
-        onButtonPressed: () => Navigator.of(context).pop(null),
+        onButtonPressed: () =>
+            Navigator.of(context, rootNavigator: true).pop(null),
       );
     }
 
@@ -299,7 +315,8 @@ class _SmartSearchModalState extends State<SmartSearchModal> {
         subtitle: 'Попробуйте изменить запрос\nили создайте простую заметку',
         buttonText: 'Создать заметку',
         buttonIcon: Ionicons.create_outline,
-        onButtonPressed: () => Navigator.of(context).pop(null),
+        onButtonPressed: () =>
+            Navigator.of(context, rootNavigator: true).pop(null),
       );
     }
 
@@ -312,6 +329,7 @@ class _SmartSearchModalState extends State<SmartSearchModal> {
     }
 
     return ListView.builder(
+      controller: widget.scrollController,
       padding: const EdgeInsets.all(16),
       itemCount: _results.length,
       itemBuilder: (context, index) {
@@ -366,4 +384,3 @@ class _SmartSearchModalState extends State<SmartSearchModal> {
     }
   }
 }
-

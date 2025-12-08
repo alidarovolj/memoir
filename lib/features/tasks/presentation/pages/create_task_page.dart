@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:memoir/features/tasks/data/models/task_model.dart';
 import 'package:memoir/features/tasks/data/datasources/task_remote_datasource.dart';
+import 'package:memoir/features/tasks/presentation/pages/task_templates_page.dart';
 import 'package:memoir/core/widgets/widgets.dart';
 import 'package:memoir/core/theme/app_theme.dart';
 import 'package:memoir/core/network/dio_client.dart';
@@ -50,6 +51,19 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
     _titleController.dispose();
     _descriptionController.dispose();
     super.dispose();
+  }
+
+  Future<void> _openTemplatesLibrary() async {
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const TaskTemplatesPage(),
+      ),
+    );
+
+    // If task was created from template, close this page and return to tasks
+    if (result == true && mounted) {
+      Navigator.of(context).pop(true);
+    }
   }
 
   Future<void> _analyzeTaskWithAI() async {
@@ -259,6 +273,13 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
           icon: const Icon(Ionicons.close_outline),
           onPressed: () => Navigator.of(context).pop(),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Ionicons.albums_outline),
+            onPressed: _openTemplatesLibrary,
+            tooltip: 'Выбрать из шаблона',
+          ),
+        ],
       ),
       body: Container(
         decoration: const BoxDecoration(

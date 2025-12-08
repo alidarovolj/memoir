@@ -65,7 +65,10 @@ class _CreateMemoryPageState extends State<CreateMemoryPage>
         maxChildSize: 0.95,
         expand: false,
         builder: (context, scrollController) {
-          return SmartSearchModal(initialQuery: query);
+          return SmartSearchModal(
+            initialQuery: query,
+            scrollController: scrollController,
+          );
         },
       ),
     );
