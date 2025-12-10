@@ -1,8 +1,12 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:memoir/core/core.dart';
+import 'package:memoir/core/network/dio_client.dart';
 import 'package:ionicons/ionicons.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:memoir/features/smart_search/presentation/widgets/smart_search_modal.dart';
 import 'package:memoir/features/smart_search/data/models/search_result_model.dart';
+import 'package:dio/dio.dart';
 
 class CreateMemoryPage extends StatefulWidget {
   const CreateMemoryPage({super.key});
@@ -22,6 +26,9 @@ class _CreateMemoryPageState extends State<CreateMemoryPage>
   late AnimationController _slideController;
   Map<String, dynamic>?
   _selectedContent; // Store selected content from smart search
+  File? _selectedImage; // Selected image file
+  String? _uploadedImageUrl; // Uploaded image URL from backend
+  final ImagePicker _imagePicker = ImagePicker();
 
   final List<Map<String, dynamic>> _sourceTypes = [
     {'type': 'text', 'icon': Ionicons.text_outline, 'label': 'Текст'},
@@ -76,6 +83,71 @@ class _CreateMemoryPageState extends State<CreateMemoryPage>
     if (result != null) {
       _fillFormFromSearchResult(result);
     }
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1920,
+        maxHeight: 1920,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        setState(() {
+          _selectedImage = File(image.path);
+        });
+
+        // Upload immediately after selection
+        await _uploadImage();
+      }
+    } catch (e) {
+      if (mounted) {
+        SnackBarUtils.showError(context, 'Ошибка выбора изображения');
+      }
+    }
+  }
+
+  Future<void> _uploadImage() async {
+    if (_selectedImage == null) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final dio = DioClient.instance;
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(
+          _selectedImage!.path,
+          filename: _selectedImage!.path.split('/').last,
+        ),
+      });
+
+      final response = await dio.post('/api/v1/upload/image', data: formData);
+
+      if (response.data['success'] == true) {
+        setState(() {
+          _uploadedImageUrl = response.data['image_url'];
+          _isLoading = false;
+        });
+
+        if (mounted) {
+          SnackBarUtils.showSuccess(context, 'Изображение загружено!');
+        }
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        SnackBarUtils.showError(context, 'Ошибка загрузки изображения');
+      }
+    }
+  }
+
+  void _removeImage() {
+    setState(() {
+      _selectedImage = null;
+      _uploadedImageUrl = null;
+    });
   }
 
   void _fillFormFromSearchResult(ContentResult result) {
@@ -155,6 +227,11 @@ class _CreateMemoryPageState extends State<CreateMemoryPage>
         'content': _contentController.text,
         'source_type': _selectedSourceType,
       };
+
+      // Add uploaded image URL if exists
+      if (_uploadedImageUrl != null) {
+        memoryData['image_url'] = 'http://localhost:8000$_uploadedImageUrl';
+      }
 
       print('📝 [CREATE] Base memory data: $memoryData');
 
@@ -386,6 +463,14 @@ class _CreateMemoryPageState extends State<CreateMemoryPage>
                       ),
                       const SizedBox(height: 24),
 
+                      // Image preview if uploaded
+                      if (_selectedImage != null) ...[
+                        _buildSectionTitle('Изображение'),
+                        const SizedBox(height: 12),
+                        _buildImagePreview(),
+                        const SizedBox(height: 24),
+                      ],
+
                       // Переключатель "Опубликовать в историях"
                       _buildPublishAsStoryToggle(),
                       const SizedBox(height: 24),
@@ -557,6 +642,9 @@ class _CreateMemoryPageState extends State<CreateMemoryPage>
               onTap: _isLoading
                   ? null
                   : () {
+                      if (source['type'] == 'image') {
+                        _pickImage();
+                      }
                       setState(() {
                         _selectedSourceType = source['type'] as String;
                       });
@@ -609,6 +697,54 @@ class _CreateMemoryPageState extends State<CreateMemoryPage>
             ),
           );
         }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildImagePreview() {
+    return Container(
+      height: 200,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        image: _selectedImage != null
+            ? DecorationImage(
+                image: FileImage(_selectedImage!),
+                fit: BoxFit.cover,
+              )
+            : null,
+      ),
+      child: Stack(
+        children: [
+          if (_isLoading)
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              ),
+            ),
+          Positioned(
+            top: 8,
+            right: 8,
+            child: IconButton(
+              onPressed: _isLoading ? null : _removeImage,
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.6),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Ionicons.close_outline,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

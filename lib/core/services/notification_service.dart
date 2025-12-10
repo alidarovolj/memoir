@@ -4,6 +4,7 @@ import 'dart:ui' show Color;
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:memoir/core/network/dio_client.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Background message handler - must be top-level function
 @pragma('vm:entry-point')
@@ -82,16 +83,14 @@ class NotificationService {
         log('⚠️ Could not get FCM token: $e (will retry on token refresh)');
       }
 
-      // Send token to backend
-      if (_fcmToken != null) {
-        await _sendTokenToBackend(_fcmToken!);
-      }
+      // Note: Token will be sent to backend after successful login
+      // via explicit call to sendTokenToBackend()
 
       // Listen to token refresh
       _firebaseMessaging.onTokenRefresh.listen((newToken) {
         log('🔄 FCM Token refreshed');
         _fcmToken = newToken;
-        _sendTokenToBackend(newToken);
+        // Token will be sent on next app launch or explicit call
       });
 
       // Set up background handler
@@ -234,11 +233,29 @@ class NotificationService {
   /// Send FCM token to backend
   Future<void> _sendTokenToBackend(String token) async {
     try {
+      // Check if user is authenticated
+      final prefs = await SharedPreferences.getInstance();
+      final authToken = prefs.getString('auth_token');
+
+      if (authToken == null || authToken.isEmpty) {
+        log('ℹ️ Skipping FCM token send - user not authenticated');
+        return;
+      }
+
       final dio = DioClient.instance;
       await dio.post('/api/v1/users/fcm-token', data: {'fcm_token': token});
       log('✅ FCM token sent to backend');
     } catch (e) {
       log('❌ Failed to send FCM token to backend: $e');
+    }
+  }
+
+  /// Send FCM token to backend (call after successful login)
+  Future<void> sendTokenToBackend() async {
+    if (_fcmToken != null) {
+      await _sendTokenToBackend(_fcmToken!);
+    } else {
+      log('⚠️ FCM token not available yet');
     }
   }
 

@@ -26,6 +26,7 @@ import 'package:memoir/features/memories/presentation/pages/edit_memory_page.dar
 import 'package:memoir/features/tasks/data/datasources/task_remote_datasource.dart';
 import 'package:memoir/features/tasks/data/models/task_suggestion_model.dart';
 import 'package:memoir/features/tasks/presentation/widgets/task_suggestions_modal.dart';
+import 'package:memoir/features/profile/presentation/pages/profile_page.dart';
 
 // Global navigation key для навигации из interceptor
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -46,9 +47,9 @@ void main() async {
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-      systemNavigationBarColor: Color(0xFFF8FAFC),
-      systemNavigationBarIconBrightness: Brightness.dark,
+      statusBarIconBrightness: Brightness.light,
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarIconBrightness: Brightness.light,
     ),
   );
 
@@ -136,6 +137,15 @@ class _SplashScreenState extends State<SplashScreen>
       final isAuth = await authService.isAuthenticated();
 
       if (isAuth) {
+        // Send FCM token to backend for already authenticated user
+        try {
+          final notificationService = NotificationService();
+          await notificationService.sendTokenToBackend();
+        } catch (e) {
+          // Log but don't block navigation
+          print('⚠️ [SPLASH] Failed to send FCM token: $e');
+        }
+
         Navigator.of(context).pushReplacementNamed('/home');
       } else {
         Navigator.of(context).pushReplacementNamed('/phone-login');
@@ -535,45 +545,60 @@ class _HomePageState extends State<HomePage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       extendBodyBehindAppBar: true,
       appBar: CustomAppBar(
-        title: 'Memoir',
+        title: 'Главная',
+        useGradient: false,
+        centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Ionicons.search_outline, size: 22),
-            onPressed: () => Navigator.of(
-              context,
-            ).push(PageTransitions.slideFromRight(const SearchPage())),
+            icon: const Icon(Ionicons.add_outline, size: 24),
+            onPressed: () async {
+              final result = await Navigator.of(
+                context,
+              ).push(PageTransitions.slideFromBottom(const CreateMemoryPage()));
+
+              if (result != null && result is Map<String, dynamic>) {
+                await _createMemory(result);
+              }
+            },
           ),
           IconButton(
-            icon: const Icon(Ionicons.person_circle_outline, size: 22),
+            icon: const Icon(Ionicons.bookmark_outline, size: 22),
             onPressed: () =>
-                SnackBarUtils.showInfo(context, 'Профиль - в разработке'),
+                SnackBarUtils.showInfo(context, 'Закладки - в разработке'),
+          ),
+          IconButton(
+            icon: const Icon(Ionicons.notifications_outline, size: 22),
+            onPressed: () =>
+                SnackBarUtils.showInfo(context, 'Уведомления - в разработке'),
           ),
         ],
       ),
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: AppTheme.lightBackgroundGradient,
-        ),
+        color: AppTheme.appBackgroundColor, // Чистый темный фон #2f3035
         child: SafeArea(child: _buildBody()),
       ),
-      floatingActionButton: ScaleTransition(
-        scale: _fabAnimController,
-        child: FloatingActionButton.extended(
-          onPressed: () async {
-            final result = await Navigator.of(
-              context,
-            ).push(PageTransitions.slideFromBottom(const CreateMemoryPage()));
+      floatingActionButton: _memories.isNotEmpty
+          ? ScaleTransition(
+              scale: _fabAnimController,
+              child: FloatingActionButton.extended(
+                onPressed: () async {
+                  final result = await Navigator.of(context).push(
+                    PageTransitions.slideFromBottom(const CreateMemoryPage()),
+                  );
 
-            if (result != null && result is Map<String, dynamic>) {
-              await _createMemory(result);
-            }
-          },
-          icon: const Icon(Ionicons.add_outline, size: 20),
-          label: const Text('Создать'),
-        ),
-      ),
+                  if (result != null && result is Map<String, dynamic>) {
+                    await _createMemory(result);
+                  }
+                },
+                backgroundColor: AppTheme.blueColor,
+                icon: const Icon(Ionicons.add_outline, size: 20),
+                label: const Text('Создать'),
+              ),
+            )
+          : null, // Не показываем FAB если нет воспоминаний
       bottomNavigationBar: CustomBottomNav(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (index) {
@@ -581,12 +606,17 @@ class _HomePageState extends State<HomePage>
             // Home page
             setState(() => _selectedIndex = index);
           } else if (index == 1) {
-            // Navigate to Tasks page
+            // Navigate to Search page
+            Navigator.of(
+              context,
+            ).push(PageTransitions.slideFromRight(const SearchPage()));
+          } else if (index == 2) {
+            // AI - можно открыть Tasks или AI features
             Navigator.of(
               context,
             ).push(PageTransitions.slideFromRight(const TasksPage()));
-          } else if (index == 2) {
-            // Показываем модалку категорий
+          } else if (index == 3) {
+            // Browse - Categories modal
             showModalBottomSheet(
               context: context,
               isScrollControlled: true,
@@ -598,8 +628,11 @@ class _HomePageState extends State<HomePage>
                 builder: (context, scrollController) => const CategoriesModal(),
               ),
             );
-          } else if (index == 3) {
-            SnackBarUtils.showInfo(context, 'Поиск - в разработке');
+          } else if (index == 4) {
+            // Navigate to Profile page
+            Navigator.of(
+              context,
+            ).push(PageTransitions.slideFromRight(const ProfilePage()));
           }
         },
       ),
@@ -617,39 +650,44 @@ class _HomePageState extends State<HomePage>
       backgroundColor: AppTheme.surfaceColor,
       child: CustomScrollView(
         slivers: [
-          // Stories list
-          if (_stories.isNotEmpty || _isLoadingStories)
+          // Stories list (только если есть воспоминания)
+          if (_memories.isNotEmpty &&
+              (_stories.isNotEmpty || _isLoadingStories))
             SliverToBoxAdapter(
-              child: StoriesList(
-                stories: _stories,
-                isLoading: _isLoadingStories,
-                onAddStory: _showAddStoryDialog,
-                onStoryTap: (story) {
-                  // onStoryTap больше не используется, навигация внутри StoriesList
-                },
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: StoriesList(
+                  stories: _stories,
+                  isLoading: _isLoadingStories,
+                  onAddStory: _showAddStoryDialog,
+                  onStoryTap: (story) {
+                    // onStoryTap больше не используется, навигация внутри StoriesList
+                  },
+                ),
               ),
             ),
 
-          // Banner carousel
-          SliverToBoxAdapter(
-            child: BannerCarousel(
-              banners: [
-                BannerItem(
-                  assetPath: 'assets/images/test_banner.jpg',
-                  title: 'Netflix Poster Series II',
-                  subtitle: 'Новая коллекция постеров',
-                  onTap: () {
-                    SnackBarUtils.showInfo(
-                      context,
-                      'Открытие баннера - в разработке',
-                    );
-                  },
-                ),
-                // Можно добавить больше баннеров
-              ],
-              height: 180,
+          // Banner carousel (только если есть воспоминания)
+          if (_memories.isNotEmpty)
+            SliverToBoxAdapter(
+              child: BannerCarousel(
+                banners: [
+                  BannerItem(
+                    assetPath: 'assets/images/test_banner.jpg',
+                    title: 'Netflix Poster Series II',
+                    subtitle: 'Новая коллекция постеров',
+                    onTap: () {
+                      SnackBarUtils.showInfo(
+                        context,
+                        'Открытие баннера - в разработке',
+                      );
+                    },
+                  ),
+                  // Можно добавить больше баннеров
+                ],
+                height: 180,
+              ),
             ),
-          ),
 
           // Memories list
           if (_memories.isEmpty)
@@ -661,6 +699,7 @@ class _HomePageState extends State<HomePage>
                 subtitle: 'Начните сохранять важные моменты,\nидеи и мысли',
                 buttonText: 'Создать первое воспоминание',
                 buttonIcon: Ionicons.add_circle_outline,
+                showIcon: false, // Убираем большую иконку
                 onButtonPressed: () async {
                   final result = await Navigator.of(context).push(
                     PageTransitions.slideFromBottom(const CreateMemoryPage()),
@@ -674,7 +713,12 @@ class _HomePageState extends State<HomePage>
             )
           else
             SliverPadding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.only(
+                left: 16,
+                right: 16,
+                top: 16,
+                bottom: 100, // Extra space for floating tab bar
+              ),
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate((context, index) {
                   final memory = _memories[index];

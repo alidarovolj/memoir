@@ -3,6 +3,7 @@ import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:memoir/core/theme/app_theme.dart';
 import 'package:memoir/core/utils/snackbar_utils.dart';
 import 'package:memoir/core/services/sms_auth_service.dart';
+import 'package:memoir/core/services/notification_service.dart';
 import 'package:memoir/core/network/dio_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
@@ -100,24 +101,30 @@ class _PhoneVerifyPageState extends State<PhoneVerifyPage> {
       developer.log('✅ [PHONE_VERIFY] Code verified successfully');
       developer.log('👤 [PHONE_VERIFY] User: ${response['user']}');
 
-      // Save tokens
+      // Save tokens and user data
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('auth_token', response['access_token']);
       await prefs.setString('user_id', response['user']['id']);
       await prefs.setString('user_phone', response['user']['phone_number']);
+      if (response['user']['username'] != null) {
+        await prefs.setString('username', response['user']['username']);
+      }
+      if (response['user']['email'] != null) {
+        await prefs.setString('email', response['user']['email']);
+      }
+
+      // Send FCM token to backend after successful login
+      try {
+        final notificationService = NotificationService();
+        await notificationService.sendTokenToBackend();
+      } catch (e) {
+        developer.log('⚠️ [PHONE_VERIFY] Failed to send FCM token: $e');
+      }
 
       if (!mounted) return;
 
-      setState(() {
-        _isLoading = false;
-      });
-
-      // Navigate to home
-      if (mounted) {
-        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
-
-        SnackBarUtils.showSuccess(context, 'Добро пожаловать!');
-      }
+      // Navigate to home (don't update state after navigation)
+      Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
     } catch (e) {
       developer.log('❌ [PHONE_VERIFY] Error: $e');
 
@@ -135,8 +142,12 @@ class _PhoneVerifyPageState extends State<PhoneVerifyPage> {
 
         setState(() {
           _isLoading = false;
-          _codeController.clear();
         });
+
+        // Clear controller only if not disposed
+        if (_codeController.hasListeners) {
+          _codeController.clear();
+        }
 
         SnackBarUtils.showError(context, errorMessage);
       }

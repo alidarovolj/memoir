@@ -8,6 +8,7 @@ class EmptyState extends StatelessWidget {
   final String? buttonText;
   final VoidCallback? onButtonPressed;
   final IconData? buttonIcon;
+  final bool showIcon; // Показывать ли большую иконку
 
   const EmptyState({
     super.key,
@@ -17,6 +18,7 @@ class EmptyState extends StatelessWidget {
     this.buttonText,
     this.onButtonPressed,
     this.buttonIcon,
+    this.showIcon = true, // По умолчанию показываем
   });
 
   @override
@@ -27,38 +29,40 @@ class EmptyState extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Анимированная иконка
-            TweenAnimationBuilder<double>(
-              duration: const Duration(milliseconds: 1000),
-              tween: Tween(begin: 0.0, end: 1.0),
-              builder: (context, value, child) {
-                return Transform.scale(
-                  scale: 0.8 + (value * 0.2),
-                  child: Opacity(
-                    opacity: value,
-                    child: Container(
-                      width: 150,
-                      height: 150,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            AppTheme.primaryColor.withOpacity(0.2),
-                            AppTheme.secondaryColor.withOpacity(0.2),
-                          ],
+            // Анимированная иконка (опционально)
+            if (showIcon) ...[
+              TweenAnimationBuilder<double>(
+                duration: const Duration(milliseconds: 1000),
+                tween: Tween(begin: 0.0, end: 1.0),
+                builder: (context, value, child) {
+                  return Transform.scale(
+                    scale: 0.8 + (value * 0.2),
+                    child: Opacity(
+                      opacity: value,
+                      child: Container(
+                        width: 150,
+                        height: 150,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              AppTheme.primaryColor.withOpacity(0.2),
+                              AppTheme.secondaryColor.withOpacity(0.2),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(30),
                         ),
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      child: Icon(
-                        icon,
-                        size: 80,
-                        color: Colors.white.withOpacity(0.5),
+                        child: Icon(
+                          icon,
+                          size: 80,
+                          color: Colors.white.withOpacity(0.5),
+                        ),
                       ),
                     ),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 32),
+                  );
+                },
+              ),
+              const SizedBox(height: 32),
+            ],
             Text(
               title,
               style: Theme.of(context).textTheme.headlineMedium,
@@ -91,7 +95,9 @@ class EmptyState extends StatelessWidget {
                     backgroundColor: Colors.transparent,
                     shadowColor: Colors.transparent,
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 32, vertical: 20),
+                      horizontal: 32,
+                      vertical: 20,
+                    ),
                   ),
                   icon: buttonIcon != null
                       ? Icon(buttonIcon, size: 24)
@@ -99,7 +105,9 @@ class EmptyState extends StatelessWidget {
                   label: Text(
                     buttonText!,
                     style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w600),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
@@ -110,4 +118,3 @@ class EmptyState extends StatelessWidget {
     );
   }
 }
-
