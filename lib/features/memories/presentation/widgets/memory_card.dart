@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:memoir/core/theme/app_theme.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -36,33 +37,14 @@ class MemoryCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        gradient: isDark
-            ? LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppTheme.surfaceColor.withOpacity(0.7),
-                  AppTheme.cardColor.withOpacity(0.5),
-                ],
-              )
-            : null,
-        color: isDark ? null : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withOpacity(0.1)
-              : Colors.black.withOpacity(0.08),
-          width: 1,
-        ),
+        color: isDark ? AppTheme.cardColor : Colors.white,
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: isDark
-                ? Colors.black.withOpacity(0.2)
-                : Colors.black.withOpacity(0.08),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
@@ -70,299 +52,374 @@ class MemoryCard extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(20),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Image preview (if available)
-                if (imageUrl != null && imageUrl!.isNotEmpty) ...[
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: CachedNetworkImage(
-                      imageUrl: imageUrl!,
-                      width: 80,
-                      height: 120,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(
-                        width: 80,
-                        height: 120,
-                        decoration: BoxDecoration(
-                          gradient: AppTheme.primaryGradient.withOpacity(0.3),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Center(
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      ),
-                      errorWidget: (context, url, error) => Container(
-                        width: 80,
-                        height: 120,
-                        decoration: BoxDecoration(
-                          gradient: AppTheme.primaryGradient.withOpacity(0.3),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          Ionicons.image_outline,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                ],
+          borderRadius: BorderRadius.circular(24),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final cardHeight = constraints.maxHeight;
+                final topImageHeight =
+                    cardHeight * 0.57; // ~57% высоты карточки
 
-                // Content
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                return SizedBox(
+                  height: cardHeight > 0 ? cardHeight : 420,
+                  child: Stack(
                     children: [
-                      // Header с категорией и действиями
-                      Row(
-                        children: [
-                          // AI Processing indicator
-                          if (isAiProcessing) ...[
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppTheme.accentColor.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: AppTheme.accentColor.withOpacity(0.4),
-                                  width: 1,
+                      // Background image (blurred) - занимает всю карточку
+                      Positioned.fill(
+                        child: imageUrl != null && imageUrl!.isNotEmpty
+                            ? ImageFiltered(
+                                imageFilter: ImageFilter.blur(
+                                  sigmaX: 20,
+                                  sigmaY: 20,
                                 ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  SizedBox(
-                                    width: 12,
-                                    height: 12,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation(
-                                        AppTheme.accentColor,
+                                child: CachedNetworkImage(
+                                  imageUrl: imageUrl!,
+                                  fit: BoxFit.cover,
+                                  placeholder: (context, url) => Container(
+                                    decoration: BoxDecoration(
+                                      gradient: AppTheme.primaryGradient
+                                          .withOpacity(0.3),
+                                    ),
+                                    child: const Center(
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    'AI обработка...',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppTheme.accentColor,
+                                  errorWidget: (context, url, error) =>
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          gradient: AppTheme.primaryGradient
+                                              .withOpacity(0.3),
+                                        ),
+                                        child: const Center(
+                                          child: Icon(
+                                            Ionicons.image_outline,
+                                            color: Colors.white,
+                                            size: 48,
+                                          ),
+                                        ),
+                                      ),
+                                ),
+                              )
+                            : Container(
+                                decoration: BoxDecoration(
+                                  gradient: AppTheme.primaryGradient
+                                      .withOpacity(0.3),
+                                ),
+                                child: const Center(
+                                  child: Icon(
+                                    Ionicons.image_outline,
+                                    color: Colors.white,
+                                    size: 48,
+                                  ),
+                                ),
+                              ),
+                      ),
+
+                      // Четкое изображение в верхней части
+                      Positioned(
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: topImageHeight,
+                        child: imageUrl != null && imageUrl!.isNotEmpty
+                            ? CachedNetworkImage(
+                                imageUrl: imageUrl!,
+                                fit: BoxFit.contain,
+                                alignment: Alignment.topCenter,
+                                placeholder: (context, url) => Container(
+                                  decoration: BoxDecoration(
+                                    gradient: AppTheme.primaryGradient
+                                        .withOpacity(0.3),
+                                  ),
+                                ),
+                                errorWidget: (context, url, error) => Container(
+                                  decoration: BoxDecoration(
+                                    gradient: AppTheme.primaryGradient
+                                        .withOpacity(0.3),
+                                  ),
+                                ),
+                              )
+                            : Container(
+                                decoration: BoxDecoration(
+                                  gradient: AppTheme.primaryGradient
+                                      .withOpacity(0.3),
+                                ),
+                              ),
+                      ),
+
+                      // Gradient overlay для плавного перехода от четкого фото к блюру
+                      Positioned.fill(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.transparent,
+                                Colors.transparent,
+                                Colors.black.withOpacity(0.2),
+                              ],
+                              stops: const [0.0, 0.5, 1.0],
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      // AI Processing indicator (top)
+                      if (isAiProcessing)
+                        Positioned(
+                          top: 16,
+                          right: 16,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppTheme.accentColor.withOpacity(0.95),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const SizedBox(
+                                  width: 12,
+                                  height: 12,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation(
+                                      Colors.white,
                                     ),
                                   ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                          ],
-
-                          if (category != null) ...[
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                gradient: AppTheme.primaryGradient,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(
-                                    Ionicons.apps,
-                                    size: 14,
+                                ),
+                                const SizedBox(width: 8),
+                                const Text(
+                                  'AI Processing...',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
                                     color: Colors.white,
                                   ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    category!,
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 8),
-                          ],
+                          ),
+                        ),
 
-                          // AI Confidence badge
-                          if (aiConfidence != null && aiConfidence! > 0) ...[
-                            Tooltip(
-                              message:
-                                  'AI Уверенность: ${(aiConfidence! * 100).toStringAsFixed(0)}%',
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: _getConfidenceGradient(
-                                      aiConfidence!,
-                                    ),
-                                  ),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(
-                                      Ionicons.sparkles,
-                                      size: 12,
-                                      color: Colors.white,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      '${(aiConfidence! * 100).toInt()}%',
-                                      style: const TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                    ),
+                      // Content at bottom with blur effect
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        child: ClipRRect(
+                          borderRadius: const BorderRadius.only(
+                            bottomLeft: Radius.circular(24),
+                            bottomRight: Radius.circular(24),
+                          ),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.black.withOpacity(0.5),
+                                    Colors.black.withOpacity(0.75),
                                   ],
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                          ],
+                              child: Padding(
+                                padding: const EdgeInsets.all(20),
+                                child: Builder(
+                                  builder: (context) {
+                                    final hasBadges =
+                                        aiConfidence != null ||
+                                        category != null;
+                                    final hasDescription = content.isNotEmpty;
 
-                          const Spacer(),
+                                    return Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        // Title
+                                        Text(
+                                          title,
+                                          style: const TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.white,
+                                            letterSpacing: 0,
+                                            height: 1.25, // 20/16 = 1.25
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        // Отступ между заголовком и описанием только если есть описание
+                                        if (hasDescription)
+                                          const SizedBox(height: 15),
 
-                          // Действия
-                          if (onEdit != null)
-                            IconButton(
-                              icon: const Icon(
-                                Ionicons.create_outline,
-                                size: 20,
-                              ),
-                              onPressed: onEdit,
-                              color: isDark ? Colors.white70 : Colors.black54,
-                              padding: const EdgeInsets.all(8),
-                              constraints: const BoxConstraints(),
-                            ),
-                          if (onDelete != null)
-                            IconButton(
-                              icon: const Icon(
-                                Ionicons.trash_outline,
-                                size: 20,
-                              ),
-                              onPressed: onDelete,
-                              color: isDark
-                                  ? Colors.red.shade300
-                                  : Colors.red.shade400,
-                              padding: const EdgeInsets.all(8),
-                              constraints: const BoxConstraints(),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
+                                        // Description
+                                        if (hasDescription)
+                                          Text(
+                                            content,
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w400,
+                                              color: Colors.white.withOpacity(
+                                                0.85,
+                                              ),
+                                              height: 1.214, // 17/14 ≈ 1.214
+                                              letterSpacing: 0,
+                                            ),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        // Отступ между описанием и бейджами только если есть и описание, и бейджи
+                                        if (hasDescription && hasBadges)
+                                          const SizedBox(height: 16),
 
-                      // Заголовок
-                      Text(
-                        title,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 8),
+                                        // Rating and date info
+                                        if (hasBadges)
+                                          Row(
+                                            children: [
+                                              // Rating with stars
+                                              if (aiConfidence != null)
+                                                Container(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 10,
+                                                        vertical: 6,
+                                                      ),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.white
+                                                        .withOpacity(0.15),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          12,
+                                                        ),
+                                                  ),
+                                                  child: Row(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      Text(
+                                                        (aiConfidence! * 5)
+                                                            .toStringAsFixed(1),
+                                                        style: const TextStyle(
+                                                          fontSize: 13,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                          color: Colors.white,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(width: 6),
+                                                      ...List.generate(5, (
+                                                        index,
+                                                      ) {
+                                                        return Padding(
+                                                          padding:
+                                                              const EdgeInsets.only(
+                                                                left: 2,
+                                                              ),
+                                                          child: Icon(
+                                                            index <
+                                                                    (aiConfidence! *
+                                                                            5)
+                                                                        .round()
+                                                                ? Ionicons.star
+                                                                : Ionicons
+                                                                      .star_outline,
+                                                            size: 12,
+                                                            color: Colors.amber,
+                                                          ),
+                                                        );
+                                                      }),
+                                                    ],
+                                                  ),
+                                                ),
+                                              if (aiConfidence != null &&
+                                                  category != null)
+                                                const SizedBox(width: 8),
 
-                      // Контент
-                      Text(
-                        content,
-                        style: Theme.of(
-                          context,
-                        ).textTheme.bodyMedium?.copyWith(height: 1.5),
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 12),
+                                              // Date badge
+                                              if (category != null)
+                                                Container(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 10,
+                                                        vertical: 6,
+                                                      ),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.white
+                                                        .withOpacity(0.15),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          12,
+                                                        ),
+                                                  ),
+                                                  child: Text(
+                                                    category!,
+                                                    style: const TextStyle(
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color: Colors.white,
+                                                    ),
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                        // Отступ между бейджами и кнопкой только если есть бейджи
+                                        if (hasBadges)
+                                          const SizedBox(height: 16),
 
-                      // Теги
-                      if (tags != null && tags!.isNotEmpty) ...[
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: tags!.take(3).map((tag) {
-                            return Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppTheme.primaryColor.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: AppTheme.primaryColor.withOpacity(0.3),
-                                  width: 1,
+                                        // Action button
+                                        // const SizedBox(height: 16),
+                                        // SizedBox(
+                                        //   width: double.infinity,
+                                        //   child: ElevatedButton(
+                                        //     onPressed: onTap,
+                                        //     style: ElevatedButton.styleFrom(
+                                        //       backgroundColor: Colors.white,
+                                        //       foregroundColor: Colors.black,
+                                        //       padding:
+                                        //           const EdgeInsets.symmetric(
+                                        //             vertical: 8,
+                                        //           ),
+                                        //       shape: RoundedRectangleBorder(
+                                        //         borderRadius:
+                                        //             BorderRadius.circular(50),
+                                        //       ),
+                                        //       elevation: 0,
+                                        //     ),
+                                        //     child: const Text(
+                                        //       'Открыть',
+                                        //       style: TextStyle(
+                                        //         fontSize: 12,
+                                        //         fontWeight: FontWeight.w700,
+                                        //         letterSpacing: 0,
+                                        //       ),
+                                        //     ),
+                                        //   ),
+                                        // ),
+                                      ],
+                                    );
+                                  },
                                 ),
                               ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Ionicons.pricetag,
-                                    size: 12,
-                                    color: AppTheme.primaryColor,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    tag,
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w500,
-                                      color: AppTheme.primaryColor,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                        const SizedBox(height: 12),
-                      ],
-
-                      // Footer с датой
-                      Row(
-                        children: [
-                          Icon(
-                            Ionicons.time_outline,
-                            size: 14,
-                            color: isDark
-                                ? Colors.white.withOpacity(0.5)
-                                : Colors.black45,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            _formatDate(createdAt),
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: isDark
-                                  ? Colors.white.withOpacity(0.5)
-                                  : Colors.black45,
-                              fontWeight: FontWeight.w500,
                             ),
                           ),
-                        ],
+                        ),
                       ),
                     ],
                   ),
-                ),
-              ],
+                );
+              },
             ),
           ),
         ),
@@ -388,23 +445,6 @@ class MemoryCard extends StatelessWidget {
       return '${difference.inDays} дн назад';
     } else {
       return '${date.day}.${date.month.toString().padLeft(2, '0')}.${date.year}';
-    }
-  }
-
-  /// Get gradient colors based on confidence level
-  List<Color> _getConfidenceGradient(double confidence) {
-    if (confidence >= 0.8) {
-      // High confidence - green gradient
-      return [Colors.green.shade500, Colors.green.shade700];
-    } else if (confidence >= 0.6) {
-      // Medium-high confidence - yellow-green gradient
-      return [Colors.lightGreen.shade500, Colors.lightGreen.shade700];
-    } else if (confidence >= 0.4) {
-      // Medium confidence - yellow gradient
-      return [Colors.orange.shade400, Colors.orange.shade600];
-    } else {
-      // Low confidence - red gradient
-      return [Colors.deepOrange.shade400, Colors.deepOrange.shade600];
     }
   }
 }

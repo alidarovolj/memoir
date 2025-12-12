@@ -23,8 +23,25 @@ class StoriesList extends StatefulWidget {
   State<StoriesList> createState() => _StoriesListState();
 }
 
-class _StoriesListState extends State<StoriesList> {
+class _StoriesListState extends State<StoriesList>
+    with SingleTickerProviderStateMixin {
   final Set<String> _viewedStoryIds = {};
+  late AnimationController _rotationController;
+
+  @override
+  void initState() {
+    super.initState();
+    _rotationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 15),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _rotationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +49,7 @@ class _StoriesListState extends State<StoriesList> {
       return Container(
         height: 110,
         decoration: BoxDecoration(
-          color: Colors.transparent,
+          color: AppTheme.headerBackgroundColor,
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.05),
@@ -63,7 +80,7 @@ class _StoriesListState extends State<StoriesList> {
     return Container(
       height: 110,
       decoration: BoxDecoration(
-        color: Colors.transparent,
+        color: AppTheme.headerBackgroundColor,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -84,24 +101,36 @@ class _StoriesListState extends State<StoriesList> {
               margin: const EdgeInsets.only(right: 6),
               child: Column(
                 children: [
-                  Container(
+                  SizedBox(
                     width: 68,
                     height: 68,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: AppTheme.primaryGradient,
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppTheme.primaryColor.withOpacity(0.3),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
+                    child: Stack(
+                      children: [
+                        // Вращающаяся пунктирная обводка
+                        RotationTransition(
+                          turns: _rotationController,
+                          child: CustomPaint(
+                            size: const Size(68, 68),
+                            painter: DashedCirclePainter(),
+                          ),
+                        ),
+                        // Статичная иконка по центру
+                        Center(
+                          child: Container(
+                            width: 60,
+                            height: 60,
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.transparent,
+                            ),
+                            child: const Icon(
+                              Ionicons.add,
+                              color: Colors.white,
+                              size: 32,
+                            ),
+                          ),
                         ),
                       ],
-                    ),
-                    child: const Icon(
-                      Ionicons.add,
-                      color: Colors.white,
-                      size: 32,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -110,7 +139,7 @@ class _StoriesListState extends State<StoriesList> {
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      color: Colors.white,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -158,4 +187,39 @@ class _StoriesListState extends State<StoriesList> {
       ),
     );
   }
+}
+
+class DashedCirclePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = AppTheme.primaryColor
+      ..strokeWidth = 2.0
+      ..style = PaintingStyle.stroke;
+
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - 1;
+
+    // Рисуем пунктирный круг
+    const dashWidth = 4.0;
+    const dashSpace = 4.0;
+    const totalDashes = 20.0;
+
+    for (var i = 0; i < totalDashes; i++) {
+      final startAngle = (i * 2 * 3.14159 / totalDashes);
+      final endAngle = ((i + 0.5) * 2 * 3.14159 / totalDashes);
+
+      final path = Path()
+        ..addArc(
+          Rect.fromCircle(center: center, radius: radius),
+          startAngle,
+          endAngle - startAngle,
+        );
+
+      canvas.drawPath(path, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }

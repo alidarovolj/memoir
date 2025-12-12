@@ -244,7 +244,9 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
   late AnimationController _fabAnimController;
+  late ScrollController _scrollController;
   int _selectedIndex = 0;
+  bool _showHeaderTitle = false;
 
   late MemoryRemoteDataSource _memoryDataSource;
   late StoryRemoteDataSource _storyDataSource;
@@ -263,6 +265,9 @@ class _HomePageState extends State<HomePage>
     );
     _fabAnimController.forward();
 
+    _scrollController = ScrollController();
+    _scrollController.addListener(_onScroll);
+
     _memoryDataSource = MemoryRemoteDataSourceImpl(dio: DioClient.instance);
     _storyDataSource = StoryRemoteDataSourceImpl(dio: DioClient.instance);
     _taskDataSource = TaskRemoteDataSourceImpl(dio: DioClient.instance);
@@ -270,9 +275,21 @@ class _HomePageState extends State<HomePage>
     _loadStories();
   }
 
+  void _onScroll() {
+    // Показываем заголовок в хедере, если проскроллили больше 100px
+    final shouldShow = _scrollController.offset > 100;
+    if (shouldShow != _showHeaderTitle) {
+      setState(() {
+        _showHeaderTitle = shouldShow;
+      });
+    }
+  }
+
   @override
   void dispose() {
     _fabAnimController.dispose();
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -546,39 +563,66 @@ class _HomePageState extends State<HomePage>
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
-      extendBodyBehindAppBar: true,
-      appBar: CustomAppBar(
-        title: 'Главная',
-        useGradient: false,
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Ionicons.add_outline, size: 24),
-            onPressed: () async {
-              final result = await Navigator.of(
-                context,
-              ).push(PageTransitions.slideFromBottom(const CreateMemoryPage()));
-
-              if (result != null && result is Map<String, dynamic>) {
-                await _createMemory(result);
-              }
-            },
-          ),
-          IconButton(
-            icon: const Icon(Ionicons.bookmark_outline, size: 22),
-            onPressed: () =>
-                SnackBarUtils.showInfo(context, 'Закладки - в разработке'),
-          ),
-          IconButton(
-            icon: const Icon(Ionicons.notifications_outline, size: 22),
-            onPressed: () =>
-                SnackBarUtils.showInfo(context, 'Уведомления - в разработке'),
-          ),
-        ],
-      ),
       body: Container(
-        color: AppTheme.appBackgroundColor, // Чистый темный фон #2f3035
-        child: SafeArea(child: _buildBody()),
+        color: AppTheme.pageBackgroundColor, // Фон страницы rgba(28, 27, 32, 1)
+        child: Column(
+          children: [
+            // SafeArea с хедером
+            Container(
+              color: AppTheme
+                  .headerBackgroundColor, // Фон хедера и SafeArea rgba(21, 20, 24, 1)
+              child: SafeArea(
+                bottom: false,
+                child: CustomHeader(
+                  title: _showHeaderTitle ? 'Главная' : '',
+                  type: HeaderType.none,
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Ionicons.add_outline, size: 24),
+                        color: Colors.white,
+                        onPressed: () async {
+                          final result = await Navigator.of(context).push(
+                            PageTransitions.slideFromBottom(
+                              const CreateMemoryPage(),
+                            ),
+                          );
+
+                          if (result != null &&
+                              result is Map<String, dynamic>) {
+                            await _createMemory(result);
+                          }
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Ionicons.bookmark_outline, size: 22),
+                        color: Colors.white,
+                        onPressed: () => SnackBarUtils.showInfo(
+                          context,
+                          'Закладки - в разработке',
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          Ionicons.notifications_outline,
+                          size: 22,
+                        ),
+                        color: Colors.white,
+                        onPressed: () => SnackBarUtils.showInfo(
+                          context,
+                          'Уведомления - в разработке',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            // Body content
+            Expanded(child: _buildBody()),
+          ],
+        ),
       ),
       floatingActionButton: _memories.isNotEmpty
           ? ScaleTransition(
@@ -649,13 +693,36 @@ class _HomePageState extends State<HomePage>
       color: AppTheme.primaryColor,
       backgroundColor: AppTheme.surfaceColor,
       child: CustomScrollView(
+        controller: _scrollController,
         slivers: [
+          // Заголовок "Главная" над сторисами
+          if (_memories.isNotEmpty &&
+              (_stories.isNotEmpty || _isLoadingStories))
+            SliverToBoxAdapter(
+              child: AnimatedOpacity(
+                opacity: _showHeaderTitle ? 0.0 : 1.0,
+                duration: const Duration(milliseconds: 300),
+                child: Container(
+                  color: AppTheme.headerBackgroundColor,
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+                  child: const Text(
+                    'Главная',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
           // Stories list (только если есть воспоминания)
           if (_memories.isNotEmpty &&
               (_stories.isNotEmpty || _isLoadingStories))
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.only(bottom: 0),
                 child: StoriesList(
                   stories: _stories,
                   isLoading: _isLoadingStories,
@@ -714,12 +781,18 @@ class _HomePageState extends State<HomePage>
           else
             SliverPadding(
               padding: const EdgeInsets.only(
-                left: 16,
-                right: 16,
+                left: 12,
+                right: 12,
                 top: 16,
                 bottom: 100, // Extra space for floating tab bar
               ),
-              sliver: SliverList(
+              sliver: SliverGrid(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: 0.75,
+                ),
                 delegate: SliverChildBuilderDelegate((context, index) {
                   final memory = _memories[index];
                   final createdAt = memory['created_at'] != null

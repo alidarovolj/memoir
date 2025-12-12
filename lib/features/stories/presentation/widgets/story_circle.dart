@@ -45,24 +45,21 @@ class StoryCircle extends StatelessWidget {
                           )
                         : AppTheme.primaryGradient,
                   ),
-                  padding: const EdgeInsets.all(3),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white,
-                    ),
-                    padding: const EdgeInsets.all(3),
+                  child: Padding(
+                    padding: const EdgeInsets.all(1.5),
                     child: ClipOval(
                       child: imageUrl != null && imageUrl!.isNotEmpty
                           ? CachedNetworkImage(
                               imageUrl: imageUrl!,
                               fit: BoxFit.cover,
-                              width: 64,
-                              height: 64,
+                              width: 65,
+                              height: 65,
                               placeholder: (context, url) => Container(
                                 color: Colors.grey.shade200,
                                 child: const Center(
-                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
                                 ),
                               ),
                               errorWidget: (context, url, error) => Container(
@@ -102,10 +99,7 @@ class StoryCircle extends StatelessWidget {
                       decoration: BoxDecoration(
                         gradient: AppTheme.primaryGradient,
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: Colors.white,
-                          width: 2,
-                        ),
+                        border: Border.all(color: Colors.white, width: 2),
                       ),
                       child: Text(
                         '$storiesCount',
@@ -122,12 +116,14 @@ class StoryCircle extends StatelessWidget {
             const SizedBox(height: 4),
             // Username
             Text(
-              username.length > 10 ? '${username.substring(0, 10)}...' : username,
+              username.length > 10
+                  ? '${username.substring(0, 10)}...'
+                  : username,
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.3,
-                color: isViewed ? Colors.grey.shade600 : Colors.black87,
+                color: isViewed ? Colors.white70 : Colors.white,
               ),
               textAlign: TextAlign.center,
               maxLines: 1,

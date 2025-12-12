@@ -10,8 +10,14 @@ class AppTheme {
   static const lightGrayColor = Color(0xFFF2F3F5); // #f2f3f5 - Светло-серый
   static const whiteColor = Color(0xFFFFFFFF); // #ffffff - Белый
   static const appBackgroundColor = Color(
-    0xFF2F3035,
-  ); // #2f3035 - Фон приложения
+    0xFF1C1B20,
+  ); // rgba(28, 27, 32, 1) - Фон приложения
+  static const pageBackgroundColor = Color(
+    0xFF1C1B20,
+  ); // rgba(28, 27, 32, 1) - Фон страницы
+  static const headerBackgroundColor = Color(
+    0xFF151418,
+  ); // rgba(21, 20, 24, 1) - Фон хедера
 
   // Алиасы для совместимости
   static const primaryColor = blueColor; // Синий как основной

@@ -58,22 +58,19 @@ class _BannerCarouselState extends State<BannerCarousel> {
 
     return Container(
       height: widget.height,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Stack(
         children: [
           // Карусель баннеров
-          PageView.builder(
+          PageView(
             controller: _pageController,
-            itemCount: widget.banners.length,
             onPageChanged: (index) {
               setState(() {
                 _currentPage = index;
               });
             },
-            itemBuilder: (context, index) {
-              final banner = widget.banners[index];
-              return _buildBannerItem(banner);
-            },
+            children: widget.banners
+                .map((banner) => _buildBannerItem(banner))
+                .toList(),
           ),
 
           // Индикаторы точек
@@ -112,9 +109,7 @@ class _BannerCarouselState extends State<BannerCarousel> {
     return GestureDetector(
       onTap: banner.onTap,
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 4),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.1),
@@ -123,88 +118,82 @@ class _BannerCarouselState extends State<BannerCarousel> {
             ),
           ],
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              // Изображение баннера
-              banner.imageUrl != null
-                  ? Image.network(
-                      banner.imageUrl!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return _buildLocalImage(banner.assetPath);
-                      },
-                    )
-                  : _buildLocalImage(banner.assetPath),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Изображение баннера
+            banner.imageUrl != null
+                ? Image.network(
+                    banner.imageUrl!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return _buildLocalImage(banner.assetPath);
+                    },
+                  )
+                : _buildLocalImage(banner.assetPath),
 
-              // Градиент поверх (для лучшей читаемости текста)
-              if (banner.title != null || banner.subtitle != null)
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        Colors.black.withOpacity(0.7),
-                      ],
-                    ),
+            // Градиент поверх (для лучшей читаемости текста)
+            if (banner.title != null || banner.subtitle != null)
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
                   ),
                 ),
+              ),
 
-              // Текст баннера
-              if (banner.title != null || banner.subtitle != null)
-                Positioned(
-                  bottom: 20,
-                  left: 20,
-                  right: 20,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (banner.title != null)
-                        Text(
-                          banner.title!,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            shadows: [
-                              Shadow(
-                                color: Colors.black45,
-                                offset: Offset(0, 2),
-                                blurRadius: 4,
-                              ),
-                            ],
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+            // Текст баннера
+            if (banner.title != null || banner.subtitle != null)
+              Positioned(
+                bottom: 20,
+                left: 20,
+                right: 20,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (banner.title != null)
+                      Text(
+                        banner.title!,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          shadows: [
+                            Shadow(
+                              color: Colors.black45,
+                              offset: Offset(0, 2),
+                              blurRadius: 4,
+                            ),
+                          ],
                         ),
-                      if (banner.subtitle != null) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          banner.subtitle!,
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
-                            fontSize: 14,
-                            shadows: const [
-                              Shadow(
-                                color: Colors.black45,
-                                offset: Offset(0, 1),
-                                blurRadius: 3,
-                              ),
-                            ],
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    if (banner.subtitle != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        banner.subtitle!,
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.9),
+                          fontSize: 14,
+                          shadows: const [
+                            Shadow(
+                              color: Colors.black45,
+                              offset: Offset(0, 1),
+                              blurRadius: 3,
+                            ),
+                          ],
                         ),
-                      ],
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ],
-                  ),
+                  ],
                 ),
-            ],
-          ),
+              ),
+          ],
         ),
       ),
     );
@@ -229,11 +218,7 @@ class _BannerCarouselState extends State<BannerCarousel> {
         gradient: AppTheme.primaryGradient.withOpacity(0.3),
       ),
       child: const Center(
-        child: Icon(
-          Icons.image_outlined,
-          size: 50,
-          color: Colors.white,
-        ),
+        child: Icon(Icons.image_outlined, size: 50, color: Colors.white),
       ),
     );
   }
@@ -254,4 +239,3 @@ class BannerItem {
     this.onTap,
   });
 }
-
