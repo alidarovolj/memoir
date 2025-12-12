@@ -17,7 +17,7 @@ class TaskSuggestionsModal extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        color: Colors.white,
+        gradient: AppTheme.lightBackgroundGradient,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(

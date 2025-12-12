@@ -57,8 +57,10 @@ class _CategoriesModalState extends State<CategoriesModal> {
       return _categories;
     }
     return _categories
-        .where((cat) =>
-            cat['name'].toLowerCase().contains(_searchQuery.toLowerCase()))
+        .where(
+          (cat) =>
+              cat['name'].toLowerCase().contains(_searchQuery.toLowerCase()),
+        )
         .toList();
   }
 
@@ -71,9 +73,9 @@ class _CategoriesModalState extends State<CategoriesModal> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.95),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -127,7 +129,10 @@ class _CategoriesModalState extends State<CategoriesModal> {
                 decoration: InputDecoration(
                   hintText: 'Поиск или создать',
                   hintStyle: TextStyle(color: Colors.grey.shade500),
-                  prefixIcon: Icon(Ionicons.search_outline, color: Colors.grey.shade500),
+                  prefixIcon: Icon(
+                    Ionicons.search_outline,
+                    color: Colors.grey.shade500,
+                  ),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
@@ -266,10 +271,7 @@ class _CategoryItem extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Center(
-                  child: Text(
-                    emoji,
-                    style: const TextStyle(fontSize: 24),
-                  ),
+                  child: Text(emoji, style: const TextStyle(fontSize: 24)),
                 ),
               ),
               const SizedBox(width: 16),
@@ -299,4 +301,3 @@ class _CategoryItem extends StatelessWidget {
     );
   }
 }
-

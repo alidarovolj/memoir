@@ -119,7 +119,7 @@ class ActivityHeatmap extends StatelessWidget {
                     return Expanded(
                       child: Tooltip(
                         message:
-                            '${DateFormat('dd MMM').format(activity.date)}\n${totalActivity} активностей',
+                            '${DateFormat('dd MMM').format(activity.date)}\n$totalActivity активностей',
                         child: Container(
                           height: 32,
                           margin: const EdgeInsets.all(2),

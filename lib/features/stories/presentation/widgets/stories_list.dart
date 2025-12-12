@@ -32,7 +32,7 @@ class _StoriesListState extends State<StoriesList> {
       return Container(
         height: 110,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Colors.transparent,
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.05),
@@ -63,7 +63,7 @@ class _StoriesListState extends State<StoriesList> {
     return Container(
       height: 110,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.transparent,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),

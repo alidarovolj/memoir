@@ -320,7 +320,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       filled: true,
-                      fillColor: Colors.white,
+                      fillColor: Colors.white.withOpacity(0.9),
                     ),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {

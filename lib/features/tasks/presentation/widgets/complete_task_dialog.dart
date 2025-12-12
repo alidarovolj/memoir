@@ -35,7 +35,12 @@ class _CompleteTaskDialogState extends State<CompleteTaskDialog> {
   Widget build(BuildContext context) {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      backgroundColor: Colors.transparent,
       child: Container(
+        decoration: const BoxDecoration(
+          gradient: AppTheme.lightBackgroundGradient,
+          borderRadius: BorderRadius.all(Radius.circular(20)),
+        ),
         padding: const EdgeInsets.all(24),
         constraints: const BoxConstraints(maxWidth: 400),
         child: Column(

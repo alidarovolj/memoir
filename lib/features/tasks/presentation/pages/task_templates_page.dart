@@ -13,8 +13,7 @@ class TaskTemplatesPage extends StatefulWidget {
 }
 
 class _TaskTemplatesPageState extends State<TaskTemplatesPage> {
-  final _dataSource =
-      TaskTemplateRemoteDataSourceImpl(dio: DioClient.instance);
+  final _dataSource = TaskTemplateRemoteDataSourceImpl(dio: DioClient.instance);
 
   bool _isLoading = true;
   List<TaskTemplateModel> _templates = [];
@@ -135,33 +134,33 @@ class _TaskTemplatesPageState extends State<TaskTemplatesPage> {
                 child: _isLoading
                     ? const LoadingState()
                     : _templates.isEmpty
-                        ? EmptyState(
-                            icon: Ionicons.document_text_outline,
-                            title: 'Нет шаблонов',
-                            subtitle: 'Создайте свой первый шаблон',
-                            buttonText: 'Создать шаблон',
-                            buttonIcon: Ionicons.add,
-                            onButtonPressed: () {
-                              // TODO: Navigate to create template page
-                            },
-                          )
-                        : RefreshIndicator(
-                            onRefresh: _loadTemplates,
-                            child: ListView.builder(
-                              padding: const EdgeInsets.all(16),
-                              itemCount: _templates.length,
-                              itemBuilder: (context, index) {
-                                final template = _templates[index];
-                                return _TemplateCard(
-                                  template: template,
-                                  onTap: () => _useTemplate(template),
-                                  onLongPress: () {
-                                    _showTemplateOptions(template);
-                                  },
-                                );
+                    ? EmptyState(
+                        icon: Ionicons.document_text_outline,
+                        title: 'Нет шаблонов',
+                        subtitle: 'Создайте свой первый шаблон',
+                        buttonText: 'Создать шаблон',
+                        buttonIcon: Ionicons.add,
+                        onButtonPressed: () {
+                          // TODO: Navigate to create template page
+                        },
+                      )
+                    : RefreshIndicator(
+                        onRefresh: _loadTemplates,
+                        child: ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: _templates.length,
+                          itemBuilder: (context, index) {
+                            final template = _templates[index];
+                            return _TemplateCard(
+                              template: template,
+                              onTap: () => _useTemplate(template),
+                              onLongPress: () {
+                                _showTemplateOptions(template);
                               },
-                            ),
-                          ),
+                            );
+                          },
+                        ),
+                      ),
               ),
             ],
           ),
@@ -174,6 +173,10 @@ class _TaskTemplatesPageState extends State<TaskTemplatesPage> {
     showModalBottomSheet(
       context: context,
       builder: (context) => Container(
+        decoration: const BoxDecoration(
+          gradient: AppTheme.lightBackgroundGradient,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -197,7 +200,10 @@ class _TaskTemplatesPageState extends State<TaskTemplatesPage> {
               ),
               ListTile(
                 leading: const Icon(Ionicons.trash_outline, color: Colors.red),
-                title: const Text('Удалить', style: TextStyle(color: Colors.red)),
+                title: const Text(
+                  'Удалить',
+                  style: TextStyle(color: Colors.red),
+                ),
                 onTap: () async {
                   final navigator = Navigator.of(context);
                   navigator.pop();
