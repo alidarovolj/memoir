@@ -33,13 +33,18 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     try {
       setState(() => _isLoading = true);
       final analytics = await _dataSource.getAnalyticsDashboard();
-      setState(() {
-        _analytics = analytics;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() => _isLoading = false);
       if (mounted) {
+        setState(() {
+          _analytics = analytics;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _analytics = null;
+          _isLoading = false;
+        });
         SnackBarUtils.showError(context, 'Ошибка загрузки аналитики');
       }
     }
@@ -48,58 +53,85 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: const CustomAppBar(title: 'Аналитика'),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: AppTheme.lightBackgroundGradient,
-        ),
-        child: SafeArea(
-          child: _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : RefreshIndicator(
-                  onRefresh: _loadAnalytics,
-                  child: ListView(
-                    padding: const EdgeInsets.all(20),
-                    children: [
-                      // Header Stats
-                      _buildHeaderStats(),
-                      const SizedBox(height: 24),
+      backgroundColor: AppTheme.pageBackgroundColor,
+      body: Column(
+        children: [
+          // Custom Header
+          Container(
+            color: AppTheme.headerBackgroundColor,
+            child: const SafeArea(
+              bottom: false,
+              child: CustomHeader(title: 'Аналитика', type: HeaderType.pop),
+            ),
+          ),
 
-                      // This Week Overview
-                      _buildThisWeekCard(),
-                      const SizedBox(height: 24),
-
-                      // Streaks
-                      _buildStreaksCard(),
-                      const SizedBox(height: 24),
-
-                      // Activity Heatmap
-                      _buildSectionTitle('Активность за месяц'),
-                      const SizedBox(height: 12),
-                      ActivityHeatmap(
-                        dailyActivities:
-                            _analytics!.currentMonth.dailyActivities,
+          // Content
+          Expanded(
+            child: _isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        AppTheme.primaryColor,
                       ),
-                      const SizedBox(height: 24),
-
-                      // Productivity Trends
-                      _buildSectionTitle('Продуктивность (6 месяцев)'),
-                      const SizedBox(height: 12),
-                      ProductivityChart(trends: _analytics!.productivityTrends),
-                      const SizedBox(height: 24),
-
-                      // Category Stats
-                      if (_analytics!.categoryStats.isNotEmpty) ...[
-                        _buildSectionTitle('Категории'),
-                        const SizedBox(height: 12),
-                        CategoryChart(categoryStats: _analytics!.categoryStats),
+                    ),
+                  )
+                : _analytics == null
+                ? const Center(
+                    child: EmptyState(
+                      title: 'Аналитика недоступна',
+                      subtitle: 'Данные не загружены',
+                    ),
+                  )
+                : RefreshIndicator(
+                    onRefresh: _loadAnalytics,
+                    color: AppTheme.primaryColor,
+                    backgroundColor: AppTheme.cardColor,
+                    child: ListView(
+                      padding: const EdgeInsets.all(20),
+                      children: [
+                        // Header Stats
+                        _buildHeaderStats(),
                         const SizedBox(height: 24),
+
+                        // This Week Overview
+                        _buildThisWeekCard(),
+                        const SizedBox(height: 24),
+
+                        // Streaks
+                        _buildStreaksCard(),
+                        const SizedBox(height: 24),
+
+                        // Activity Heatmap
+                        _buildSectionTitle('Активность за месяц'),
+                        const SizedBox(height: 12),
+                        ActivityHeatmap(
+                          dailyActivities:
+                              _analytics!.currentMonth.dailyActivities,
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Productivity Trends
+                        _buildSectionTitle('Продуктивность (6 месяцев)'),
+                        const SizedBox(height: 12),
+                        ProductivityChart(
+                          trends: _analytics!.productivityTrends,
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Category Stats
+                        if (_analytics!.categoryStats.isNotEmpty) ...[
+                          _buildSectionTitle('Категории'),
+                          const SizedBox(height: 12),
+                          CategoryChart(
+                            categoryStats: _analytics!.categoryStats,
+                          ),
+                          const SizedBox(height: 24),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
-                ),
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -110,7 +142,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
       style: const TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.w700,
-        color: Colors.black87,
+        color: Colors.white,
       ),
     );
   }
@@ -143,11 +175,12 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.cardColor,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(0.2),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -176,7 +209,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
-                  color: Colors.black87,
+                  color: Colors.white,
                 ),
               ),
             ],
@@ -190,13 +223,21 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                 'Воспоминаний',
                 Ionicons.albums_outline,
               ),
-              Container(width: 1, height: 40, color: Colors.black12),
+              Container(
+                width: 1,
+                height: 40,
+                color: Colors.white.withOpacity(0.2),
+              ),
               _buildWeekStat(
                 '${_analytics!.thisWeekTasks}',
                 'Задач',
                 Ionicons.checkmark_circle_outline,
               ),
-              Container(width: 1, height: 40, color: Colors.black12),
+              Container(
+                width: 1,
+                height: 40,
+                color: Colors.white.withOpacity(0.2),
+              ),
               _buildWeekStat(
                 _analytics!.thisWeekTime.toTimeFormat(),
                 'Времени',
@@ -219,12 +260,12 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
           style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            color: Colors.black87,
+            color: Colors.white,
           ),
         ),
         Text(
           label,
-          style: TextStyle(fontSize: 12, color: Colors.black.withOpacity(0.5)),
+          style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.6)),
         ),
       ],
     );

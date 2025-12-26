@@ -119,7 +119,6 @@ class _TimeLogsPageState extends State<TimeLogsPage> {
                     ? const LoadingState()
                     : _logs.isEmpty
                     ? EmptyState(
-                        icon: Ionicons.time_outline,
                         title: 'Нет записей',
                         subtitle:
                             'Запустите таймер чтобы начать отслеживать время',

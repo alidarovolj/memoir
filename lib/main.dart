@@ -17,6 +17,7 @@ import 'package:memoir/features/memories/data/datasources/memory_remote_datasour
 import 'package:memoir/core/services/auth_service.dart';
 import 'package:memoir/core/services/notification_service.dart';
 import 'package:memoir/features/auth/presentation/pages/phone_login_page.dart';
+import 'package:memoir/features/auth/presentation/pages/profile_setup_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:memoir/features/stories/data/datasources/story_remote_datasource.dart';
 import 'package:memoir/features/stories/data/models/story_model.dart';
@@ -27,6 +28,27 @@ import 'package:memoir/features/tasks/data/datasources/task_remote_datasource.da
 import 'package:memoir/features/tasks/data/models/task_suggestion_model.dart';
 import 'package:memoir/features/tasks/presentation/widgets/task_suggestions_modal.dart';
 import 'package:memoir/features/profile/presentation/pages/profile_page.dart';
+import 'package:chucker_flutter/chucker_flutter.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:memoir/features/analytics/data/datasources/analytics_remote_datasource.dart';
+import 'package:memoir/features/analytics/data/models/analytics_model.dart';
+import 'package:memoir/features/analytics/presentation/widgets/header_stats.dart';
+import 'package:memoir/features/analytics/presentation/widgets/this_week_card.dart';
+import 'package:memoir/features/analytics/presentation/widgets/streaks_card.dart';
+import 'package:memoir/core/widgets/referral_banner.dart';
+// Pet imports
+import 'package:memoir/features/pet/data/models/pet_model.dart';
+import 'package:memoir/features/pet/data/datasources/pet_remote_datasource.dart';
+import 'package:memoir/features/pet/presentation/widgets/pet_widget.dart';
+import 'package:memoir/features/pet/presentation/pages/pet_page.dart';
+import 'package:memoir/features/pet/presentation/pages/pet_onboarding_page.dart';
+import 'package:memoir/features/pet/data/services/pet_service.dart';
+// Time Capsule imports
+import 'package:memoir/features/time_capsule/data/datasources/time_capsule_remote_datasource.dart';
+import 'package:memoir/features/time_capsule/presentation/widgets/throwback_modal.dart';
+import 'package:memoir/features/time_capsule/presentation/pages/time_capsule_page.dart';
+// Daily Prompts imports
+import 'package:memoir/features/daily_prompts/presentation/widgets/daily_prompt_card.dart';
 
 // Global navigation key для навигации из interceptor
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -42,6 +64,8 @@ void main() async {
 
   // Initialize Notification Service
   await NotificationService().initialize();
+
+  // Note: PetService will be initialized after DioClient is ready (in HomePage)
 
   // Настройка системных UI элементов
   SystemChrome.setSystemUIOverlayStyle(
@@ -66,6 +90,9 @@ class MemoirApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       navigatorKey: navigatorKey, // Добавляем глобальный ключ
+      navigatorObservers: [
+        ChuckerFlutter.navigatorObserver,
+      ], // Добавляем Chucker observer
       title: 'Memoir',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
@@ -75,6 +102,7 @@ class MemoirApp extends StatelessWidget {
       routes: {
         '/': (context) => const SplashScreen(),
         '/phone-login': (context) => const PhoneLoginPage(),
+        '/profile-setup': (context) => const ProfileSetupPage(),
         '/home': (context) => const HomePage(),
       },
     );
@@ -146,7 +174,31 @@ class _SplashScreenState extends State<SplashScreen>
           print('⚠️ [SPLASH] Failed to send FCM token: $e');
         }
 
-        Navigator.of(context).pushReplacementNamed('/home');
+        // Проверяем заполненность профиля
+        try {
+          final response = await dio.get('/api/v1/users/me');
+          final user = response.data;
+
+          final hasFirstName =
+              user['first_name'] != null &&
+              user['first_name'].toString().isNotEmpty;
+          final hasLastName =
+              user['last_name'] != null &&
+              user['last_name'].toString().isNotEmpty;
+
+          if (!hasFirstName || !hasLastName) {
+            // Профиль не заполнен, перенаправляем на настройку
+            print('👤 [SPLASH] Profile incomplete, redirecting to setup');
+            Navigator.of(context).pushReplacementNamed('/profile-setup');
+          } else {
+            // Профиль заполнен, переходим на главную
+            Navigator.of(context).pushReplacementNamed('/home');
+          }
+        } catch (e) {
+          print('⚠️ [SPLASH] Failed to check profile: $e');
+          // В случае ошибки, переходим на главную
+          Navigator.of(context).pushReplacementNamed('/home');
+        }
       } else {
         Navigator.of(context).pushReplacementNamed('/phone-login');
       }
@@ -168,25 +220,23 @@ class _SplashScreenState extends State<SplashScreen>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Анимированная иконка с градиентом
+                  // SVG Logo
                   Container(
-                    width: 120,
-                    height: 120,
+                    width: 200,
+                    height: 147, // Соотношение сторон 400:294 из SVG
                     decoration: BoxDecoration(
-                      gradient: AppTheme.primaryGradient,
                       borderRadius: BorderRadius.circular(30),
                       boxShadow: [
                         BoxShadow(
-                          color: AppTheme.primaryColor.withOpacity(0.5),
-                          blurRadius: 30,
-                          spreadRadius: 5,
+                          color: AppTheme.primaryColor.withOpacity(0.3),
+                          blurRadius: 40,
+                          spreadRadius: 10,
                         ),
                       ],
                     ),
-                    child: const Icon(
-                      Ionicons.sparkles,
-                      size: 60,
-                      color: Colors.white,
+                    child: SvgPicture.asset(
+                      'assets/images/first_logo.svg',
+                      fit: BoxFit.contain,
                     ),
                   ),
                   const SizedBox(height: 32),
@@ -243,7 +293,6 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
-  late AnimationController _fabAnimController;
   late ScrollController _scrollController;
   int _selectedIndex = 0;
   bool _showHeaderTitle = false;
@@ -251,28 +300,52 @@ class _HomePageState extends State<HomePage>
   late MemoryRemoteDataSource _memoryDataSource;
   late StoryRemoteDataSource _storyDataSource;
   late TaskRemoteDataSource _taskDataSource;
+  late AnalyticsRemoteDataSource _analyticsDataSource;
+  late PetRemoteDataSource _petDataSource;
+  late TimeCapsuleRemoteDataSource _timeCapsuleDataSource;
   List<Map<String, dynamic>> _memories = [];
   List<StoryModel> _stories = [];
   bool _isLoading = false;
   bool _isLoadingStories = false;
+  AnalyticsDashboard? _analytics;
+  bool _isLoadingAnalytics = true;
+  PetModel? _pet;
+  bool _isLoadingPet = true;
+  bool _petOnboardingShown =
+      false; // Flag to prevent showing onboarding multiple times
+  bool _throwbackShown =
+      false; // Flag to prevent showing throwback multiple times
+
+  // User data for display
+  String? _userName;
+  String? _userAvatar;
 
   @override
   void initState() {
     super.initState();
-    _fabAnimController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-    _fabAnimController.forward();
 
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
 
+    // Initialize PetService with properly configured DioClient
+    PetService().initialize();
+
     _memoryDataSource = MemoryRemoteDataSourceImpl(dio: DioClient.instance);
     _storyDataSource = StoryRemoteDataSourceImpl(dio: DioClient.instance);
     _taskDataSource = TaskRemoteDataSourceImpl(dio: DioClient.instance);
+    _analyticsDataSource = AnalyticsRemoteDataSourceImpl(
+      dio: DioClient.instance,
+    );
+    _petDataSource = PetRemoteDataSourceImpl(dio: DioClient.instance);
+    _timeCapsuleDataSource = TimeCapsuleRemoteDataSourceImpl(
+      dio: DioClient.instance,
+    );
+    _loadUserData();
     _loadMemories();
     _loadStories();
+    _loadAnalytics();
+    _loadPet();
+    _checkThrowback(); // Check for throwback memory
   }
 
   void _onScroll() {
@@ -287,10 +360,166 @@ class _HomePageState extends State<HomePage>
 
   @override
   void dispose() {
-    _fabAnimController.dispose();
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final response = await DioClient.instance.get('/api/v1/users/me');
+      final user = response.data;
+
+      if (mounted) {
+        setState(() {
+          final firstName = user['first_name'] ?? '';
+          final lastName = user['last_name'] ?? '';
+          _userName = '$firstName $lastName'.trim();
+          if (_userName!.isEmpty) {
+            _userName = user['username'] ?? 'Пользователь';
+          }
+          _userAvatar = user['avatar_url'];
+        });
+      }
+    } catch (e) {
+      print('⚠️ Failed to load user data: $e');
+    }
+  }
+
+  Future<void> _loadAnalytics() async {
+    try {
+      setState(() => _isLoadingAnalytics = true);
+      final analytics = await _analyticsDataSource.getAnalyticsDashboard();
+      if (mounted) {
+        setState(() {
+          _analytics = analytics;
+          _isLoadingAnalytics = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _analytics = null;
+          _isLoadingAnalytics = false;
+        });
+      }
+      print('⚠️ Failed to load analytics: $e');
+    }
+  }
+
+  Future<void> _loadPet() async {
+    print('🐾 [HOME] Loading pet...');
+    try {
+      final pet = await PetService().loadPet();
+
+      print('🐾 [HOME] Pet loaded: $pet');
+      print('🐾 [HOME] Pet is null: ${pet == null}');
+
+      if (mounted) {
+        setState(() {
+          _pet = pet;
+          _isLoadingPet = false;
+        });
+
+        // Show onboarding ONLY if no pet AND flag not set
+        if (pet == null && !_petOnboardingShown) {
+          print('🐾 [HOME] No pet found, showing onboarding');
+          _petOnboardingShown = true;
+          _showPetOnboarding();
+        } else if (pet != null) {
+          print('🐾 [HOME] Pet exists: ${pet.name}, NOT showing onboarding');
+        }
+      }
+    } catch (e, stackTrace) {
+      print('❌ [HOME] Error loading pet: $e');
+      print('❌ [HOME] Stack trace: $stackTrace');
+      if (mounted) {
+        setState(() {
+          _pet = null;
+          _isLoadingPet = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _checkThrowback() async {
+    print('🕰️ [HOME] Checking for throwback memory...');
+
+    // Only show once per session
+    if (_throwbackShown) {
+      print('🕰️ [HOME] Throwback already shown this session');
+      return;
+    }
+
+    // Delay to let the home page load first
+    await Future.delayed(const Duration(milliseconds: 800));
+
+    if (!mounted) return;
+
+    try {
+      final memory = await _timeCapsuleDataSource.getThrowbackMemory(
+        yearsAgo: 1,
+      );
+
+      if (memory != null && mounted) {
+        print('🕰️ [HOME] Found throwback memory: ${memory.title}');
+        _throwbackShown = true;
+
+        // Show throwback modal as overlay
+        showDialog(
+          context: context,
+          barrierDismissible: true,
+          builder: (context) => ThrowbackModal(
+            memory: memory,
+            yearsAgo: 1,
+            onClose: () => Navigator.pop(context),
+          ),
+        );
+      } else {
+        print('🕰️ [HOME] No throwback memory found');
+      }
+    } catch (e) {
+      print('⚠️ [HOME] Error checking throwback: $e');
+      // Silently fail - not critical
+    }
+  }
+
+  Future<void> _showPetOnboarding() async {
+    // Delay to let the home page load first
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    if (!mounted) return;
+
+    final result = await Navigator.of(
+      context,
+    ).push(PageTransitions.slideFromBottom(const PetOnboardingPage()));
+
+    if (result != null && result is PetModel) {
+      setState(() => _pet = result);
+      PetService().updatePet(result);
+      SnackBarUtils.showSuccess(
+        context,
+        'Добро пожаловать, ${result.name}! 🎉',
+      );
+    }
+  }
+
+  Future<void> _feedPet() async {
+    if (_pet == null) return;
+
+    try {
+      final result = await PetService().feedPet();
+
+      if (result != null && mounted) {
+        setState(() => _pet = result.pet);
+
+        if (result.levelUps > 0 || result.evolved) {
+          SnackBarUtils.showSuccess(context, result.message);
+        }
+      }
+    } catch (e) {
+      print('⚠️ Failed to feed pet: $e');
+    }
   }
 
   Future<void> _loadMemories() async {
@@ -305,6 +534,9 @@ class _HomePageState extends State<HomePage>
         print('🔍 [HOME] First memory data:');
         print('   - id: ${memories[0]['id']}');
         print('   - title: ${memories[0]['title']}');
+        print('   - category_name: ${memories[0]['category_name']}');
+        print('   - ai_confidence: ${memories[0]['ai_confidence']}');
+        print('   - tags: ${memories[0]['tags']}');
         print('   - image_url: ${memories[0]['image_url']}');
         print('   - backdrop_url: ${memories[0]['backdrop_url']}');
         print('   - memory_metadata: ${memories[0]['memory_metadata']}');
@@ -368,6 +600,9 @@ class _HomePageState extends State<HomePage>
         print('🔄 [HOME] Reloading memories list...');
         await _loadMemories(); // Перезагружаем список
         print('✅ [HOME] Memories reloaded');
+
+        // 🐾 NEW: Feed pet when creating memory
+        await _feedPet();
 
         if (shouldPublishAsStory) {
           SnackBarUtils.showSuccess(
@@ -562,123 +797,142 @@ class _HomePageState extends State<HomePage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBody: true,
-      body: Container(
-        color: AppTheme.pageBackgroundColor, // Фон страницы rgba(28, 27, 32, 1)
-        child: Column(
-          children: [
-            // SafeArea с хедером
-            Container(
-              color: AppTheme
-                  .headerBackgroundColor, // Фон хедера и SafeArea rgba(21, 20, 24, 1)
-              child: SafeArea(
-                bottom: false,
-                child: CustomHeader(
-                  title: _showHeaderTitle ? 'Главная' : '',
-                  type: HeaderType.none,
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Ionicons.add_outline, size: 24),
-                        color: Colors.white,
-                        onPressed: () async {
-                          final result = await Navigator.of(context).push(
-                            PageTransitions.slideFromBottom(
-                              const CreateMemoryPage(),
-                            ),
-                          );
+      body: Stack(
+        children: [
+          _buildCurrentPage(),
+          // Фиксированная кнопка справа для создания воспоминания
+          Positioned(
+            right: 0,
+            bottom: 20, // Над таббаром
+            child: GestureDetector(
+              onTap: () async {
+                final result = await Navigator.of(context).push(
+                  PageTransitions.slideFromBottom(const CreateMemoryPage()),
+                );
 
-                          if (result != null &&
-                              result is Map<String, dynamic>) {
-                            await _createMemory(result);
-                          }
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(Ionicons.bookmark_outline, size: 22),
-                        color: Colors.white,
-                        onPressed: () => SnackBarUtils.showInfo(
-                          context,
-                          'Закладки - в разработке',
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(
-                          Ionicons.notifications_outline,
-                          size: 22,
-                        ),
-                        color: Colors.white,
-                        onPressed: () => SnackBarUtils.showInfo(
-                          context,
-                          'Уведомления - в разработке',
-                        ),
-                      ),
-                    ],
+                if (result != null && result is Map<String, dynamic>) {
+                  await _createMemory(result);
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 20,
+                ),
+                decoration: BoxDecoration(
+                  gradient: AppTheme.primaryGradient,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    bottomLeft: Radius.circular(16),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primaryColor.withOpacity(0.3),
+                      blurRadius: 20,
+                      offset: const Offset(-5, 0),
+                    ),
+                  ],
+                ),
+                child: RotatedBox(
+                  quarterTurns: 3, // Поворачиваем текст вертикально
+                  child: const Text(
+                    'Создать воспоминание',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black,
+                      letterSpacing: 0.5,
+                    ),
                   ),
                 ),
               ),
             ),
-            // Body content
-            Expanded(child: _buildBody()),
-          ],
-        ),
+          ),
+        ],
       ),
-      floatingActionButton: _memories.isNotEmpty
-          ? ScaleTransition(
-              scale: _fabAnimController,
-              child: FloatingActionButton.extended(
-                onPressed: () async {
-                  final result = await Navigator.of(context).push(
-                    PageTransitions.slideFromBottom(const CreateMemoryPage()),
-                  );
-
-                  if (result != null && result is Map<String, dynamic>) {
-                    await _createMemory(result);
-                  }
-                },
-                backgroundColor: AppTheme.blueColor,
-                icon: const Icon(Ionicons.add_outline, size: 20),
-                label: const Text('Создать'),
-              ),
-            )
-          : null, // Не показываем FAB если нет воспоминаний
       bottomNavigationBar: CustomBottomNav(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (index) {
-          if (index == 0) {
-            // Home page
-            setState(() => _selectedIndex = index);
-          } else if (index == 1) {
-            // Navigate to Search page
-            Navigator.of(
-              context,
-            ).push(PageTransitions.slideFromRight(const SearchPage()));
-          } else if (index == 2) {
-            // AI - можно открыть Tasks или AI features
-            Navigator.of(
-              context,
-            ).push(PageTransitions.slideFromRight(const TasksPage()));
-          } else if (index == 3) {
-            // Browse - Categories modal
-            showModalBottomSheet(
-              context: context,
-              isScrollControlled: true,
-              backgroundColor: Colors.transparent,
-              builder: (context) => DraggableScrollableSheet(
-                initialChildSize: 0.7,
-                minChildSize: 0.5,
-                maxChildSize: 0.9,
-                builder: (context, scrollController) => const CategoriesModal(),
-              ),
-            );
-          } else if (index == 4) {
-            // Navigate to Profile page
-            Navigator.of(
-              context,
-            ).push(PageTransitions.slideFromRight(const ProfilePage()));
-          }
+          setState(() => _selectedIndex = index);
         },
+      ),
+    );
+  }
+
+  Widget _buildCurrentPage() {
+    switch (_selectedIndex) {
+      case 0:
+        return _buildHomePage(); // Главная страница с хедером
+      case 1:
+        return const SearchPage(); // Поиск
+      case 2:
+        return const TasksPage(); // AI/Задачи
+      case 3:
+        return const ProfilePage(); // Профиль
+      default:
+        return _buildHomePage();
+    }
+  }
+
+  Widget _buildHomePage() {
+    return Container(
+      color: AppTheme.pageBackgroundColor, // Фон страницы rgba(28, 27, 32, 1)
+      child: Column(
+        children: [
+          // SafeArea с хедером только для главной
+          Container(
+            color: AppTheme
+                .headerBackgroundColor, // Фон хедера и SafeArea rgba(21, 20, 24, 1)
+            child: SafeArea(
+              bottom: false,
+              child: CustomHeader(
+                title: _showHeaderTitle ? 'Главная' : '',
+                type: HeaderType.none,
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Ionicons.add_outline, size: 24),
+                      color: Colors.white,
+                      onPressed: () async {
+                        final result = await Navigator.of(context).push(
+                          PageTransitions.slideFromBottom(
+                            const CreateMemoryPage(),
+                          ),
+                        );
+
+                        if (result != null && result is Map<String, dynamic>) {
+                          await _createMemory(result);
+                        }
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Ionicons.bookmark_outline, size: 22),
+                      color: Colors.white,
+                      onPressed: () => SnackBarUtils.showInfo(
+                        context,
+                        'Закладки - в разработке',
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(
+                        Ionicons.notifications_outline,
+                        size: 22,
+                      ),
+                      color: Colors.white,
+                      onPressed: () => SnackBarUtils.showInfo(
+                        context,
+                        'Уведомления - в разработке',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          // Body content
+          Expanded(child: _buildBody()),
+        ],
       ),
     );
   }
@@ -696,8 +950,7 @@ class _HomePageState extends State<HomePage>
         controller: _scrollController,
         slivers: [
           // Заголовок "Главная" над сторисами
-          if (_memories.isNotEmpty &&
-              (_stories.isNotEmpty || _isLoadingStories))
+          if (_stories.isNotEmpty || _isLoadingStories)
             SliverToBoxAdapter(
               child: AnimatedOpacity(
                 opacity: _showHeaderTitle ? 0.0 : 1.0,
@@ -717,9 +970,8 @@ class _HomePageState extends State<HomePage>
               ),
             ),
 
-          // Stories list (только если есть воспоминания)
-          if (_memories.isNotEmpty &&
-              (_stories.isNotEmpty || _isLoadingStories))
+          // Stories list
+          if (_stories.isNotEmpty || _isLoadingStories)
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.only(bottom: 0),
@@ -734,25 +986,116 @@ class _HomePageState extends State<HomePage>
               ),
             ),
 
-          // Banner carousel (только если есть воспоминания)
+          // Banner carousel
+          // SliverToBoxAdapter(
+          //   child: BannerCarousel(
+          //     banners: [
+          //       BannerItem(
+          //         assetPath: 'assets/images/test_banner.jpg',
+          //         title: 'Netflix Poster Series II',
+          //         subtitle: 'Новая коллекция постеров',
+          //         url: 'https://www.netflix.com', // Пример URL
+          //       ),
+          //       // Можно добавить больше баннеров
+          //       BannerItem(
+          //         assetPath: 'assets/images/test_banner.jpg',
+          //         title: 'Сохраняйте воспоминания',
+          //         subtitle: 'Начните свою историю',
+          //         onTap: () {
+          //           // Пример с callback вместо URL
+          //           SnackBarUtils.showInfo(
+          //             context,
+          //             'Создайте ваше первое воспоминание!',
+          //           );
+          //         },
+          //       ),
+          //     ],
+          //     height: 180,
+          //   ),
+          // ),
+
+          // Реферальный баннер
+          SliverToBoxAdapter(
+            child: ReferralBanner(
+              onTap: () {
+                SnackBarUtils.showInfo(
+                  context,
+                  'Функция приглашения друзей - в разработке',
+                );
+              },
+            ),
+          ),
+
+          // Pet Widget
+          if (_pet != null && !_isLoadingPet)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: PetWidget(
+                  pet: _pet!,
+                  onTap: () {
+                    Navigator.of(context)
+                        .push(
+                          PageTransitions.slideFromRight(
+                            PetPage(initialPet: _pet!),
+                          ),
+                        )
+                        .then((_) => _loadPet()); // Reload pet after returning
+                  },
+                ),
+              ),
+            ),
+
+          // Блоки аналитики
+          if (_analytics != null && !_isLoadingAnalytics) ...[
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: HeaderStats(
+                  totalMemories: _analytics!.totalMemories,
+                  totalTasksCompleted: _analytics!.totalTasksCompleted,
+                ),
+              ),
+            ),
+
+            // Daily Prompt Card
+            const SliverToBoxAdapter(child: DailyPromptCard()),
+
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: ThisWeekCard(
+                  thisWeekMemories: _analytics!.thisWeekMemories,
+                  thisWeekTasks: _analytics!.thisWeekTasks,
+                  thisWeekTime: _analytics!.thisWeekTime,
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: StreaksCard(
+                  currentStreak: _analytics!.currentStreak,
+                  longestStreak: _analytics!.longestStreak,
+                ),
+              ),
+            ),
+          ],
+
+          // Заголовок "Вспоминаем вместе"
           if (_memories.isNotEmpty)
             SliverToBoxAdapter(
-              child: BannerCarousel(
-                banners: [
-                  BannerItem(
-                    assetPath: 'assets/images/test_banner.jpg',
-                    title: 'Netflix Poster Series II',
-                    subtitle: 'Новая коллекция постеров',
-                    onTap: () {
-                      SnackBarUtils.showInfo(
-                        context,
-                        'Открытие баннера - в разработке',
-                      );
-                    },
+              child: Container(
+                color: AppTheme.pageBackgroundColor,
+                padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+                child: const Text(
+                  'Вспоминаем вместе',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
                   ),
-                  // Можно добавить больше баннеров
-                ],
-                height: 180,
+                ),
               ),
             ),
 
@@ -761,7 +1104,6 @@ class _HomePageState extends State<HomePage>
             SliverFillRemaining(
               hasScrollBody: false,
               child: EmptyState(
-                icon: Ionicons.folder_open_outline,
                 title: 'У вас пока нет воспоминаний',
                 subtitle: 'Начните сохранять важные моменты,\nидеи и мысли',
                 buttonText: 'Создать первое воспоминание',
@@ -781,63 +1123,83 @@ class _HomePageState extends State<HomePage>
           else
             SliverPadding(
               padding: const EdgeInsets.only(
-                left: 12,
-                right: 12,
                 top: 16,
-                bottom: 100, // Extra space for floating tab bar
+                bottom: 16, // Уменьшенный отступ, так как нет FAB
               ),
-              sliver: SliverGrid(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  childAspectRatio: 0.75,
-                ),
-                delegate: SliverChildBuilderDelegate((context, index) {
-                  final memory = _memories[index];
-                  final createdAt = memory['created_at'] != null
-                      ? DateTime.parse(memory['created_at'])
-                      : DateTime.now();
-
-                  // Extract AI data
-                  final aiConfidence = memory['ai_confidence'] != null
-                      ? (memory['ai_confidence'] as num).toDouble()
-                      : null;
-
-                  // Check if AI is still processing (memory created recently with no category)
-                  final isProcessing =
-                      memory['category_id'] == null &&
-                      DateTime.now().difference(createdAt).inMinutes < 5;
-
-                  return MemoryCard(
-                    title: memory['title'] ?? 'Без заголовка',
-                    content: memory['content'] ?? '',
-                    category: memory['category_name'],
-                    tags: memory['tags'] != null
-                        ? List<String>.from(memory['tags'])
-                        : null,
-                    createdAt: createdAt,
-                    imageUrl: memory['image_url'],
-                    aiConfidence: aiConfidence,
-                    isAiProcessing: isProcessing,
-                    onTap: () async {
-                      final result = await Navigator.of(context).push(
-                        PageTransitions.slideFromRight(
-                          MemoryDetailPage(memoryId: memory['id']),
-                        ),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    // Разделители между постами
+                    if (index.isOdd) {
+                      return Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 16),
+                        height: 1,
+                        color: Colors.white.withOpacity(0.08),
                       );
+                    }
 
-                      // If memory was deleted, reload the list
-                      if (result == true) {
-                        await _loadMemories();
-                      }
-                    },
-                    onEdit: () => _editMemory(memory, index),
-                    onDelete: () {
-                      _showDeleteConfirmation(context, memory['id'], index);
-                    },
-                  );
-                }, childCount: _memories.length),
+                    final memoryIndex = index ~/ 2;
+                    final memory = _memories[memoryIndex];
+                    final createdAt = memory['created_at'] != null
+                        ? DateTime.parse(memory['created_at'])
+                        : DateTime.now();
+
+                    // Extract AI data
+                    final aiConfidence = memory['ai_confidence'] != null
+                        ? (memory['ai_confidence'] as num).toDouble()
+                        : null;
+
+                    // Check if AI is still processing (memory created recently with no category)
+                    final isProcessing =
+                        memory['category_id'] == null &&
+                        DateTime.now().difference(createdAt).inMinutes < 5;
+
+                    return Padding(
+                      padding: const EdgeInsets.only(
+                        left: 16,
+                        right: 16,
+                        bottom: 16,
+                        top: 16,
+                      ),
+                      child: MemoryCard(
+                        title: memory['title'] ?? 'Без заголовка',
+                        content: memory['content'] ?? '',
+                        category: memory['category_name'],
+                        tags: memory['tags'] != null
+                            ? List<String>.from(memory['tags'])
+                            : null,
+                        createdAt: createdAt,
+                        imageUrl: memory['image_url'],
+                        aiConfidence: aiConfidence,
+                        isAiProcessing: isProcessing,
+                        authorName: _userName,
+                        authorAvatar: _userAvatar,
+                        isOwnPost: true, // Все посты на главной - свои
+                        onTap: () async {
+                          final result = await Navigator.of(context).push(
+                            PageTransitions.slideFromRight(
+                              MemoryDetailPage(memoryId: memory['id']),
+                            ),
+                          );
+
+                          // If memory was deleted, reload the list
+                          if (result == true) {
+                            await _loadMemories();
+                          }
+                        },
+                        onEdit: () => _editMemory(memory, memoryIndex),
+                        onDelete: () {
+                          _showDeleteConfirmation(
+                            context,
+                            memory['id'],
+                            memoryIndex,
+                          );
+                        },
+                      ),
+                    );
+                  },
+                  childCount: _memories.length * 2 - 1,
+                ), // Удваиваем количество для разделителей
               ),
             ),
         ],
@@ -873,149 +1235,6 @@ class _HomePageState extends State<HomePage>
             child: const Text('Удалить'),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class CategoriesPage extends StatefulWidget {
-  const CategoriesPage({super.key});
-
-  @override
-  State<CategoriesPage> createState() => _CategoriesPageState();
-}
-
-class _CategoriesPageState extends State<CategoriesPage>
-    with TickerProviderStateMixin {
-  late List<AnimationController> _controllers;
-
-  final categories = [
-    {
-      'name': 'Movies & TV',
-      'icon': Ionicons.film_outline,
-      'color': const Color(0xFFE50914),
-      'emoji': '🎬',
-    },
-    {
-      'name': 'Books & Articles',
-      'icon': Ionicons.book_outline,
-      'color': const Color(0xFF4285F4),
-      'emoji': '📚',
-    },
-    {
-      'name': 'Places',
-      'icon': Ionicons.location_outline,
-      'color': const Color(0xFF34A853),
-      'emoji': '📍',
-    },
-    {
-      'name': 'Ideas & Insights',
-      'icon': Ionicons.bulb_outline,
-      'color': const Color(0xFFFBBC04),
-      'emoji': '💡',
-    },
-    {
-      'name': 'Recipes',
-      'icon': Ionicons.restaurant_outline,
-      'color': const Color(0xFFFF6D00),
-      'emoji': '🍳',
-    },
-    {
-      'name': 'Products',
-      'icon': Ionicons.bag_handle_outline,
-      'color': const Color(0xFF9C27B0),
-      'emoji': '🛍️',
-    },
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _controllers = List.generate(
-      categories.length,
-      (index) => AnimationController(
-        duration: const Duration(milliseconds: 400),
-        vsync: this,
-      ),
-    );
-    _animateCards();
-  }
-
-  void _animateCards() async {
-    for (int i = 0; i < _controllers.length; i++) {
-      await Future.delayed(const Duration(milliseconds: 80));
-      if (mounted) {
-        _controllers[i].forward();
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    for (var controller in _controllers) {
-      controller.dispose();
-    }
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: CustomAppBar(
-        title: 'Категории',
-        leading: IconButton(
-          icon: const Icon(Ionicons.chevron_back_outline),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: AppTheme.lightBackgroundGradient,
-        ),
-        child: SafeArea(
-          child: GridView.builder(
-            padding: const EdgeInsets.all(20),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 1.0,
-            ),
-            itemCount: categories.length,
-            itemBuilder: (context, index) {
-              final category = categories[index];
-              return SlideTransition(
-                position:
-                    Tween<Offset>(
-                      begin: const Offset(0, 0.3),
-                      end: Offset.zero,
-                    ).animate(
-                      CurvedAnimation(
-                        parent: _controllers[index],
-                        curve: Curves.easeOutCubic,
-                      ),
-                    ),
-                child: FadeTransition(
-                  opacity: _controllers[index],
-                  child: CategoryCard(
-                    name: category['name'] as String,
-                    icon: category['icon'] as IconData,
-                    color: category['color'] as Color,
-                    emoji: category['emoji'] as String,
-                    count: 0,
-                    onTap: () {
-                      SnackBarUtils.showInfo(
-                        context,
-                        '${category['name']} - в разработке',
-                      );
-                    },
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
       ),
     );
   }

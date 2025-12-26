@@ -297,7 +297,6 @@ class _SmartSearchModalState extends State<SmartSearchModal> {
 
     if (_searchResponse != null && !_searchResponse!.needsSearch) {
       return EmptyState(
-        icon: Ionicons.create_outline,
         title: 'Просто создайте заметку',
         subtitle:
             'Для "${_searchResponse!.intent}" поиск не нужен.\nПросто сохраните как есть.',
@@ -310,7 +309,6 @@ class _SmartSearchModalState extends State<SmartSearchModal> {
 
     if (_results.isEmpty && _searchController.text.isNotEmpty) {
       return EmptyState(
-        icon: Ionicons.search_outline,
         title: 'Ничего не найдено',
         subtitle: 'Попробуйте изменить запрос\nили создайте простую заметку',
         buttonText: 'Создать заметку',
@@ -321,8 +319,7 @@ class _SmartSearchModalState extends State<SmartSearchModal> {
     }
 
     if (_results.isEmpty) {
-      return EmptyState(
-        icon: Ionicons.sparkles_outline,
+      return const EmptyState(
         title: 'Начните поиск',
         subtitle: 'Введите название фильма, книги,\nили что хотите найти',
       );

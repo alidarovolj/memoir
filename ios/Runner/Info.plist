@@ -48,5 +48,15 @@
 		<string>UIInterfaceOrientationPortrait</string>
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Memoir нужен доступ к камере для съемки фотографий</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Memoir нужен доступ к микрофону для записи голосовых заметок</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Memoir нужен доступ к галерее для выбора фотографий</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Memoir нужен доступ для сохранения фотографий в галерею</string>
+	<key>PHPhotoLibraryPreventAutomaticLimitedAccessAlert</key>
+	<true/>
 </dict>
 </plist>

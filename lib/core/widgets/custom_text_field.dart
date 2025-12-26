@@ -13,6 +13,7 @@ class CustomTextField extends StatelessWidget {
   final bool obscureText;
   final String? Function(String?)? validator;
   final void Function(String)? onChanged;
+  final void Function(String)? onSubmitted;
 
   const CustomTextField({
     super.key,
@@ -27,12 +28,13 @@ class CustomTextField extends StatelessWidget {
     this.obscureText = false,
     this.validator,
     this.onChanged,
+    this.onSubmitted,
   });
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return TextField(
       controller: controller,
       maxLines: maxLines,
@@ -40,8 +42,9 @@ class CustomTextField extends StatelessWidget {
       keyboardType: keyboardType,
       obscureText: obscureText,
       onChanged: onChanged,
+      onSubmitted: onSubmitted,
       style: TextStyle(
-        fontSize: 16, 
+        fontSize: 16,
         color: isDark ? Colors.white : Colors.black87,
       ),
       decoration: InputDecoration(
@@ -49,11 +52,13 @@ class CustomTextField extends StatelessWidget {
         hintText: hintText,
         prefixIcon: prefixIcon != null
             ? maxLines > 1
-                ? Padding(
-                    padding: EdgeInsets.only(bottom: (maxLines * 20).toDouble()),
-                    child: Icon(prefixIcon, color: AppTheme.primaryColor),
-                  )
-                : Icon(prefixIcon, color: AppTheme.primaryColor)
+                  ? Padding(
+                      padding: EdgeInsets.only(
+                        bottom: (maxLines * 20).toDouble(),
+                      ),
+                      child: Icon(prefixIcon, color: AppTheme.primaryColor),
+                    )
+                  : Icon(prefixIcon, color: AppTheme.primaryColor)
             : null,
         suffixIcon: suffixIcon,
         alignLabelWithHint: maxLines > 1,
@@ -61,4 +66,3 @@ class CustomTextField extends StatelessWidget {
     );
   }
 }
-

@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:memoir/core/theme/app_theme.dart';
-import 'package:memoir/core/widgets/custom_app_bar.dart';
 import 'package:memoir/core/services/auth_service.dart';
 import 'package:memoir/core/services/notification_service.dart';
 import 'package:memoir/core/network/dio_client.dart';
 import 'package:memoir/core/utils/snackbar_utils.dart';
 import 'package:memoir/features/analytics/presentation/pages/analytics_page.dart';
+import 'package:memoir/features/challenges/presentation/pages/challenges_page.dart';
+import 'package:memoir/features/ai_stories/presentation/pages/ai_stories_page.dart';
+import 'package:memoir/features/achievements/presentation/pages/achievements_page.dart';
 import 'package:memoir/features/profile/data/models/user_stats_model.dart';
 import 'package:memoir/features/profile/data/datasources/user_stats_remote_datasource.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:dio/dio.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:developer' as developer;
 
 class ProfilePage extends StatefulWidget {
@@ -21,32 +27,62 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   String? _phoneNumber;
-  String? _username;
+  String? _firstName;
+  String? _lastName;
+  String? _avatarUrl;
   UserStatsModel? _stats;
   bool _isLoading = true;
   late UserStatsRemoteDataSource _statsDataSource;
+  final _scrollController = ScrollController();
+  final _headerOpacity = ValueNotifier<double>(0.0);
+  bool _notificationsEnabled = true;
+  final _imagePicker = ImagePicker();
 
   @override
   void initState() {
     super.initState();
     _statsDataSource = UserStatsRemoteDataSourceImpl(dio: DioClient.instance);
     _loadUserData();
+
+    // Добавляем слушатель для анимации header
+    _scrollController.addListener(() {
+      final offset = _scrollController.offset;
+      final newOpacity = (offset / 100).clamp(0.0, 1.0);
+      if (_headerOpacity.value != newOpacity) {
+        _headerOpacity.value = newOpacity;
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _headerOpacity.dispose();
+    super.dispose();
   }
 
   Future<void> _loadUserData() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      final dio = DioClient.instance;
 
-      // Load user info from SharedPreferences
-      final phoneNumber = prefs.getString('user_phone');
-      final username = prefs.getString('username');
+      // Load user info from API
+      final response = await dio.get('/api/v1/users/me');
+      final user = response.data;
 
       // Load stats from API
       final stats = await _statsDataSource.getUserStats();
 
       setState(() {
-        _phoneNumber = phoneNumber;
-        _username = username;
+        _phoneNumber = user['phone_number'];
+        _firstName = user['first_name'];
+        _lastName = user['last_name'];
+        // Add base URL if avatar_url starts with /uploads
+        _avatarUrl =
+            user['avatar_url'] != null &&
+                user['avatar_url'].toString().startsWith('/uploads')
+            ? 'http://localhost:8000${user['avatar_url']}'
+            : user['avatar_url'];
         _stats = stats;
         _isLoading = false;
       });
@@ -56,32 +92,259 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  Future<void> _pickAndUploadAvatar() async {
+    // Показываем диалог выбора источника
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: AppTheme.surfaceColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Выберите источник',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 20),
+              ListTile(
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Ionicons.camera,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+                title: const Text(
+                  'Камера',
+                  style: TextStyle(color: Colors.white),
+                ),
+                onTap: () => Navigator.pop(context, ImageSource.camera),
+              ),
+              ListTile(
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Ionicons.images,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+                title: const Text(
+                  'Галерея',
+                  style: TextStyle(color: Colors.white),
+                ),
+                onTap: () => Navigator.pop(context, ImageSource.gallery),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (source == null) return;
+
+    // Для камеры запрашиваем разрешение
+    // Для галереи в iOS 14+ не требуется разрешение при использовании image_picker
+    if (source == ImageSource.camera) {
+      final status = await Permission.camera.request();
+
+      if (!status.isGranted) {
+        if (mounted) {
+          final shouldOpenSettings = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              backgroundColor: AppTheme.surfaceColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              title: const Text(
+                'Разрешение не предоставлено',
+                style: TextStyle(color: Colors.white),
+              ),
+              content: Text(
+                'Для использования камеры необходимо разрешение. Открыть настройки?',
+                style: TextStyle(color: Colors.white.withOpacity(0.7)),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Отмена'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppTheme.primaryColor,
+                  ),
+                  child: const Text('Настройки'),
+                ),
+              ],
+            ),
+          );
+
+          if (shouldOpenSettings == true) {
+            await openAppSettings();
+          }
+        }
+        return;
+      }
+    }
+
+    // Выбираем изображение
+    try {
+      final pickedFile = await _imagePicker.pickImage(
+        source: source,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+
+      if (pickedFile == null) return;
+
+      // Показываем загрузку
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) =>
+              const Center(child: CircularProgressIndicator()),
+        );
+      }
+
+      // Загружаем на сервер
+      final dio = DioClient.instance;
+      final formData = FormData.fromMap({
+        'avatar': await MultipartFile.fromFile(
+          pickedFile.path,
+          filename: 'avatar.jpg',
+        ),
+      });
+
+      await dio.put('/api/v1/users/me', data: formData);
+
+      // Закрываем диалог загрузки
+      if (mounted) {
+        Navigator.pop(context);
+      }
+
+      developer.log('✅ [PROFILE] Avatar uploaded successfully');
+
+      // Перезагружаем данные профиля
+      await _loadUserData();
+
+      if (mounted) {
+        SnackBarUtils.showSuccess(context, 'Фото профиля обновлено');
+      }
+    } catch (e) {
+      developer.log('❌ [PROFILE] Error uploading avatar: $e');
+
+      // Закрываем диалог загрузки если открыт
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      if (mounted) {
+        SnackBarUtils.showError(context, 'Не удалось загрузить фото');
+      }
+    }
+  }
+
   Future<void> _logout() async {
     // Show confirmation dialog
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.surfaceColor,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          'Выйти из аккаунта?',
-          style: TextStyle(color: Colors.white),
-        ),
-        content: const Text(
-          'Вы действительно хотите выйти?',
-          style: TextStyle(color: Colors.white70),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Отмена'),
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.9,
+          decoration: BoxDecoration(
+            color: AppTheme.surfaceColor,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Выйти'),
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Выйти из аккаунта?',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Вы действительно хотите выйти?',
+                style: TextStyle(color: Colors.white70, fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              // Кнопка "Отмена"
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white.withOpacity(0.1),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    'Отмена',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Кнопка "Выйти"
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    'Выйти',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
 
@@ -119,62 +382,190 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: const CustomAppBar(title: 'Профиль'),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: AppTheme.lightBackgroundGradient,
-        ),
-        child: SafeArea(
-          child: _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : ListView(
-                  padding: const EdgeInsets.all(20),
+      backgroundColor: AppTheme.pageBackgroundColor,
+      body: Column(
+        children: [
+          // Custom Header с анимацией
+          Container(
+            color: AppTheme.headerBackgroundColor,
+            child: SafeArea(
+              bottom: false,
+              child: Container(
+                height: 64,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Stack(
                   children: [
-                    const SizedBox(height: 20),
-                    // User Avatar
+                    // Анимированный заголовок
                     Center(
-                      child: Container(
-                        width: 100,
-                        height: 100,
-                        decoration: BoxDecoration(
-                          gradient: AppTheme.primaryGradient,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppTheme.primaryColor.withOpacity(0.3),
-                              blurRadius: 20,
-                              spreadRadius: 5,
-                            ),
-                          ],
-                        ),
-                        child: const Icon(
-                          Ionicons.person,
-                          size: 50,
-                          color: Colors.white,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 48),
+                        child: ValueListenableBuilder<double>(
+                          valueListenable: _headerOpacity,
+                          builder: (context, opacity, child) {
+                            return Opacity(
+                              opacity: opacity,
+                              child: const Text(
+                                'Профиль',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                              ),
+                            );
+                          },
                         ),
                       ),
                     ),
-                    const SizedBox(height: 24),
-                    // User Info
-                    _buildInfoCard(),
-                    const SizedBox(height: 24),
-                    // Settings Section
-                    _buildSectionTitle('Настройки'),
-                    const SizedBox(height: 12),
-                    _buildSettingsCard(),
-                    const SizedBox(height: 24),
-                    // About Section
-                    _buildSectionTitle('О приложении'),
-                    const SizedBox(height: 12),
-                    _buildAboutCard(),
-                    const SizedBox(height: 24),
-                    // Logout Button
-                    _buildLogoutButton(),
-                    const SizedBox(height: 40),
+                    // Кнопка назад (всегда видна)
+                    // Positioned(
+                    //   left: 0,
+                    //   top: 0,
+                    //   bottom: 0,
+                    //   child: Center(
+                    //     child: GestureDetector(
+                    //       behavior: HitTestBehavior.opaque,
+                    //       onTap: () {
+                    //         if (Navigator.canPop(context)) {
+                    //           Navigator.of(context).pop();
+                    //         }
+                    //       },
+                    //       child: Container(
+                    //         padding: const EdgeInsets.all(8),
+                    //         child: const Icon(
+                    //           Ionicons.chevron_back,
+                    //           color: AppTheme.primaryColor,
+                    //           size: 24,
+                    //         ),
+                    //       ),
+                    //     ),
+                    //   ),
+                    // ),
                   ],
                 ),
-        ),
+              ),
+            ),
+          ),
+
+          // Content
+          Expanded(
+            child: _isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        AppTheme.primaryColor,
+                      ),
+                    ),
+                  )
+                : CustomScrollView(
+                    controller: _scrollController,
+                    slivers: [
+                      // Основной контент
+                      SliverPadding(
+                        padding: const EdgeInsets.all(20),
+                        sliver: SliverList(
+                          delegate: SliverChildListDelegate([
+                            const SizedBox(height: 20),
+                            // User Avatar
+                            Center(
+                              child: GestureDetector(
+                                onTap: _pickAndUploadAvatar,
+                                child: Stack(
+                                  children: [
+                                    Container(
+                                      width: 100,
+                                      height: 100,
+                                      decoration: BoxDecoration(
+                                        gradient: _avatarUrl == null
+                                            ? AppTheme.primaryGradient
+                                            : null,
+                                        shape: BoxShape.circle,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: AppTheme.primaryColor
+                                                .withOpacity(0.3),
+                                            blurRadius: 20,
+                                            spreadRadius: 5,
+                                          ),
+                                        ],
+                                      ),
+                                      child: _avatarUrl != null
+                                          ? ClipOval(
+                                              child: CachedNetworkImage(
+                                                imageUrl: _avatarUrl!,
+                                                fit: BoxFit.cover,
+                                                placeholder: (context, url) =>
+                                                    const Center(
+                                                      child:
+                                                          CircularProgressIndicator(),
+                                                    ),
+                                                errorWidget:
+                                                    (context, url, error) =>
+                                                        const Icon(
+                                                          Ionicons.person,
+                                                          size: 50,
+                                                          color: Colors.white,
+                                                        ),
+                                              ),
+                                            )
+                                          : const Icon(
+                                              Ionicons.person,
+                                              size: 50,
+                                              color: Colors.white,
+                                            ),
+                                    ),
+                                    Positioned(
+                                      right: 0,
+                                      bottom: 0,
+                                      child: Container(
+                                        width: 32,
+                                        height: 32,
+                                        decoration: BoxDecoration(
+                                          color: AppTheme.primaryColor,
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: AppTheme.pageBackgroundColor,
+                                            width: 2,
+                                          ),
+                                        ),
+                                        child: const Icon(
+                                          Ionicons.camera,
+                                          color: Colors.white,
+                                          size: 16,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            // User Info
+                            _buildInfoCard(),
+                            const SizedBox(height: 24),
+                            // Settings Section
+                            _buildSectionTitle('Настройки'),
+                            const SizedBox(height: 12),
+                            _buildSettingsCard(),
+                            const SizedBox(height: 24),
+                            // About Section
+                            _buildSectionTitle('О приложении'),
+                            const SizedBox(height: 12),
+                            _buildAboutCard(),
+                            const SizedBox(height: 24),
+                            // Logout Button
+                            _buildLogoutButton(),
+                            const SizedBox(height: 20),
+                          ]),
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
+        ],
       ),
     );
   }
@@ -195,14 +586,17 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
       child: Column(
         children: [
-          // Username
+          // Name
           Text(
-            _username ?? 'Пользователь',
+            _firstName != null && _lastName != null
+                ? '$_firstName $_lastName'
+                : _firstName ?? _lastName ?? 'Пользователь',
             style: const TextStyle(
               color: Colors.white,
               fontSize: 24,
               fontWeight: FontWeight.bold,
             ),
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           // Phone
@@ -318,33 +712,57 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
           const Divider(height: 1, color: Colors.white12),
           _buildSettingsItem(
-            icon: Ionicons.notifications_outline,
-            title: 'Уведомления',
-            subtitle: 'Управление push-уведомлениями',
+            icon: Ionicons.trophy_outline,
+            title: 'Челленджи',
+            subtitle: 'Совместные события и достижения',
             onTap: () {
-              SnackBarUtils.showInfo(
-                context,
-                'Настройки уведомлений - в разработке',
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => const ChallengesPage()),
               );
             },
           ),
           const Divider(height: 1, color: Colors.white12),
           _buildSettingsItem(
-            icon: Ionicons.language_outline,
-            title: 'Язык',
-            subtitle: 'Русский',
+            icon: Ionicons.sparkles_outline,
+            title: 'AI Истории',
+            subtitle: 'Создайте стихи и рассказы из воспоминаний',
             onTap: () {
-              SnackBarUtils.showInfo(context, 'Выбор языка - в разработке');
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => const AIStoriesPage()),
+              );
             },
           ),
           const Divider(height: 1, color: Colors.white12),
           _buildSettingsItem(
-            icon: Ionicons.moon_outline,
-            title: 'Тема',
-            subtitle: 'Светлая',
+            icon: Ionicons.medal_outline,
+            title: 'Достижения',
+            subtitle: 'Ваши награды и прогресс',
             onTap: () {
-              SnackBarUtils.showInfo(context, 'Выбор темы - в разработке');
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const AchievementsPage(),
+                ),
+              );
             },
+          ),
+          const Divider(height: 1, color: Colors.white12),
+          _buildSettingsItem(
+            icon: Ionicons.notifications_outline,
+            title: 'Уведомления',
+            trailing: Switch(
+              value: _notificationsEnabled,
+              onChanged: (value) {
+                setState(() {
+                  _notificationsEnabled = value;
+                });
+                SnackBarUtils.showSuccess(
+                  context,
+                  value ? 'Уведомления включены' : 'Уведомления выключены',
+                );
+              },
+              activeThumbColor: AppTheme.primaryColor,
+            ),
+            onTap: null,
           ),
         ],
       ),
@@ -397,7 +815,8 @@ class _ProfilePageState extends State<ProfilePage> {
     required IconData icon,
     required String title,
     String? subtitle,
-    required VoidCallback onTap,
+    Widget? trailing,
+    VoidCallback? onTap,
   }) {
     return InkWell(
       onTap: onTap,
@@ -441,11 +860,12 @@ class _ProfilePageState extends State<ProfilePage> {
                 ],
               ),
             ),
-            Icon(
-              Ionicons.chevron_forward_outline,
-              color: Colors.white.withOpacity(0.3),
-              size: 20,
-            ),
+            trailing ??
+                Icon(
+                  Ionicons.chevron_forward_outline,
+                  color: Colors.white.withOpacity(0.3),
+                  size: 20,
+                ),
           ],
         ),
       ),

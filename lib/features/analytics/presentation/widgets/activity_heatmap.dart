@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:memoir/core/theme/app_theme.dart';
 import 'package:memoir/features/analytics/data/models/analytics_model.dart';
 import 'package:intl/intl.dart';
 
@@ -8,8 +9,8 @@ class ActivityHeatmap extends StatelessWidget {
   const ActivityHeatmap({super.key, required this.dailyActivities});
 
   Color _getColorForActivity(int totalActivity) {
-    if (totalActivity == 0) return Colors.grey.shade200;
-    if (totalActivity <= 2) return const Color(0xFFc6e48b);
+    if (totalActivity == 0) return Colors.white.withOpacity(0.1);
+    if (totalActivity <= 2) return const Color(0xFFc6e48b).withOpacity(0.5);
     if (totalActivity <= 5) return const Color(0xFF7bc96f);
     if (totalActivity <= 10) return const Color(0xFF49af5d);
     return const Color(0xFF196127);
@@ -56,11 +57,12 @@ class ActivityHeatmap extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.cardColor,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(0.2),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -80,7 +82,7 @@ class ActivityHeatmap extends StatelessWidget {
                       day,
                       style: TextStyle(
                         fontSize: 10,
-                        color: Colors.black.withOpacity(0.5),
+                        color: Colors.white.withOpacity(0.6),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -107,7 +109,7 @@ class ActivityHeatmap extends StatelessWidget {
                       'W${weekIndex + 1}',
                       style: TextStyle(
                         fontSize: 10,
-                        color: Colors.black.withOpacity(0.4),
+                        color: Colors.white.withOpacity(0.4),
                       ),
                     ),
                   ),
@@ -135,7 +137,7 @@ class ActivityHeatmap extends StatelessWidget {
                                 fontWeight: FontWeight.w600,
                                 color: totalActivity > 5
                                     ? Colors.white
-                                    : Colors.black87,
+                                    : Colors.white.withOpacity(0.8),
                               ),
                             ),
                           ),
@@ -158,7 +160,7 @@ class ActivityHeatmap extends StatelessWidget {
                 'Меньше',
                 style: TextStyle(
                   fontSize: 10,
-                  color: Colors.black.withOpacity(0.5),
+                  color: Colors.white.withOpacity(0.6),
                 ),
               ),
               const SizedBox(width: 8),
@@ -178,7 +180,7 @@ class ActivityHeatmap extends StatelessWidget {
                 'Больше',
                 style: TextStyle(
                   fontSize: 10,
-                  color: Colors.black.withOpacity(0.5),
+                  color: Colors.white.withOpacity(0.6),
                 ),
               ),
             ],

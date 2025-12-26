@@ -159,20 +159,23 @@ class KanbanBoard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.grey.shade50,
+                color: AppTheme.cardColor.withOpacity(0.5),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: Colors.grey.shade200,
+                  color: color.withOpacity(0.2),
                   style: BorderStyle.solid,
                 ),
               ),
               child: Column(
                 children: [
-                  Icon(icon, size: 32, color: Colors.grey.shade300),
+                  Icon(icon, size: 32, color: Colors.white.withOpacity(0.3)),
                   const SizedBox(height: 8),
                   Text(
                     'Нет задач',
-                    style: TextStyle(fontSize: 13, color: Colors.grey.shade400),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.white.withOpacity(0.4),
+                    ),
                   ),
                 ],
               ),

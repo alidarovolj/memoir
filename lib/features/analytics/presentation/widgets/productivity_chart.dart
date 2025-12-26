@@ -14,10 +14,16 @@ class ProductivityChart extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.all(40),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppTheme.cardColor,
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withOpacity(0.1)),
         ),
-        child: const Center(child: Text('Недостаточно данных для графика')),
+        child: Center(
+          child: Text(
+            'Недостаточно данных для графика',
+            style: TextStyle(color: Colors.white.withOpacity(0.6)),
+          ),
+        ),
       );
     }
 
@@ -25,11 +31,12 @@ class ProductivityChart extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       height: 300,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.cardColor,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(0.2),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -42,7 +49,10 @@ class ProductivityChart extends StatelessWidget {
             drawVerticalLine: false,
             horizontalInterval: 1,
             getDrawingHorizontalLine: (value) {
-              return FlLine(color: Colors.grey.shade200, strokeWidth: 1);
+              return FlLine(
+                color: Colors.white.withOpacity(0.1),
+                strokeWidth: 1,
+              );
             },
           ),
           titlesData: FlTitlesData(
@@ -55,7 +65,7 @@ class ProductivityChart extends StatelessWidget {
                     value.toInt().toString(),
                     style: TextStyle(
                       fontSize: 10,
-                      color: Colors.black.withOpacity(0.5),
+                      color: Colors.white.withOpacity(0.6),
                     ),
                   );
                 },
@@ -74,7 +84,7 @@ class ProductivityChart extends StatelessWidget {
                         period[1],
                         style: TextStyle(
                           fontSize: 10,
-                          color: Colors.black.withOpacity(0.5),
+                          color: Colors.white.withOpacity(0.6),
                         ),
                       );
                     }
@@ -110,7 +120,7 @@ class ProductivityChart extends StatelessWidget {
               dotData: const FlDotData(show: true),
               belowBarData: BarAreaData(
                 show: true,
-                color: AppTheme.primaryColor.withOpacity(0.1),
+                color: AppTheme.primaryColor.withOpacity(0.2),
               ),
             ),
             // Memories line
@@ -131,12 +141,14 @@ class ProductivityChart extends StatelessWidget {
               dotData: const FlDotData(show: true),
               belowBarData: BarAreaData(
                 show: true,
-                color: const Color(0xFF667EEA).withOpacity(0.1),
+                color: const Color(0xFF667EEA).withOpacity(0.2),
               ),
             ),
           ],
           lineTouchData: LineTouchData(
             touchTooltipData: LineTouchTooltipData(
+              tooltipBgColor: AppTheme.cardColor,
+              tooltipBorder: BorderSide(color: Colors.white.withOpacity(0.2)),
               getTooltipItems: (touchedSpots) {
                 return touchedSpots.map((spot) {
                   final period = trends[spot.x.toInt()].period;

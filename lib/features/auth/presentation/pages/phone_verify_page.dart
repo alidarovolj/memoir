@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
+import 'package:ionicons/ionicons.dart';
 import 'package:memoir/core/theme/app_theme.dart';
 import 'package:memoir/core/utils/snackbar_utils.dart';
 import 'package:memoir/core/services/sms_auth_service.dart';
 import 'package:memoir/core/services/notification_service.dart';
 import 'package:memoir/core/network/dio_client.dart';
+import 'package:memoir/features/auth/presentation/pages/profile_setup_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'dart:developer' as developer;
@@ -49,7 +51,10 @@ class _PhoneVerifyPageState extends State<PhoneVerifyPage> {
   void dispose() {
     _timer?.cancel();
     _timer = null;
-    _codeController.dispose();
+    // Dispose controller only if it hasn't been disposed yet
+    if (mounted) {
+      _codeController.dispose();
+    }
     super.dispose();
   }
 
@@ -123,8 +128,28 @@ class _PhoneVerifyPageState extends State<PhoneVerifyPage> {
 
       if (!mounted) return;
 
-      // Navigate to home (don't update state after navigation)
-      Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+      // Проверяем, заполнен ли профиль (только имя и фамилия)
+      final hasFirstName =
+          response['user']['first_name'] != null &&
+          response['user']['first_name'].toString().isNotEmpty;
+      final hasLastName =
+          response['user']['last_name'] != null &&
+          response['user']['last_name'].toString().isNotEmpty;
+
+      // Если профиль не заполнен, перенаправляем на страницу настройки профиля
+      if (!hasFirstName || !hasLastName) {
+        developer.log(
+          '👤 [PHONE_VERIFY] Profile incomplete, redirecting to setup',
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const ProfileSetupPage()),
+        );
+      } else {
+        // Профиль заполнен, переходим на домашнюю страницу
+        developer.log('✅ [PHONE_VERIFY] Profile complete, going to home');
+        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+      }
     } catch (e) {
       developer.log('❌ [PHONE_VERIFY] Error: $e');
 
@@ -180,119 +205,186 @@ class _PhoneVerifyPageState extends State<PhoneVerifyPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: Container(
-        decoration: BoxDecoration(gradient: AppTheme.lightBackgroundGradient),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 32),
-
-                // Title
-                Text(
-                  'Введите код',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.headlineLarge?.copyWith(fontSize: 32),
-                  textAlign: TextAlign.center,
+      backgroundColor: AppTheme.pageBackgroundColor,
+      body: Column(
+        children: [
+          // Custom Header
+          Container(
+            color: AppTheme.headerBackgroundColor,
+            child: SafeArea(
+              bottom: false,
+              child: Container(
+                height: 64,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Stack(
+                  children: [
+                    // Заголовок
+                    const Center(
+                      child: Text(
+                        'Подтверждение',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    // Кнопка назад
+                    Positioned(
+                      left: 0,
+                      top: 0,
+                      bottom: 0,
+                      child: Center(
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () => Navigator.of(context).pop(),
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            child: const Icon(
+                              Ionicons.chevron_back,
+                              color: AppTheme.primaryColor,
+                              size: 24,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
+              ),
+            ),
+          ),
 
-                const SizedBox(height: 16),
+          // Content
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 32),
 
-                // Subtitle
-                Text(
-                  'Мы отправили SMS с кодом на номер',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade600),
-                  textAlign: TextAlign.center,
-                ),
-
-                const SizedBox(height: 8),
-
-                // Phone Number
-                Text(
-                  widget.phoneNumber,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.center,
-                ),
-
-                const SizedBox(height: 48),
-
-                // PIN Code Input
-                PinCodeTextField(
-                  key: _pinCodeKey,
-                  appContext: context,
-                  length: 6,
-                  controller: _codeController,
-                  animationType: AnimationType.fade,
-                  keyboardType: TextInputType.number,
-                  autoFocus: true,
-                  enabled: !_isLoading,
-                  pinTheme: PinTheme(
-                    shape: PinCodeFieldShape.box,
-                    borderRadius: BorderRadius.circular(16),
-                    fieldHeight: 60,
-                    fieldWidth: 50,
-                    activeFillColor: Colors.white.withOpacity(0.9),
-                    inactiveFillColor: Colors.white.withOpacity(0.5),
-                    selectedFillColor: Colors.white.withOpacity(0.9),
-                    activeColor: AppTheme.primaryColor,
-                    inactiveColor: Colors.grey.shade300,
-                    selectedColor: AppTheme.primaryColor,
+                  // Title
+                  const Text(
+                    'Введите код',
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  animationDuration: const Duration(milliseconds: 200),
-                  backgroundColor: Colors.transparent,
-                  enableActiveFill: true,
-                  onCompleted: (code) {
-                    _verifyCode(code);
-                  },
-                  onChanged: (value) {},
-                ),
 
-                const SizedBox(height: 32),
+                  const SizedBox(height: 16),
 
-                // Loading Indicator
-                if (_isLoading)
-                  const Center(child: CircularProgressIndicator()),
+                  // Subtitle
+                  Text(
+                    'Мы отправили SMS с кодом на номер',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white.withOpacity(0.6),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
 
-                const Spacer(),
+                  const SizedBox(height: 8),
 
-                // Resend Code Button
-                Center(
-                  child: TextButton(
-                    onPressed: _canResend ? _resendCode : null,
-                    child: Text(
-                      _canResend
-                          ? 'Отправить код повторно'
-                          : 'Отправить повторно через $_resendCountdown сек',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: _canResend
-                            ? AppTheme.primaryColor
-                            : Colors.grey.shade600,
-                        fontWeight: FontWeight.w600,
+                  // Phone Number
+                  Text(
+                    widget.phoneNumber,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primaryColor,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+
+                  const SizedBox(height: 48),
+
+                  // PIN Code Input
+                  PinCodeTextField(
+                    key: _pinCodeKey,
+                    appContext: context,
+                    length: 6,
+                    controller: _codeController,
+                    animationType: AnimationType.fade,
+                    keyboardType: TextInputType.number,
+                    autoFocus: true,
+                    enabled: !_isLoading,
+                    cursorColor: Colors.white,
+                    textStyle: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                    pinTheme: PinTheme(
+                      shape: PinCodeFieldShape.box,
+                      borderRadius: BorderRadius.circular(12),
+                      fieldHeight: 60,
+                      fieldWidth: 50,
+                      activeFillColor: AppTheme.cardColor,
+                      inactiveFillColor: AppTheme.surfaceColor,
+                      selectedFillColor: AppTheme.cardColor,
+                      activeColor: AppTheme.primaryColor,
+                      inactiveColor: Colors.white.withOpacity(0.1),
+                      selectedColor: AppTheme.primaryColor,
+                      borderWidth: 1.5,
+                    ),
+                    animationDuration: const Duration(milliseconds: 200),
+                    backgroundColor: Colors.transparent,
+                    enableActiveFill: true,
+                    onCompleted: (code) {
+                      _verifyCode(code);
+                    },
+                    onChanged: (value) {},
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // Loading Indicator
+                  if (_isLoading)
+                    const Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppTheme.primaryColor,
+                        ),
+                      ),
+                    ),
+
+                  const Spacer(),
+
+                  // Resend Code Button
+                  Center(
+                    child: TextButton(
+                      onPressed: _canResend ? _resendCode : null,
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
+                      ),
+                      child: Text(
+                        _canResend
+                            ? 'Отправить код повторно'
+                            : 'Отправить повторно через $_resendCountdown сек',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: _canResend
+                              ? AppTheme.primaryColor
+                              : Colors.white.withOpacity(0.4),
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
-                ),
 
-                const SizedBox(height: 16),
-              ],
+                  const SizedBox(height: 16),
+                ],
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }

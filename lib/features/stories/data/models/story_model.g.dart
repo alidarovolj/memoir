@@ -20,6 +20,16 @@ _$StoryModelImpl _$$StoryModelImplFromJson(Map<String, dynamic> json) =>
       memory: json['memory'] == null
           ? null
           : StoryMemoryModel.fromJson(json['memory'] as Map<String, dynamic>),
+      likes_count: (json['likes_count'] as num?)?.toInt() ?? 0,
+      comments_count: (json['comments_count'] as num?)?.toInt() ?? 0,
+      shares_count: (json['shares_count'] as num?)?.toInt() ?? 0,
+      reposts_count: (json['reposts_count'] as num?)?.toInt() ?? 0,
+      is_liked: json['is_liked'] as bool? ?? false,
+      original_story: json['original_story'] == null
+          ? null
+          : StoryOriginalModel.fromJson(
+              json['original_story'] as Map<String, dynamic>,
+            ),
     );
 
 Map<String, dynamic> _$$StoryModelImplToJson(_$StoryModelImpl instance) =>
@@ -32,6 +42,12 @@ Map<String, dynamic> _$$StoryModelImplToJson(_$StoryModelImpl instance) =>
       'expires_at': instance.expires_at.toIso8601String(),
       'user': instance.user,
       'memory': instance.memory,
+      'likes_count': instance.likes_count,
+      'comments_count': instance.comments_count,
+      'shares_count': instance.shares_count,
+      'reposts_count': instance.reposts_count,
+      'is_liked': instance.is_liked,
+      'original_story': instance.original_story,
     };
 
 _$StoryUserModelImpl _$$StoryUserModelImplFromJson(Map<String, dynamic> json) =>
@@ -39,6 +55,9 @@ _$StoryUserModelImpl _$$StoryUserModelImplFromJson(Map<String, dynamic> json) =>
       id: json['id'] as String,
       username: json['username'] as String?,
       email: json['email'] as String?,
+      first_name: json['first_name'] as String?,
+      last_name: json['last_name'] as String?,
+      avatar_url: json['avatar_url'] as String?,
     );
 
 Map<String, dynamic> _$$StoryUserModelImplToJson(
@@ -47,6 +66,9 @@ Map<String, dynamic> _$$StoryUserModelImplToJson(
   'id': instance.id,
   'username': instance.username,
   'email': instance.email,
+  'first_name': instance.first_name,
+  'last_name': instance.last_name,
+  'avatar_url': instance.avatar_url,
 };
 
 _$StoryMemoryModelImpl _$$StoryMemoryModelImplFromJson(
@@ -70,3 +92,16 @@ Map<String, dynamic> _$$StoryMemoryModelImplToJson(
   'backdrop_url': instance.backdrop_url,
   'source_type': instance.source_type,
 };
+
+_$StoryOriginalModelImpl _$$StoryOriginalModelImplFromJson(
+  Map<String, dynamic> json,
+) => _$StoryOriginalModelImpl(
+  id: json['id'] as String,
+  user: json['user'] == null
+      ? null
+      : StoryUserModel.fromJson(json['user'] as Map<String, dynamic>),
+);
+
+Map<String, dynamic> _$$StoryOriginalModelImplToJson(
+  _$StoryOriginalModelImpl instance,
+) => <String, dynamic>{'id': instance.id, 'user': instance.user};

@@ -8,6 +8,7 @@ import 'package:memoir/features/tasks/presentation/widgets/task_timer_widget.dar
 import 'package:memoir/core/theme/app_theme.dart';
 import 'package:memoir/core/network/dio_client.dart';
 import 'package:memoir/core/utils/snackbar_utils.dart';
+import 'package:memoir/core/widgets/custom_header.dart';
 import 'dart:developer';
 
 class TaskDetailsPage extends StatefulWidget {
@@ -128,119 +129,74 @@ class _TaskDetailsPageState extends State<TaskDetailsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: AppTheme.lightBackgroundGradient,
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Custom AppBar
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(
-                        Ionicons.chevron_back,
-                        color: Colors.black87,
-                      ),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                    const Text(
-                      'Детали задачи',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                    ),
-                  ],
-                ),
+      backgroundColor: AppTheme.pageBackgroundColor,
+      body: Column(
+        children: [
+          // SafeArea с хедером
+          Container(
+            color: AppTheme.headerBackgroundColor,
+            child: SafeArea(
+              bottom: false,
+              child: CustomHeader(
+                title: widget.task.title,
+                type: HeaderType.pop,
               ),
-              // Body
-              Expanded(
-                child: _isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : SingleChildScrollView(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Task Title
-                            Row(
-                              children: [
-                                Container(
-                                  width: 4,
-                                  height: 40,
-                                  decoration: BoxDecoration(
-                                    gradient: AppTheme.primaryGradient,
-                                    borderRadius: BorderRadius.circular(2),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    widget.task.title,
-                                    style: const TextStyle(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black87,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-
-                            const SizedBox(height: 16),
-
-                            // Description
-                            if (widget.task.description != null &&
-                                widget.task.description!.isNotEmpty) ...[
-                              Text(
-                                widget.task.description!,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.grey.shade700,
-                                  height: 1.5,
-                                ),
-                              ),
-                              const SizedBox(height: 24),
-                            ],
-
-                            // Task Meta
-                            _buildMetaRow(),
-
-                            const SizedBox(height: 24),
-
-                            // Time Tracker
-                            TaskTimerWidget(
-                              taskId: widget.task.id,
-                              onTimerStateChanged: () {
-                                // Refresh task data when timer state changes
-                                widget.onTaskUpdated?.call();
-                              },
-                            ),
-
-                            const SizedBox(height: 32),
-
-                            // Subtasks Section
-                            SubtasksList(
-                              taskId: widget.task.id,
-                              subtasks: _subtasks,
-                              onToggle: _toggleSubtask,
-                              onDelete: _deleteSubtask,
-                              onAdd: _addSubtask,
-                            ),
-
-                            const SizedBox(height: 24),
-                          ],
-                        ),
-                      ),
-              ),
-            ],
+            ),
           ),
-        ),
+          // Body
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : SingleChildScrollView(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Description
+                        if (widget.task.description != null &&
+                            widget.task.description!.isNotEmpty) ...[
+                          Text(
+                            widget.task.description!,
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.white.withOpacity(0.8),
+                              height: 1.5,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                        ],
+
+                        // Task Meta
+                        _buildMetaRow(),
+
+                        const SizedBox(height: 24),
+
+                        // Time Tracker
+                        TaskTimerWidget(
+                          taskId: widget.task.id,
+                          onTimerStateChanged: () {
+                            // Refresh task data when timer state changes
+                            widget.onTaskUpdated?.call();
+                          },
+                        ),
+
+                        const SizedBox(height: 32),
+
+                        // Subtasks Section
+                        SubtasksList(
+                          taskId: widget.task.id,
+                          subtasks: _subtasks,
+                          onToggle: _toggleSubtask,
+                          onDelete: _deleteSubtask,
+                          onAdd: _addSubtask,
+                        ),
+
+                        const SizedBox(height: 24),
+                      ],
+                    ),
+                  ),
+          ),
+        ],
       ),
     );
   }
@@ -298,9 +254,9 @@ class _TaskDetailsPageState extends State<TaskDetailsPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withOpacity(0.2),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withOpacity(0.4)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -312,7 +268,7 @@ class _TaskDetailsPageState extends State<TaskDetailsPage> {
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: color.withOpacity(0.9),
+              color: color,
             ),
           ),
         ],

@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:memoir/core/network/auth_interceptor.dart';
 import 'package:memoir/core/config/api_config.dart';
 import 'package:memoir/core/services/auth_service.dart';
+import 'package:chucker_flutter/chucker_flutter.dart';
 
 class DioClient {
   static Dio? _instance;
@@ -15,7 +16,7 @@ class DioClient {
     _prefs = await SharedPreferences.getInstance();
     _instance = null; // Сбрасываем instance чтобы пересоздать с новым ключом
   }
-  
+
   /// Create a new Dio instance with auth interceptor
   static Dio createDio(SharedPreferences prefs) {
     final dio = Dio(
@@ -29,6 +30,9 @@ class DioClient {
         },
       ),
     );
+
+    // Add Chucker interceptor for network debugging (first, so it captures everything)
+    dio.interceptors.add(ChuckerDioInterceptor());
 
     // Add logging interceptor
     dio.interceptors.add(
@@ -47,10 +51,7 @@ class DioClient {
     if (_navigatorKey != null) {
       final authService = AuthService(dio, prefs);
       dio.interceptors.add(
-        AuthInterceptor(
-          authService: authService,
-          navigatorKey: _navigatorKey!,
-        ),
+        AuthInterceptor(authService: authService, navigatorKey: _navigatorKey!),
       );
     }
 
@@ -73,6 +74,9 @@ class DioClient {
           },
         ),
       );
+
+      // Add Chucker interceptor
+      _instance!.interceptors.add(ChuckerDioInterceptor());
 
       _instance!.interceptors.add(
         LogInterceptor(

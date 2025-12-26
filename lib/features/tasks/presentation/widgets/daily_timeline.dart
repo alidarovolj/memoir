@@ -116,8 +116,8 @@ class DailyTimeline extends StatelessWidget {
                     ? FontWeight.w600
                     : FontWeight.w400,
                 color: hasTasksAtThisHour
-                    ? Colors.black87
-                    : Colors.grey.shade400,
+                    ? Colors.white
+                    : Colors.white.withOpacity(0.4),
               ),
             ),
           ),
@@ -194,178 +194,172 @@ class DailyTimeline extends StatelessWidget {
 
   Widget _buildTaskItem(BuildContext context, TaskModel task) {
     final priorityColor = _getPriorityColor(task.priority);
-    final isUrgent = task.priority == TaskPriority.urgent;
+    final isCompleted = task.status == TaskStatus.completed;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isUrgent ? Colors.red.shade300 : Colors.grey.shade200,
-          width: isUrgent ? 2 : 1,
-        ),
+        border: Border.all(color: priorityColor.withOpacity(0.3), width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              // Priority indicator
-              Container(
-                width: 4,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: priorityColor,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(width: 12),
-
-              // Task title
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      task.title,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            if (onTaskTap != null) {
+              onTaskTap!(task);
+            }
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                // Checkbox
+                GestureDetector(
+                  onTap: () {
+                    if (task.status != TaskStatus.completed) {
+                      _handleTaskComplete(context, task);
+                    }
+                  },
+                  child: Container(
+                    width: 20,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: isCompleted ? AppTheme.primaryGradient : null,
+                      border: isCompleted
+                          ? null
+                          : Border.all(
+                              color: priorityColor.withOpacity(0.6),
+                              width: 2,
+                            ),
                     ),
-                    if (task.description != null &&
-                        task.description!.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(
+                    child: isCompleted
+                        ? const Icon(
+                            Ionicons.checkmark,
+                            size: 12,
+                            color: Colors.white,
+                          )
+                        : null,
+                  ),
+                ),
+                const SizedBox(width: 12),
+
+                // Task content
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        task.title,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: isCompleted
+                              ? Colors.white.withOpacity(0.5)
+                              : Colors.white,
+                          decoration: isCompleted
+                              ? TextDecoration.lineThrough
+                              : null,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (task.description != null &&
+                          task.description!.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
                           task.description!,
                           style: TextStyle(
                             fontSize: 13,
-                            color: Colors.grey.shade600,
+                            color: Colors.white.withOpacity(0.6),
                           ),
-                          maxLines: 2,
+                          maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                  ],
-                ),
-              ),
-
-              // Actions
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Priority badge
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: priorityColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: priorityColor.withOpacity(0.3)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (isUrgent)
-                          Icon(
-                            Ionicons.alert_circle,
-                            size: 14,
-                            color: priorityColor,
-                          ),
-                        if (isUrgent) const SizedBox(width: 4),
-                        Text(
-                          _getPriorityLabel(task.priority),
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: priorityColor,
-                          ),
+                      ],
+                      if (task.tags != null && task.tags!.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Wrap(
+                          spacing: 4,
+                          children: task.tags!.take(2).map((tag) {
+                            return Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryColor.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                tag,
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.white.withOpacity(0.7),
+                                ),
+                              ),
+                            );
+                          }).toList(),
                         ),
                       ],
-                    ),
+                    ],
                   ),
+                ),
 
-                  // Complete button
-                  if (task.status != TaskStatus.completed)
-                    IconButton(
-                      icon: const Icon(Ionicons.checkmark_circle_outline),
-                      iconSize: 20,
-                      color: Colors.green,
-                      onPressed: () => _handleTaskComplete(context, task),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
+                const SizedBox(width: 8),
 
-                  // Delete button
-                  IconButton(
-                    icon: const Icon(Ionicons.trash_outline),
-                    iconSize: 18,
-                    color: Colors.red,
-                    onPressed: () {
-                      if (onTaskDelete != null) {
-                        onTaskDelete!(task);
-                      }
-                    },
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
-                ],
-              ),
-            ],
-          ),
-
-          // Tags (if any)
-          if (task.tags != null && task.tags!.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 6,
-              children: task.tags!.take(3).map((tag) {
-                return Container(
+                // Priority badge
+                Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
+                    horizontal: 6,
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(4),
+                    color: priorityColor.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: priorityColor.withOpacity(0.4)),
                   ),
-                  child: Text(
-                    tag,
-                    style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+                  child: Icon(
+                    _getPriorityIcon(task.priority),
+                    size: 14,
+                    color: priorityColor,
                   ),
-                );
-              }).toList(),
+                ),
+
+                const SizedBox(width: 4),
+
+                // Delete button
+                IconButton(
+                  icon: const Icon(Ionicons.trash_outline),
+                  iconSize: 16,
+                  color: Colors.white.withOpacity(0.4),
+                  onPressed: () {
+                    if (onTaskDelete != null) {
+                      onTaskDelete!(task);
+                    }
+                  },
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 32,
+                    minHeight: 32,
+                  ),
+                ),
+              ],
             ),
-          ],
-        ],
+          ),
+        ),
       ),
     );
-  }
-
-  String _getPriorityLabel(TaskPriority priority) {
-    switch (priority) {
-      case TaskPriority.low:
-        return 'Низкий';
-      case TaskPriority.medium:
-        return 'Средний';
-      case TaskPriority.high:
-        return 'Высокий';
-      case TaskPriority.urgent:
-        return 'Срочно';
-    }
   }
 
   Color _getPriorityColor(TaskPriority priority) {
@@ -378,6 +372,19 @@ class DailyTimeline extends StatelessWidget {
         return Colors.orange;
       case TaskPriority.urgent:
         return Colors.red;
+    }
+  }
+
+  IconData _getPriorityIcon(TaskPriority priority) {
+    switch (priority) {
+      case TaskPriority.low:
+        return Ionicons.remove_outline;
+      case TaskPriority.medium:
+        return Ionicons.arrow_up_outline;
+      case TaskPriority.high:
+        return Ionicons.alert_outline;
+      case TaskPriority.urgent:
+        return Ionicons.alert_circle;
     }
   }
 

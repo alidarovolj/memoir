@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:memoir/core/theme/app_theme.dart';
 import 'dart:async';
+import 'package:url_launcher/url_launcher.dart';
 
 class BannerCarousel extends StatefulWidget {
   final List<BannerItem> banners;
@@ -56,7 +57,7 @@ class _BannerCarouselState extends State<BannerCarousel> {
       return const SizedBox.shrink();
     }
 
-    return Container(
+    return SizedBox(
       height: widget.height,
       child: Stack(
         children: [
@@ -107,7 +108,18 @@ class _BannerCarouselState extends State<BannerCarousel> {
 
   Widget _buildBannerItem(BannerItem banner) {
     return GestureDetector(
-      onTap: banner.onTap,
+      onTap: () async {
+        // Если есть URL, открываем его
+        if (banner.url != null && banner.url!.isNotEmpty) {
+          final uri = Uri.parse(banner.url!);
+          if (await canLaunchUrl(uri)) {
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+          }
+        } else if (banner.onTap != null) {
+          // Иначе используем onTap callback
+          banner.onTap!();
+        }
+      },
       child: Container(
         decoration: BoxDecoration(
           boxShadow: [
@@ -229,6 +241,7 @@ class BannerItem {
   final String? assetPath;
   final String? title;
   final String? subtitle;
+  final String? url; // URL для открытия в браузере
   final VoidCallback? onTap;
 
   BannerItem({
@@ -236,6 +249,7 @@ class BannerItem {
     this.assetPath,
     this.title,
     this.subtitle,
+    this.url,
     this.onTap,
   });
 }

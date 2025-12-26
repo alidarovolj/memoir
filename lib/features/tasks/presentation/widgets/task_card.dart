@@ -27,7 +27,7 @@ class TaskCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.cardColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: _getPriorityColor(task.priority).withOpacity(0.3),
@@ -35,7 +35,7 @@ class TaskCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(0.2),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -90,8 +90,8 @@ class TaskCard extends StatelessWidget {
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: isCompleted
-                              ? Colors.grey.shade400
-                              : Colors.black87,
+                              ? Colors.white.withOpacity(0.4)
+                              : Colors.white,
                           decoration: isCompleted
                               ? TextDecoration.lineThrough
                               : null,
@@ -110,7 +110,7 @@ class TaskCard extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: _getPriorityColor(
                           task.priority,
-                        ).withOpacity(0.1),
+                        ).withOpacity(0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -128,7 +128,7 @@ class TaskCard extends StatelessWidget {
                       icon: const Icon(
                         Ionicons.trash_outline,
                         size: 18,
-                        color: Colors.grey,
+                        color: Colors.white54,
                       ),
                       onPressed: onDelete,
                       padding: EdgeInsets.zero,
@@ -142,7 +142,10 @@ class TaskCard extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text(
                     task.description!,
-                    style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white.withOpacity(0.7),
+                    ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -346,16 +349,16 @@ class TaskCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: AppTheme.primaryColor.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: AppTheme.primaryColor.withOpacity(0.2)),
       ),
       child: Row(
         children: [
           Icon(
             Ionicons.list_outline,
             size: 14,
-            color: Colors.grey.shade600,
+            color: Colors.white.withOpacity(0.7),
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -370,7 +373,7 @@ class TaskCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: Colors.grey.shade700,
+                        color: Colors.white.withOpacity(0.8),
                       ),
                     ),
                     Text(
@@ -391,7 +394,7 @@ class TaskCard extends StatelessWidget {
                   child: LinearProgressIndicator(
                     value: progress,
                     minHeight: 4,
-                    backgroundColor: Colors.grey.shade300,
+                    backgroundColor: Colors.white.withOpacity(0.2),
                     valueColor: AlwaysStoppedAnimation<Color>(
                       completedCount == totalCount
                           ? Colors.green

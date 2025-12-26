@@ -116,8 +116,6 @@ class _TaskTimerWidgetState extends State<TaskTimerWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -131,18 +129,12 @@ class _TaskTimerWidgetState extends State<TaskTimerWidget> {
                 ],
               )
             : null,
-        color: _isActive
-            ? null
-            : isDark
-            ? AppTheme.surfaceColor.withOpacity(0.5)
-            : Colors.grey.shade100,
+        color: _isActive ? null : AppTheme.cardColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: _isActive
               ? AppTheme.primaryColor.withOpacity(0.3)
-              : isDark
-              ? Colors.white.withOpacity(0.1)
-              : Colors.black.withOpacity(0.08),
+              : Colors.white.withOpacity(0.1),
           width: _isActive ? 2 : 1,
         ),
       ),
@@ -156,7 +148,7 @@ class _TaskTimerWidgetState extends State<TaskTimerWidget> {
               gradient: _isActive
                   ? AppTheme.primaryGradient
                   : LinearGradient(
-                      colors: [Colors.grey.shade400, Colors.grey.shade500],
+                      colors: [Colors.grey.shade700, Colors.grey.shade800],
                     ),
               borderRadius: BorderRadius.circular(12),
               boxShadow: _isActive
@@ -187,11 +179,7 @@ class _TaskTimerWidgetState extends State<TaskTimerWidget> {
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w700,
-                    color: _isActive
-                        ? AppTheme.primaryColor
-                        : isDark
-                        ? Colors.white
-                        : Colors.black87,
+                    color: _isActive ? AppTheme.primaryColor : Colors.white,
                     fontFeatures: const [FontFeature.tabularFigures()],
                   ),
                 ),
@@ -199,9 +187,7 @@ class _TaskTimerWidgetState extends State<TaskTimerWidget> {
                   _isActive ? 'Идет отсчет...' : 'Остановлено',
                   style: TextStyle(
                     fontSize: 12,
-                    color: isDark
-                        ? Colors.white.withOpacity(0.6)
-                        : Colors.black54,
+                    color: Colors.white.withOpacity(0.6),
                   ),
                 ),
               ],

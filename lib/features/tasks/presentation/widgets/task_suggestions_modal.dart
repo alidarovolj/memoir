@@ -16,9 +16,9 @@ class TaskSuggestionsModal extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        gradient: AppTheme.lightBackgroundGradient,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -29,7 +29,7 @@ class TaskSuggestionsModal extends StatelessWidget {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey[300],
+              color: Colors.white.withOpacity(0.3),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -52,26 +52,30 @@ class TaskSuggestionsModal extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         'AI предлагает задачи',
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
                       ),
                       Text(
                         'На основе вашего воспоминания',
-                        style: TextStyle(fontSize: 14, color: Colors.grey),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white.withOpacity(0.6),
+                        ),
                       ),
                     ],
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Ionicons.close),
+                  icon: const Icon(Ionicons.close, color: Colors.white),
                   onPressed: () => Navigator.pop(context),
                 ),
               ],
@@ -98,25 +102,25 @@ class TaskSuggestionsModal extends StatelessWidget {
           // Bottom actions
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-            child: Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      side: BorderSide(color: Colors.grey[300]!),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      'Отклонить все',
-                      style: TextStyle(fontSize: 16, color: Colors.grey),
-                    ),
+            child: SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () => Navigator.pop(context),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  side: BorderSide(color: Colors.white.withOpacity(0.2)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-              ],
+                child: Text(
+                  'Отклонить все',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.white.withOpacity(0.6),
+                  ),
+                ),
+              ),
             ),
           ),
         ],
@@ -131,12 +135,12 @@ class TaskSuggestionsModal extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(0.2),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -159,6 +163,7 @@ class TaskSuggestionsModal extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
                       ),
                     ),
@@ -171,7 +176,10 @@ class TaskSuggestionsModal extends StatelessWidget {
                 // Description
                 Text(
                   suggestion.description,
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.white.withOpacity(0.7),
+                  ),
                 ),
 
                 const SizedBox(height: 12),
@@ -204,11 +212,12 @@ class TaskSuggestionsModal extends StatelessWidget {
 
                 // Reasoning
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Icon(
                       Ionicons.information_circle_outline,
                       size: 16,
-                      color: Colors.grey[400],
+                      color: Colors.white.withOpacity(0.4),
                     ),
                     const SizedBox(width: 6),
                     Expanded(
@@ -216,7 +225,7 @@ class TaskSuggestionsModal extends StatelessWidget {
                         suggestion.reasoning,
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey[500],
+                          color: Colors.white.withOpacity(0.5),
                           fontStyle: FontStyle.italic,
                         ),
                       ),
@@ -230,7 +239,9 @@ class TaskSuggestionsModal extends StatelessWidget {
           // Action button
           Container(
             decoration: BoxDecoration(
-              border: Border(top: BorderSide(color: Colors.grey[200]!)),
+              border: Border(
+                top: BorderSide(color: Colors.white.withOpacity(0.1)),
+              ),
             ),
             child: InkWell(
               onTap: () {

@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:memoir/core/core.dart';
 import 'package:memoir/core/network/dio_client.dart';
+import 'package:memoir/core/widgets/audio_recorder_widget.dart';
+import 'package:memoir/core/widgets/audio_player_widget.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:memoir/features/smart_search/presentation/widgets/smart_search_modal.dart';
@@ -28,6 +30,9 @@ class _CreateMemoryPageState extends State<CreateMemoryPage>
   _selectedContent; // Store selected content from smart search
   File? _selectedImage; // Selected image file
   String? _uploadedImageUrl; // Uploaded image URL from backend
+  File? _selectedAudio; // Selected audio file
+  String? _uploadedAudioUrl; // Uploaded audio URL from backend
+  String? _audioTranscript; // Transcribed text from audio
   final ImagePicker _imagePicker = ImagePicker();
 
   final List<Map<String, dynamic>> _sourceTypes = [
@@ -104,7 +109,12 @@ class _CreateMemoryPageState extends State<CreateMemoryPage>
       }
     } catch (e) {
       if (mounted) {
-        SnackBarUtils.showError(context, 'Ошибка выбора изображения');
+        // Более детальное сообщение об ошибке
+        String errorMessage = 'Ошибка выбора изображения';
+        if (e.toString().contains('photo access')) {
+          errorMessage = 'Необходимо разрешение на доступ к галерее';
+        }
+        SnackBarUtils.showError(context, errorMessage);
       }
     }
   }
@@ -148,6 +158,97 @@ class _CreateMemoryPageState extends State<CreateMemoryPage>
       _selectedImage = null;
       _uploadedImageUrl = null;
     });
+  }
+
+  Future<void> _handleAudioRecording(String audioPath) async {
+    setState(() {
+      _selectedAudio = File(audioPath);
+      _selectedSourceType = 'voice';
+    });
+
+    // Upload audio to backend
+    await _uploadAudio();
+  }
+
+  Future<void> _uploadAudio() async {
+    if (_selectedAudio == null) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final dio = DioClient.instance;
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(
+          _selectedAudio!.path,
+          filename: 'voice_note_${DateTime.now().millisecondsSinceEpoch}.m4a',
+        ),
+      });
+
+      final response = await dio.post('/api/v1/voice/upload', data: formData);
+
+      if (response.data['success'] == true) {
+        setState(() {
+          _uploadedAudioUrl = response.data['audio_url'];
+          _audioTranscript = response.data['transcript'];
+          _isLoading = false;
+        });
+
+        // Автозаполнение контента транскрибированным текстом
+        if (_audioTranscript != null && _audioTranscript!.isNotEmpty) {
+          _contentController.text = _audioTranscript!;
+        }
+
+        if (mounted) {
+          SnackBarUtils.showSuccess(
+            context,
+            'Голосовая заметка загружена и транскрибирована! 🎙️',
+          );
+        }
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        SnackBarUtils.showError(context, 'Ошибка загрузки аудио: $e');
+      }
+    }
+  }
+
+  void _removeAudio() {
+    setState(() {
+      _selectedAudio = null;
+      _uploadedAudioUrl = null;
+      _audioTranscript = null;
+    });
+  }
+
+  void _showAudioRecorder() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.4,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (context, scrollController) {
+          return Container(
+            decoration: const BoxDecoration(
+              color: AppTheme.pageBackgroundColor,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            padding: const EdgeInsets.all(20),
+            child: AudioRecorderWidget(
+              onRecordingComplete: (path) {
+                Navigator.pop(context);
+                _handleAudioRecording(path);
+              },
+              onCancel: () => Navigator.pop(context),
+            ),
+          );
+        },
+      ),
+    );
   }
 
   void _fillFormFromSearchResult(ContentResult result) {
@@ -233,6 +334,14 @@ class _CreateMemoryPageState extends State<CreateMemoryPage>
         memoryData['image_url'] = 'http://localhost:8000$_uploadedImageUrl';
       }
 
+      // Add uploaded audio URL and transcript if exists
+      if (_uploadedAudioUrl != null) {
+        memoryData['audio_url'] = 'http://localhost:8000$_uploadedAudioUrl';
+        if (_audioTranscript != null) {
+          memoryData['audio_transcript'] = _audioTranscript;
+        }
+      }
+
       print('📝 [CREATE] Base memory data: $memoryData');
 
       // Add smart search metadata if available
@@ -297,64 +406,39 @@ class _CreateMemoryPageState extends State<CreateMemoryPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: CustomAppBar(
-        title: 'Новое воспоминание',
-        leading: IconButton(
-          icon: const Icon(Ionicons.close_outline),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: TextButton(
-              onPressed: _isLoading ? null : _createMemory,
-              style: TextButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 12,
-                ),
-              ),
-              child: _isLoading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Text(
-                      'Создать',
-                      style: TextStyle(fontWeight: FontWeight.w600),
-                    ),
-            ),
-          ),
-        ],
-      ),
       body: Container(
         decoration: const BoxDecoration(
           gradient: AppTheme.lightBackgroundGradient,
         ),
-        child: SafeArea(
-          child: SlideTransition(
-            position:
-                Tween<Offset>(
-                  begin: const Offset(0, 0.1),
-                  end: Offset.zero,
-                ).animate(
-                  CurvedAnimation(
-                    parent: _slideController,
-                    curve: Curves.easeOutCubic,
+        child: Column(
+          children: [
+            // SafeArea с хедером
+            Container(
+              color: AppTheme.headerBackgroundColor,
+              child: SafeArea(
+                bottom: false,
+                child: SlideTransition(
+                  position:
+                      Tween<Offset>(
+                        begin: const Offset(0, 0.1),
+                        end: Offset.zero,
+                      ).animate(
+                        CurvedAnimation(
+                          parent: _slideController,
+                          curve: Curves.easeOutCubic,
+                        ),
+                      ),
+                  child: FadeTransition(
+                    opacity: _slideController,
+                    child: CustomHeader(
+                      title: 'Новое воспоминание',
+                      type: HeaderType.close,
+                    ),
                   ),
                 ),
-            child: FadeTransition(
-              opacity: _slideController,
+              ),
+            ),
+            Expanded(
               child: Form(
                 key: _formKey,
                 child: SingleChildScrollView(
@@ -471,32 +555,43 @@ class _CreateMemoryPageState extends State<CreateMemoryPage>
                         const SizedBox(height: 24),
                       ],
 
+                      // Аудио плеер (если есть)
+                      if (_selectedAudio != null) ...[
+                        _buildSectionTitle('Голосовая заметка'),
+                        const SizedBox(height: 12),
+                        AudioPlayerWidget(
+                          audioPath: _selectedAudio!.path,
+                          onDelete: _removeAudio,
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+
                       // Переключатель "Опубликовать в историях"
                       _buildPublishAsStoryToggle(),
                       const SizedBox(height: 24),
 
                       // AI Info Card
-                      AIInfoCard(
-                        features: const [
-                          AIFeature(
-                            icon: Ionicons.apps_outline,
-                            text: 'Определит категорию автоматически',
-                          ),
-                          AIFeature(
-                            icon: Ionicons.pricetags_outline,
-                            text: 'Создаст релевантные теги',
-                          ),
-                          AIFeature(
-                            icon: Ionicons.cube_outline,
-                            text: 'Извлечёт ключевые метаданные',
-                          ),
-                          AIFeature(
-                            icon: Ionicons.search_outline,
-                            text: 'Добавит в семантический поиск',
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 32),
+                      // AIInfoCard(
+                      //   features: const [
+                      //     AIFeature(
+                      //       icon: Ionicons.apps_outline,
+                      //       text: 'Определит категорию автоматически',
+                      //     ),
+                      //     AIFeature(
+                      //       icon: Ionicons.pricetags_outline,
+                      //       text: 'Создаст релевантные теги',
+                      //     ),
+                      //     AIFeature(
+                      //       icon: Ionicons.cube_outline,
+                      //       text: 'Извлечёт ключевые метаданные',
+                      //     ),
+                      //     AIFeature(
+                      //       icon: Ionicons.search_outline,
+                      //       text: 'Добавит в семантический поиск',
+                      //     ),
+                      //   ],
+                      // ),
+                      // const SizedBox(height: 32),
 
                       // Кнопка создания (дополнительная)
                       GradientButton(
@@ -511,7 +606,7 @@ class _CreateMemoryPageState extends State<CreateMemoryPage>
                 ),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -644,6 +739,8 @@ class _CreateMemoryPageState extends State<CreateMemoryPage>
                   : () {
                       if (source['type'] == 'image') {
                         _pickImage();
+                      } else if (source['type'] == 'voice') {
+                        _showAudioRecorder();
                       }
                       setState(() {
                         _selectedSourceType = source['type'] as String;
@@ -670,7 +767,7 @@ class _CreateMemoryPageState extends State<CreateMemoryPage>
                     Icon(
                       source['icon'] as IconData,
                       color: isSelected
-                          ? Colors.white
+                          ? Colors.black
                           : (isDark
                                 ? Colors.white.withOpacity(0.5)
                                 : Colors.black54),
@@ -685,7 +782,7 @@ class _CreateMemoryPageState extends State<CreateMemoryPage>
                             ? FontWeight.w600
                             : FontWeight.w500,
                         color: isSelected
-                            ? Colors.white
+                            ? Colors.black
                             : (isDark
                                   ? Colors.white.withOpacity(0.5)
                                   : Colors.black54),

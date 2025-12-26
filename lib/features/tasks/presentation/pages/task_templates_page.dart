@@ -135,7 +135,6 @@ class _TaskTemplatesPageState extends State<TaskTemplatesPage> {
                     ? const LoadingState()
                     : _templates.isEmpty
                     ? EmptyState(
-                        icon: Ionicons.document_text_outline,
                         title: 'Нет шаблонов',
                         subtitle: 'Создайте свой первый шаблон',
                         buttonText: 'Создать шаблон',

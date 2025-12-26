@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:memoir/core/theme/app_theme.dart';
 
 class EmptyState extends StatelessWidget {
-  final IconData icon;
+  final IconData? icon;
   final String title;
   final String subtitle;
   final String? buttonText;
@@ -12,13 +12,13 @@ class EmptyState extends StatelessWidget {
 
   const EmptyState({
     super.key,
-    required this.icon,
+    this.icon,
     required this.title,
     required this.subtitle,
     this.buttonText,
     this.onButtonPressed,
     this.buttonIcon,
-    this.showIcon = true, // По умолчанию показываем
+    this.showIcon = false, // По умолчанию НЕ показываем
   });
 
   @override
@@ -30,7 +30,7 @@ class EmptyState extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             // Анимированная иконка (опционально)
-            if (showIcon) ...[
+            if (showIcon && icon != null) ...[
               TweenAnimationBuilder<double>(
                 duration: const Duration(milliseconds: 1000),
                 tween: Tween(begin: 0.0, end: 1.0),
@@ -52,7 +52,7 @@ class EmptyState extends StatelessWidget {
                           borderRadius: BorderRadius.circular(30),
                         ),
                         child: Icon(
-                          icon,
+                          icon!,
                           size: 80,
                           color: Colors.white.withOpacity(0.5),
                         ),

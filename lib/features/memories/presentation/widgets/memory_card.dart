@@ -1,21 +1,23 @@
 import 'package:flutter/material.dart';
-import 'dart:ui';
 import 'package:memoir/core/theme/app_theme.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
-class MemoryCard extends StatelessWidget {
+class MemoryCard extends StatefulWidget {
   final String title;
   final String content;
   final String? category;
   final List<String>? tags;
   final DateTime createdAt;
-  final String? imageUrl; // Poster/cover image
+  final String? imageUrl;
   final VoidCallback? onTap;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
-  final double? aiConfidence; // AI confidence score (0-1)
-  final bool isAiProcessing; // Whether AI is currently processing
+  final double? aiConfidence;
+  final bool isAiProcessing;
+  final String? authorName;
+  final String? authorAvatar;
+  final bool isOwnPost; // Новое поле для определения, свой ли это пост
 
   const MemoryCard({
     super.key,
@@ -30,401 +32,594 @@ class MemoryCard extends StatelessWidget {
     this.onDelete,
     this.aiConfidence,
     this.isAiProcessing = false,
+    this.authorName,
+    this.authorAvatar,
+    this.isOwnPost = true, // По умолчанию свой пост
   });
 
   @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  State<MemoryCard> createState() => _MemoryCardState();
+}
 
+class _MemoryCardState extends State<MemoryCard> {
+  bool _isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        color: isDark ? AppTheme.cardColor : Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 24,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
+      margin: const EdgeInsets.only(bottom: 8),
+      color: Colors.transparent, // Убираем фон
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(24),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(24),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final cardHeight = constraints.maxHeight;
-                final topImageHeight =
-                    cardHeight * 0.57; // ~57% высоты карточки
-
-                return SizedBox(
-                  height: cardHeight > 0 ? cardHeight : 420,
-                  child: Stack(
-                    children: [
-                      // Background image (blurred) - занимает всю карточку
-                      Positioned.fill(
-                        child: imageUrl != null && imageUrl!.isNotEmpty
-                            ? ImageFiltered(
-                                imageFilter: ImageFilter.blur(
-                                  sigmaX: 20,
-                                  sigmaY: 20,
-                                ),
-                                child: CachedNetworkImage(
-                                  imageUrl: imageUrl!,
-                                  fit: BoxFit.cover,
-                                  placeholder: (context, url) => Container(
-                                    decoration: BoxDecoration(
-                                      gradient: AppTheme.primaryGradient
-                                          .withOpacity(0.3),
-                                    ),
-                                    child: const Center(
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    ),
-                                  ),
-                                  errorWidget: (context, url, error) =>
-                                      Container(
-                                        decoration: BoxDecoration(
-                                          gradient: AppTheme.primaryGradient
-                                              .withOpacity(0.3),
-                                        ),
-                                        child: const Center(
-                                          child: Icon(
-                                            Ionicons.image_outline,
-                                            color: Colors.white,
-                                            size: 48,
-                                          ),
-                                        ),
-                                      ),
-                                ),
-                              )
-                            : Container(
-                                decoration: BoxDecoration(
-                                  gradient: AppTheme.primaryGradient
-                                      .withOpacity(0.3),
-                                ),
-                                child: const Center(
-                                  child: Icon(
-                                    Ionicons.image_outline,
-                                    color: Colors.white,
-                                    size: 48,
-                                  ),
-                                ),
-                              ),
+          onTap: widget.onTap,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header - User info (без горизонтальных отступов)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Row(
+                  children: [
+                    // Avatar
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: widget.authorAvatar == null
+                            ? AppTheme.primaryGradient
+                            : null,
                       ),
-
-                      // Четкое изображение в верхней части
-                      Positioned(
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        height: topImageHeight,
-                        child: imageUrl != null && imageUrl!.isNotEmpty
-                            ? CachedNetworkImage(
-                                imageUrl: imageUrl!,
-                                fit: BoxFit.contain,
-                                alignment: Alignment.topCenter,
+                      child: widget.authorAvatar != null
+                          ? ClipOval(
+                              child: CachedNetworkImage(
+                                imageUrl:
+                                    widget.authorAvatar!.startsWith('/uploads')
+                                    ? 'http://localhost:8000${widget.authorAvatar}'
+                                    : widget.authorAvatar!,
+                                fit: BoxFit.cover,
                                 placeholder: (context, url) => Container(
                                   decoration: BoxDecoration(
-                                    gradient: AppTheme.primaryGradient
-                                        .withOpacity(0.3),
+                                    gradient: AppTheme.primaryGradient,
                                   ),
                                 ),
                                 errorWidget: (context, url, error) => Container(
                                   decoration: BoxDecoration(
-                                    gradient: AppTheme.primaryGradient
-                                        .withOpacity(0.3),
+                                    gradient: AppTheme.primaryGradient,
                                   ),
-                                ),
-                              )
-                            : Container(
-                                decoration: BoxDecoration(
-                                  gradient: AppTheme.primaryGradient
-                                      .withOpacity(0.3),
-                                ),
-                              ),
-                      ),
-
-                      // Gradient overlay для плавного перехода от четкого фото к блюру
-                      Positioned.fill(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.transparent,
-                                Colors.transparent,
-                                Colors.black.withOpacity(0.2),
-                              ],
-                              stops: const [0.0, 0.5, 1.0],
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      // AI Processing indicator (top)
-                      if (isAiProcessing)
-                        Positioned(
-                          top: 16,
-                          right: 16,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppTheme.accentColor.withOpacity(0.95),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const SizedBox(
-                                  width: 12,
-                                  height: 12,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation(
-                                      Colors.white,
+                                  child: const Center(
+                                    child: Icon(
+                                      Ionicons.person,
+                                      color: Colors.white,
+                                      size: 20,
                                     ),
                                   ),
                                 ),
-                                const SizedBox(width: 8),
-                                const Text(
-                                  'AI Processing...',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ],
+                              ),
+                            )
+                          : const Center(
+                              child: Icon(
+                                Ionicons.person,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                            ),
+                    ),
+                    const SizedBox(width: 12),
+                    // Name and date
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.authorName ?? 'Вы',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
                             ),
                           ),
-                        ),
-
-                      // Content at bottom with blur effect
-                      Positioned(
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        child: ClipRRect(
-                          borderRadius: const BorderRadius.only(
-                            bottomLeft: Radius.circular(24),
-                            bottomRight: Radius.circular(24),
+                          const SizedBox(height: 2),
+                          Text(
+                            _formatDate(widget.createdAt),
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w400,
+                              color: Colors.white.withOpacity(0.5),
+                            ),
                           ),
-                          child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    Colors.black.withOpacity(0.5),
-                                    Colors.black.withOpacity(0.75),
-                                  ],
-                                ),
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(20),
-                                child: Builder(
-                                  builder: (context) {
-                                    final hasBadges =
-                                        aiConfidence != null ||
-                                        category != null;
-                                    final hasDescription = content.isNotEmpty;
+                        ],
+                      ),
+                    ),
+                    // Subscribe button (если не свой пост)
+                    if (!widget.isOwnPost)
+                      TextButton(
+                        onPressed: () {
+                          // TODO: Implement subscribe
+                        },
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 6,
+                          ),
+                          backgroundColor: AppTheme.primaryColor,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                        ),
+                        child: const Text(
+                          'Подписаться',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    // More button
+                    IconButton(
+                      icon: Icon(
+                        Ionicons.ellipsis_horizontal,
+                        color: Colors.white.withOpacity(0.6),
+                        size: 20,
+                      ),
+                      onPressed: () => _showOptionsMenu(context),
+                    ),
+                  ],
+                ),
+              ),
 
-                                    return Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        // Title
-                                        Text(
-                                          title,
-                                          style: const TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.white,
-                                            letterSpacing: 0,
-                                            height: 1.25, // 20/16 = 1.25
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        // Отступ между заголовком и описанием только если есть описание
-                                        if (hasDescription)
-                                          const SizedBox(height: 15),
-
-                                        // Description
-                                        if (hasDescription)
-                                          Text(
-                                            content,
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w400,
-                                              color: Colors.white.withOpacity(
-                                                0.85,
-                                              ),
-                                              height: 1.214, // 17/14 ≈ 1.214
-                                              letterSpacing: 0,
-                                            ),
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        // Отступ между описанием и бейджами только если есть и описание, и бейджи
-                                        if (hasDescription && hasBadges)
-                                          const SizedBox(height: 16),
-
-                                        // Rating and date info
-                                        if (hasBadges)
-                                          Row(
-                                            children: [
-                                              // Rating with stars
-                                              if (aiConfidence != null)
-                                                Container(
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                        horizontal: 10,
-                                                        vertical: 6,
-                                                      ),
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.white
-                                                        .withOpacity(0.15),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          12,
-                                                        ),
-                                                  ),
-                                                  child: Row(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    children: [
-                                                      Text(
-                                                        (aiConfidence! * 5)
-                                                            .toStringAsFixed(1),
-                                                        style: const TextStyle(
-                                                          fontSize: 13,
-                                                          fontWeight:
-                                                              FontWeight.w600,
-                                                          color: Colors.white,
-                                                        ),
-                                                      ),
-                                                      const SizedBox(width: 6),
-                                                      ...List.generate(5, (
-                                                        index,
-                                                      ) {
-                                                        return Padding(
-                                                          padding:
-                                                              const EdgeInsets.only(
-                                                                left: 2,
-                                                              ),
-                                                          child: Icon(
-                                                            index <
-                                                                    (aiConfidence! *
-                                                                            5)
-                                                                        .round()
-                                                                ? Ionicons.star
-                                                                : Ionicons
-                                                                      .star_outline,
-                                                            size: 12,
-                                                            color: Colors.amber,
-                                                          ),
-                                                        );
-                                                      }),
-                                                    ],
-                                                  ),
-                                                ),
-                                              if (aiConfidence != null &&
-                                                  category != null)
-                                                const SizedBox(width: 8),
-
-                                              // Date badge
-                                              if (category != null)
-                                                Container(
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                        horizontal: 10,
-                                                        vertical: 6,
-                                                      ),
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.white
-                                                        .withOpacity(0.15),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          12,
-                                                        ),
-                                                  ),
-                                                  child: Text(
-                                                    category!,
-                                                    style: const TextStyle(
-                                                      fontSize: 12,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      color: Colors.white,
-                                                    ),
-                                                  ),
-                                                ),
-                                            ],
-                                          ),
-                                        // Отступ между бейджами и кнопкой только если есть бейджи
-                                        if (hasBadges)
-                                          const SizedBox(height: 16),
-
-                                        // Action button
-                                        // const SizedBox(height: 16),
-                                        // SizedBox(
-                                        //   width: double.infinity,
-                                        //   child: ElevatedButton(
-                                        //     onPressed: onTap,
-                                        //     style: ElevatedButton.styleFrom(
-                                        //       backgroundColor: Colors.white,
-                                        //       foregroundColor: Colors.black,
-                                        //       padding:
-                                        //           const EdgeInsets.symmetric(
-                                        //             vertical: 8,
-                                        //           ),
-                                        //       shape: RoundedRectangleBorder(
-                                        //         borderRadius:
-                                        //             BorderRadius.circular(50),
-                                        //       ),
-                                        //       elevation: 0,
-                                        //     ),
-                                        //     child: const Text(
-                                        //       'Открыть',
-                                        //       style: TextStyle(
-                                        //         fontSize: 12,
-                                        //         fontWeight: FontWeight.w700,
-                                        //         letterSpacing: 0,
-                                        //       ),
-                                        //     ),
-                                        //   ),
-                                        // ),
-                                      ],
-                                    );
-                                  },
-                                ),
-                              ),
+              // Title and content (без горизонтальных отступов)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.title,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white,
+                      height: 1.3,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (widget.content.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      widget.content,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.white.withOpacity(0.85),
+                        height: 1.4,
+                      ),
+                      maxLines: _isExpanded ? null : 3,
+                      overflow: _isExpanded ? null : TextOverflow.ellipsis,
+                    ),
+                    // "Читать всё" button
+                    if (widget.content.length > 150)
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _isExpanded = !_isExpanded;
+                          });
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            _isExpanded ? 'Скрыть' : 'Читать всё',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: AppTheme.primaryColor,
                             ),
                           ),
                         ),
                       ),
-                    ],
+                  ],
+                ],
+              ),
+
+              // Image (меньшего размера)
+              if (widget.imageUrl != null && widget.imageUrl!.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: CachedNetworkImage(
+                    imageUrl: widget.imageUrl!,
+                    width: double.infinity,
+                    height: 200, // Фиксированная высота, меньше чем было
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => Container(
+                      height: 200,
+                      color: Colors.white.withOpacity(0.05),
+                      child: const Center(
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
+                    errorWidget: (context, url, error) => Container(
+                      height: 200,
+                      color: Colors.white.withOpacity(0.05),
+                      child: Center(
+                        child: Icon(
+                          Ionicons.image_outline,
+                          color: Colors.white.withOpacity(0.3),
+                          size: 48,
+                        ),
+                      ),
+                    ),
                   ),
-                );
-              },
-            ),
+                ),
+              ],
+
+              // Tags and category (без горизонтальных отступов)
+              if ((widget.tags != null && widget.tags!.isNotEmpty) ||
+                  widget.category != null ||
+                  widget.aiConfidence != null) ...[
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    // Category
+                    if (widget.category != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _getCategoryIcon(widget.category!),
+                              size: 12,
+                              color: Colors.white.withOpacity(0.9),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              widget.category!,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.white.withOpacity(0.9),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    // AI confidence
+                    if (widget.aiConfidence != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Ionicons.star,
+                              size: 12,
+                              color: Colors.amber.withOpacity(0.9),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              (widget.aiConfidence! * 5).toStringAsFixed(1),
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white.withOpacity(0.9),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    // Tags
+                    if (widget.tags != null)
+                      ...widget.tags!.take(3).map((tag) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            '#$tag',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white.withOpacity(0.9),
+                            ),
+                          ),
+                        );
+                      }),
+                  ],
+                ),
+              ],
+
+              // Bottom actions
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    _buildActionButton(
+                      icon: Ionicons.heart_outline,
+                      label: '154',
+                      onTap: () {},
+                    ),
+                    const SizedBox(width: 16),
+                    _buildActionButton(
+                      icon: Ionicons.chatbubble_outline,
+                      label: '13',
+                      onTap: () {},
+                    ),
+                    const SizedBox(width: 16),
+                    _buildActionButton(
+                      icon: Ionicons.paper_plane_outline,
+                      label: '',
+                      onTap: () {},
+                    ),
+                    const Spacer(),
+                    Text(
+                      '3K',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.white.withOpacity(0.5),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      Ionicons.eye_outline,
+                      size: 16,
+                      color: Colors.white.withOpacity(0.5),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 20, color: Colors.white.withOpacity(0.6)),
+            if (label.isNotEmpty) ...[
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white.withOpacity(0.6),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showOptionsMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Color(0xFF1C1C1E),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle bar
+              Container(
+                width: 36,
+                height: 5,
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(2.5),
+                ),
+              ),
+
+              // Report option
+              if (!widget.isOwnPost)
+                ListTile(
+                  leading: Icon(
+                    Ionicons.flag_outline,
+                    color: Colors.red.withOpacity(0.9),
+                  ),
+                  title: Text(
+                    'Пожаловаться на пост',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.red.withOpacity(0.9),
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showReportDialog(context);
+                  },
+                ),
+
+              // Own post options
+              if (widget.isOwnPost) ...[
+                ListTile(
+                  leading: Icon(
+                    Ionicons.create_outline,
+                    color: Colors.white.withOpacity(0.9),
+                  ),
+                  title: Text(
+                    'Редактировать',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white.withOpacity(0.9),
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    widget.onEdit?.call();
+                  },
+                ),
+                ListTile(
+                  leading: Icon(
+                    Ionicons.trash_outline,
+                    color: Colors.red.withOpacity(0.9),
+                  ),
+                  title: Text(
+                    'Удалить',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.red.withOpacity(0.9),
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    widget.onDelete?.call();
+                  },
+                ),
+              ],
+
+              // Cancel button
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      backgroundColor: Colors.white.withOpacity(0.1),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(
+                      'Отмена',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showReportDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1C1C1E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Пожаловаться на пост',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        content: const Text(
+          'Вы уверены, что хотите пожаловаться на этот пост?',
+          style: TextStyle(color: Colors.white70, fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Отмена',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.6),
+                fontSize: 16,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // TODO: Implement report functionality
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Жалоба отправлена'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            },
+            child: const Text(
+              'Пожаловаться',
+              style: TextStyle(
+                color: Colors.red,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  IconData _getCategoryIcon(String category) {
+    switch (category.toLowerCase()) {
+      case 'movies':
+      case 'фильмы':
+        return Ionicons.film_outline;
+      case 'books':
+      case 'книги':
+        return Ionicons.book_outline;
+      case 'music':
+      case 'музыка':
+        return Ionicons.musical_notes_outline;
+      case 'travel':
+      case 'путешествия':
+        return Ionicons.airplane_outline;
+      case 'food':
+      case 'еда':
+        return Ionicons.restaurant_outline;
+      default:
+        return Ionicons.bookmark_outline;
+    }
   }
 
   String _formatDate(DateTime date) {
@@ -434,17 +629,35 @@ class MemoryCard extends StatelessWidget {
     if (difference.inDays == 0) {
       if (difference.inHours == 0) {
         if (difference.inMinutes == 0) {
-          return 'Только что';
+          return 'только что';
         }
         return '${difference.inMinutes} мин назад';
       }
       return '${difference.inHours} ч назад';
     } else if (difference.inDays == 1) {
-      return 'Вчера';
+      return 'вчера';
     } else if (difference.inDays < 7) {
       return '${difference.inDays} дн назад';
     } else {
-      return '${date.day}.${date.month.toString().padLeft(2, '0')}.${date.year}';
+      return '${date.day} ${_getMonthName(date.month)}';
     }
+  }
+
+  String _getMonthName(int month) {
+    const months = [
+      'янв',
+      'фев',
+      'мар',
+      'апр',
+      'мая',
+      'июн',
+      'июл',
+      'авг',
+      'сен',
+      'окт',
+      'ноя',
+      'дек',
+    ];
+    return months[month - 1];
   }
 }

@@ -28,12 +28,33 @@ class StoryCircle extends StatelessWidget {
         margin: const EdgeInsets.only(right: 6),
         child: Column(
           children: [
-            // Story circle с градиентной обводкой
-            Stack(
-              children: [
-                Container(
-                  width: 68,
-                  height: 68,
+            // Story circle с градиентной обводкой и новым фоном
+            Container(
+              width: 68,
+              height: 68,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color.fromRGBO(255, 255, 255, 0.2),
+                    Color.fromRGBO(233, 233, 233, 0.2),
+                    Color.fromRGBO(242, 242, 242, 0),
+                  ],
+                  stops: [0.0, 0.5, 1.0],
+                ),
+              ),
+              child: Container(
+                margin: const EdgeInsets.all(1), // Толщина границы
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color.fromRGBO(44, 44, 44, 1),
+                ),
+                child: Container(
+                  margin: const EdgeInsets.all(
+                    2,
+                  ), // Отступ от фона до градиента истории
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: isViewed
@@ -52,8 +73,8 @@ class StoryCircle extends StatelessWidget {
                           ? CachedNetworkImage(
                               imageUrl: imageUrl!,
                               fit: BoxFit.cover,
-                              width: 65,
-                              height: 65,
+                              width: 60,
+                              height: 60,
                               placeholder: (context, url) => Container(
                                 color: Colors.grey.shade200,
                                 child: const Center(
@@ -63,55 +84,26 @@ class StoryCircle extends StatelessWidget {
                                 ),
                               ),
                               errorWidget: (context, url, error) => Container(
-                                decoration: BoxDecoration(
-                                  gradient: AppTheme.primaryGradient,
-                                ),
+                                color: const Color.fromRGBO(44, 44, 44, 1),
                                 child: const Icon(
                                   Ionicons.person,
                                   color: Colors.white,
-                                  size: 32,
+                                  size: 28,
                                 ),
                               ),
                             )
                           : Container(
-                              decoration: BoxDecoration(
-                                gradient: AppTheme.primaryGradient,
-                              ),
+                              color: const Color.fromRGBO(44, 44, 44, 1),
                               child: const Icon(
                                 Ionicons.person,
                                 color: Colors.white,
-                                size: 32,
+                                size: 28,
                               ),
                             ),
                     ),
                   ),
                 ),
-                // Показываем количество историй, если их больше 1
-                if (storiesCount != null && storiesCount! > 1)
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        gradient: AppTheme.primaryGradient,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.white, width: 2),
-                      ),
-                      child: Text(
-                        '$storiesCount',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
+              ),
             ),
             const SizedBox(height: 4),
             // Username

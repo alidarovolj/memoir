@@ -20,6 +20,22 @@ class StoryModel with _$StoryModel {
     required DateTime expires_at,
     StoryUserModel? user,
     StoryMemoryModel? memory,
+
+    // Social features
+    // ignore: non_constant_identifier_names
+    @Default(0) int likes_count,
+    // ignore: non_constant_identifier_names
+    @Default(0) int comments_count,
+    // ignore: non_constant_identifier_names
+    @Default(0) int shares_count,
+    // ignore: non_constant_identifier_names
+    @Default(0) int reposts_count,
+    // ignore: non_constant_identifier_names
+    @Default(false) bool is_liked,
+
+    // For reposts
+    // ignore: non_constant_identifier_names
+    StoryOriginalModel? original_story,
   }) = _StoryModel;
 
   factory StoryModel.fromJson(Map<String, dynamic> json) =>
@@ -28,10 +44,17 @@ class StoryModel with _$StoryModel {
 
 @freezed
 class StoryUserModel with _$StoryUserModel {
+  // ignore: invalid_annotation_target
   const factory StoryUserModel({
     required String id,
     String? username,
     String? email,
+    // ignore: non_constant_identifier_names
+    String? first_name,
+    // ignore: non_constant_identifier_names
+    String? last_name,
+    // ignore: non_constant_identifier_names
+    String? avatar_url,
   }) = _StoryUserModel;
 
   factory StoryUserModel.fromJson(Map<String, dynamic> json) =>
@@ -57,3 +80,12 @@ class StoryMemoryModel with _$StoryMemoryModel {
       _$StoryMemoryModelFromJson(json);
 }
 
+@freezed
+class StoryOriginalModel with _$StoryOriginalModel {
+  // ignore: invalid_annotation_target
+  const factory StoryOriginalModel({required String id, StoryUserModel? user}) =
+      _StoryOriginalModel;
+
+  factory StoryOriginalModel.fromJson(Map<String, dynamic> json) =>
+      _$StoryOriginalModelFromJson(json);
+}

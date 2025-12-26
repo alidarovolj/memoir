@@ -44,9 +44,9 @@ class _SubtasksListState extends State<SubtasksList> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: AppTheme.cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: AppTheme.primaryColor.withOpacity(0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -65,7 +65,7 @@ class _SubtasksListState extends State<SubtasksList> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                  color: Colors.white,
                 ),
               ),
               const Spacer(),
@@ -77,8 +77,8 @@ class _SubtasksListState extends State<SubtasksList> {
                   ),
                   decoration: BoxDecoration(
                     color: _completedCount == _totalCount
-                        ? Colors.green.shade100
-                        : Colors.blue.shade100,
+                        ? Colors.green.withOpacity(0.2)
+                        : Colors.blue.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -87,8 +87,8 @@ class _SubtasksListState extends State<SubtasksList> {
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: _completedCount == _totalCount
-                          ? Colors.green.shade700
-                          : Colors.blue.shade700,
+                          ? Colors.green
+                          : Colors.blue,
                     ),
                   ),
                 ),
@@ -103,7 +103,7 @@ class _SubtasksListState extends State<SubtasksList> {
               child: LinearProgressIndicator(
                 value: _progress,
                 minHeight: 6,
-                backgroundColor: Colors.grey.shade300,
+                backgroundColor: Colors.white.withOpacity(0.2),
                 valueColor: AlwaysStoppedAnimation<Color>(
                   _completedCount == _totalCount
                       ? Colors.green
@@ -145,7 +145,7 @@ class _SubtasksListState extends State<SubtasksList> {
                 border: Border.all(
                   color: subtask.is_completed
                       ? AppTheme.primaryColor
-                      : Colors.grey.shade400,
+                      : Colors.white.withOpacity(0.4),
                   width: 2,
                 ),
               ),
@@ -164,12 +164,12 @@ class _SubtasksListState extends State<SubtasksList> {
               style: TextStyle(
                 fontSize: 15,
                 color: subtask.is_completed
-                    ? Colors.grey.shade500
-                    : Colors.black87,
+                    ? Colors.white.withOpacity(0.5)
+                    : Colors.white,
                 decoration: subtask.is_completed
                     ? TextDecoration.lineThrough
                     : TextDecoration.none,
-                decorationColor: Colors.grey.shade400,
+                decorationColor: Colors.white.withOpacity(0.4),
               ),
             ),
           ),
@@ -179,7 +179,7 @@ class _SubtasksListState extends State<SubtasksList> {
             icon: Icon(
               Ionicons.trash_outline,
               size: 18,
-              color: Colors.red.shade400,
+              color: Colors.red.withOpacity(0.7),
             ),
             onPressed: () => widget.onDelete(subtask.id),
             padding: EdgeInsets.zero,
@@ -194,7 +194,7 @@ class _SubtasksListState extends State<SubtasksList> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.surfaceColor,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppTheme.primaryColor),
       ),
@@ -204,8 +204,10 @@ class _SubtasksListState extends State<SubtasksList> {
             child: TextField(
               controller: _newSubtaskController,
               autofocus: true,
-              decoration: const InputDecoration(
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
                 hintText: 'Название подзадачи...',
+                hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
                 border: InputBorder.none,
                 isDense: true,
                 contentPadding: EdgeInsets.zero,
@@ -227,7 +229,7 @@ class _SubtasksListState extends State<SubtasksList> {
           IconButton(
             icon: Icon(
               Ionicons.close_circle,
-              color: Colors.grey.shade400,
+              color: Colors.white.withOpacity(0.4),
               size: 24,
             ),
             onPressed: () {

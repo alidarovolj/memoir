@@ -33,7 +33,20 @@ mixin _$StoryModel {
       throw _privateConstructorUsedError; // ignore: non_constant_identifier_names
   DateTime get expires_at => throw _privateConstructorUsedError;
   StoryUserModel? get user => throw _privateConstructorUsedError;
-  StoryMemoryModel? get memory => throw _privateConstructorUsedError;
+  StoryMemoryModel? get memory =>
+      throw _privateConstructorUsedError; // Social features
+  // ignore: non_constant_identifier_names
+  int get likes_count =>
+      throw _privateConstructorUsedError; // ignore: non_constant_identifier_names
+  int get comments_count =>
+      throw _privateConstructorUsedError; // ignore: non_constant_identifier_names
+  int get shares_count =>
+      throw _privateConstructorUsedError; // ignore: non_constant_identifier_names
+  int get reposts_count =>
+      throw _privateConstructorUsedError; // ignore: non_constant_identifier_names
+  bool get is_liked => throw _privateConstructorUsedError; // For reposts
+  // ignore: non_constant_identifier_names
+  StoryOriginalModel? get original_story => throw _privateConstructorUsedError;
 
   /// Serializes this StoryModel to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -61,10 +74,17 @@ abstract class $StoryModelCopyWith<$Res> {
     DateTime expires_at,
     StoryUserModel? user,
     StoryMemoryModel? memory,
+    int likes_count,
+    int comments_count,
+    int shares_count,
+    int reposts_count,
+    bool is_liked,
+    StoryOriginalModel? original_story,
   });
 
   $StoryUserModelCopyWith<$Res>? get user;
   $StoryMemoryModelCopyWith<$Res>? get memory;
+  $StoryOriginalModelCopyWith<$Res>? get original_story;
 }
 
 /// @nodoc
@@ -90,6 +110,12 @@ class _$StoryModelCopyWithImpl<$Res, $Val extends StoryModel>
     Object? expires_at = null,
     Object? user = freezed,
     Object? memory = freezed,
+    Object? likes_count = null,
+    Object? comments_count = null,
+    Object? shares_count = null,
+    Object? reposts_count = null,
+    Object? is_liked = null,
+    Object? original_story = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -125,6 +151,30 @@ class _$StoryModelCopyWithImpl<$Res, $Val extends StoryModel>
                 ? _value.memory
                 : memory // ignore: cast_nullable_to_non_nullable
                       as StoryMemoryModel?,
+            likes_count: null == likes_count
+                ? _value.likes_count
+                : likes_count // ignore: cast_nullable_to_non_nullable
+                      as int,
+            comments_count: null == comments_count
+                ? _value.comments_count
+                : comments_count // ignore: cast_nullable_to_non_nullable
+                      as int,
+            shares_count: null == shares_count
+                ? _value.shares_count
+                : shares_count // ignore: cast_nullable_to_non_nullable
+                      as int,
+            reposts_count: null == reposts_count
+                ? _value.reposts_count
+                : reposts_count // ignore: cast_nullable_to_non_nullable
+                      as int,
+            is_liked: null == is_liked
+                ? _value.is_liked
+                : is_liked // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            original_story: freezed == original_story
+                ? _value.original_story
+                : original_story // ignore: cast_nullable_to_non_nullable
+                      as StoryOriginalModel?,
           )
           as $Val,
     );
@@ -157,6 +207,20 @@ class _$StoryModelCopyWithImpl<$Res, $Val extends StoryModel>
       return _then(_value.copyWith(memory: value) as $Val);
     });
   }
+
+  /// Create a copy of StoryModel
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $StoryOriginalModelCopyWith<$Res>? get original_story {
+    if (_value.original_story == null) {
+      return null;
+    }
+
+    return $StoryOriginalModelCopyWith<$Res>(_value.original_story!, (value) {
+      return _then(_value.copyWith(original_story: value) as $Val);
+    });
+  }
 }
 
 /// @nodoc
@@ -177,12 +241,20 @@ abstract class _$$StoryModelImplCopyWith<$Res>
     DateTime expires_at,
     StoryUserModel? user,
     StoryMemoryModel? memory,
+    int likes_count,
+    int comments_count,
+    int shares_count,
+    int reposts_count,
+    bool is_liked,
+    StoryOriginalModel? original_story,
   });
 
   @override
   $StoryUserModelCopyWith<$Res>? get user;
   @override
   $StoryMemoryModelCopyWith<$Res>? get memory;
+  @override
+  $StoryOriginalModelCopyWith<$Res>? get original_story;
 }
 
 /// @nodoc
@@ -207,6 +279,12 @@ class __$$StoryModelImplCopyWithImpl<$Res>
     Object? expires_at = null,
     Object? user = freezed,
     Object? memory = freezed,
+    Object? likes_count = null,
+    Object? comments_count = null,
+    Object? shares_count = null,
+    Object? reposts_count = null,
+    Object? is_liked = null,
+    Object? original_story = freezed,
   }) {
     return _then(
       _$StoryModelImpl(
@@ -242,6 +320,30 @@ class __$$StoryModelImplCopyWithImpl<$Res>
             ? _value.memory
             : memory // ignore: cast_nullable_to_non_nullable
                   as StoryMemoryModel?,
+        likes_count: null == likes_count
+            ? _value.likes_count
+            : likes_count // ignore: cast_nullable_to_non_nullable
+                  as int,
+        comments_count: null == comments_count
+            ? _value.comments_count
+            : comments_count // ignore: cast_nullable_to_non_nullable
+                  as int,
+        shares_count: null == shares_count
+            ? _value.shares_count
+            : shares_count // ignore: cast_nullable_to_non_nullable
+                  as int,
+        reposts_count: null == reposts_count
+            ? _value.reposts_count
+            : reposts_count // ignore: cast_nullable_to_non_nullable
+                  as int,
+        is_liked: null == is_liked
+            ? _value.is_liked
+            : is_liked // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        original_story: freezed == original_story
+            ? _value.original_story
+            : original_story // ignore: cast_nullable_to_non_nullable
+                  as StoryOriginalModel?,
       ),
     );
   }
@@ -259,6 +361,12 @@ class _$StoryModelImpl implements _StoryModel {
     required this.expires_at,
     this.user,
     this.memory,
+    this.likes_count = 0,
+    this.comments_count = 0,
+    this.shares_count = 0,
+    this.reposts_count = 0,
+    this.is_liked = false,
+    this.original_story,
   });
 
   factory _$StoryModelImpl.fromJson(Map<String, dynamic> json) =>
@@ -285,10 +393,35 @@ class _$StoryModelImpl implements _StoryModel {
   final StoryUserModel? user;
   @override
   final StoryMemoryModel? memory;
+  // Social features
+  // ignore: non_constant_identifier_names
+  @override
+  @JsonKey()
+  final int likes_count;
+  // ignore: non_constant_identifier_names
+  @override
+  @JsonKey()
+  final int comments_count;
+  // ignore: non_constant_identifier_names
+  @override
+  @JsonKey()
+  final int shares_count;
+  // ignore: non_constant_identifier_names
+  @override
+  @JsonKey()
+  final int reposts_count;
+  // ignore: non_constant_identifier_names
+  @override
+  @JsonKey()
+  final bool is_liked;
+  // For reposts
+  // ignore: non_constant_identifier_names
+  @override
+  final StoryOriginalModel? original_story;
 
   @override
   String toString() {
-    return 'StoryModel(id: $id, user_id: $user_id, memory_id: $memory_id, is_public: $is_public, created_at: $created_at, expires_at: $expires_at, user: $user, memory: $memory)';
+    return 'StoryModel(id: $id, user_id: $user_id, memory_id: $memory_id, is_public: $is_public, created_at: $created_at, expires_at: $expires_at, user: $user, memory: $memory, likes_count: $likes_count, comments_count: $comments_count, shares_count: $shares_count, reposts_count: $reposts_count, is_liked: $is_liked, original_story: $original_story)';
   }
 
   @override
@@ -307,7 +440,19 @@ class _$StoryModelImpl implements _StoryModel {
             (identical(other.expires_at, expires_at) ||
                 other.expires_at == expires_at) &&
             (identical(other.user, user) || other.user == user) &&
-            (identical(other.memory, memory) || other.memory == memory));
+            (identical(other.memory, memory) || other.memory == memory) &&
+            (identical(other.likes_count, likes_count) ||
+                other.likes_count == likes_count) &&
+            (identical(other.comments_count, comments_count) ||
+                other.comments_count == comments_count) &&
+            (identical(other.shares_count, shares_count) ||
+                other.shares_count == shares_count) &&
+            (identical(other.reposts_count, reposts_count) ||
+                other.reposts_count == reposts_count) &&
+            (identical(other.is_liked, is_liked) ||
+                other.is_liked == is_liked) &&
+            (identical(other.original_story, original_story) ||
+                other.original_story == original_story));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -322,6 +467,12 @@ class _$StoryModelImpl implements _StoryModel {
     expires_at,
     user,
     memory,
+    likes_count,
+    comments_count,
+    shares_count,
+    reposts_count,
+    is_liked,
+    original_story,
   );
 
   /// Create a copy of StoryModel
@@ -348,6 +499,12 @@ abstract class _StoryModel implements StoryModel {
     required final DateTime expires_at,
     final StoryUserModel? user,
     final StoryMemoryModel? memory,
+    final int likes_count,
+    final int comments_count,
+    final int shares_count,
+    final int reposts_count,
+    final bool is_liked,
+    final StoryOriginalModel? original_story,
   }) = _$StoryModelImpl;
 
   factory _StoryModel.fromJson(Map<String, dynamic> json) =
@@ -368,7 +525,21 @@ abstract class _StoryModel implements StoryModel {
   @override
   StoryUserModel? get user;
   @override
-  StoryMemoryModel? get memory;
+  StoryMemoryModel? get memory; // Social features
+  // ignore: non_constant_identifier_names
+  @override
+  int get likes_count; // ignore: non_constant_identifier_names
+  @override
+  int get comments_count; // ignore: non_constant_identifier_names
+  @override
+  int get shares_count; // ignore: non_constant_identifier_names
+  @override
+  int get reposts_count; // ignore: non_constant_identifier_names
+  @override
+  bool get is_liked; // For reposts
+  // ignore: non_constant_identifier_names
+  @override
+  StoryOriginalModel? get original_story;
 
   /// Create a copy of StoryModel
   /// with the given fields replaced by the non-null parameter values.
@@ -386,7 +557,13 @@ StoryUserModel _$StoryUserModelFromJson(Map<String, dynamic> json) {
 mixin _$StoryUserModel {
   String get id => throw _privateConstructorUsedError;
   String? get username => throw _privateConstructorUsedError;
-  String? get email => throw _privateConstructorUsedError;
+  String? get email =>
+      throw _privateConstructorUsedError; // ignore: non_constant_identifier_names
+  String? get first_name =>
+      throw _privateConstructorUsedError; // ignore: non_constant_identifier_names
+  String? get last_name =>
+      throw _privateConstructorUsedError; // ignore: non_constant_identifier_names
+  String? get avatar_url => throw _privateConstructorUsedError;
 
   /// Serializes this StoryUserModel to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -405,7 +582,14 @@ abstract class $StoryUserModelCopyWith<$Res> {
     $Res Function(StoryUserModel) then,
   ) = _$StoryUserModelCopyWithImpl<$Res, StoryUserModel>;
   @useResult
-  $Res call({String id, String? username, String? email});
+  $Res call({
+    String id,
+    String? username,
+    String? email,
+    String? first_name,
+    String? last_name,
+    String? avatar_url,
+  });
 }
 
 /// @nodoc
@@ -426,6 +610,9 @@ class _$StoryUserModelCopyWithImpl<$Res, $Val extends StoryUserModel>
     Object? id = null,
     Object? username = freezed,
     Object? email = freezed,
+    Object? first_name = freezed,
+    Object? last_name = freezed,
+    Object? avatar_url = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -440,6 +627,18 @@ class _$StoryUserModelCopyWithImpl<$Res, $Val extends StoryUserModel>
             email: freezed == email
                 ? _value.email
                 : email // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            first_name: freezed == first_name
+                ? _value.first_name
+                : first_name // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            last_name: freezed == last_name
+                ? _value.last_name
+                : last_name // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            avatar_url: freezed == avatar_url
+                ? _value.avatar_url
+                : avatar_url // ignore: cast_nullable_to_non_nullable
                       as String?,
           )
           as $Val,
@@ -456,7 +655,14 @@ abstract class _$$StoryUserModelImplCopyWith<$Res>
   ) = __$$StoryUserModelImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String id, String? username, String? email});
+  $Res call({
+    String id,
+    String? username,
+    String? email,
+    String? first_name,
+    String? last_name,
+    String? avatar_url,
+  });
 }
 
 /// @nodoc
@@ -476,6 +682,9 @@ class __$$StoryUserModelImplCopyWithImpl<$Res>
     Object? id = null,
     Object? username = freezed,
     Object? email = freezed,
+    Object? first_name = freezed,
+    Object? last_name = freezed,
+    Object? avatar_url = freezed,
   }) {
     return _then(
       _$StoryUserModelImpl(
@@ -491,6 +700,18 @@ class __$$StoryUserModelImplCopyWithImpl<$Res>
             ? _value.email
             : email // ignore: cast_nullable_to_non_nullable
                   as String?,
+        first_name: freezed == first_name
+            ? _value.first_name
+            : first_name // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        last_name: freezed == last_name
+            ? _value.last_name
+            : last_name // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        avatar_url: freezed == avatar_url
+            ? _value.avatar_url
+            : avatar_url // ignore: cast_nullable_to_non_nullable
+                  as String?,
       ),
     );
   }
@@ -499,7 +720,14 @@ class __$$StoryUserModelImplCopyWithImpl<$Res>
 /// @nodoc
 @JsonSerializable()
 class _$StoryUserModelImpl implements _StoryUserModel {
-  const _$StoryUserModelImpl({required this.id, this.username, this.email});
+  const _$StoryUserModelImpl({
+    required this.id,
+    this.username,
+    this.email,
+    this.first_name,
+    this.last_name,
+    this.avatar_url,
+  });
 
   factory _$StoryUserModelImpl.fromJson(Map<String, dynamic> json) =>
       _$$StoryUserModelImplFromJson(json);
@@ -510,10 +738,19 @@ class _$StoryUserModelImpl implements _StoryUserModel {
   final String? username;
   @override
   final String? email;
+  // ignore: non_constant_identifier_names
+  @override
+  final String? first_name;
+  // ignore: non_constant_identifier_names
+  @override
+  final String? last_name;
+  // ignore: non_constant_identifier_names
+  @override
+  final String? avatar_url;
 
   @override
   String toString() {
-    return 'StoryUserModel(id: $id, username: $username, email: $email)';
+    return 'StoryUserModel(id: $id, username: $username, email: $email, first_name: $first_name, last_name: $last_name, avatar_url: $avatar_url)';
   }
 
   @override
@@ -524,12 +761,26 @@ class _$StoryUserModelImpl implements _StoryUserModel {
             (identical(other.id, id) || other.id == id) &&
             (identical(other.username, username) ||
                 other.username == username) &&
-            (identical(other.email, email) || other.email == email));
+            (identical(other.email, email) || other.email == email) &&
+            (identical(other.first_name, first_name) ||
+                other.first_name == first_name) &&
+            (identical(other.last_name, last_name) ||
+                other.last_name == last_name) &&
+            (identical(other.avatar_url, avatar_url) ||
+                other.avatar_url == avatar_url));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, id, username, email);
+  int get hashCode => Object.hash(
+    runtimeType,
+    id,
+    username,
+    email,
+    first_name,
+    last_name,
+    avatar_url,
+  );
 
   /// Create a copy of StoryUserModel
   /// with the given fields replaced by the non-null parameter values.
@@ -553,6 +804,9 @@ abstract class _StoryUserModel implements StoryUserModel {
     required final String id,
     final String? username,
     final String? email,
+    final String? first_name,
+    final String? last_name,
+    final String? avatar_url,
   }) = _$StoryUserModelImpl;
 
   factory _StoryUserModel.fromJson(Map<String, dynamic> json) =
@@ -563,7 +817,13 @@ abstract class _StoryUserModel implements StoryUserModel {
   @override
   String? get username;
   @override
-  String? get email;
+  String? get email; // ignore: non_constant_identifier_names
+  @override
+  String? get first_name; // ignore: non_constant_identifier_names
+  @override
+  String? get last_name; // ignore: non_constant_identifier_names
+  @override
+  String? get avatar_url;
 
   /// Create a copy of StoryUserModel
   /// with the given fields replaced by the non-null parameter values.
@@ -853,5 +1113,195 @@ abstract class _StoryMemoryModel implements StoryMemoryModel {
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   _$$StoryMemoryModelImplCopyWith<_$StoryMemoryModelImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+StoryOriginalModel _$StoryOriginalModelFromJson(Map<String, dynamic> json) {
+  return _StoryOriginalModel.fromJson(json);
+}
+
+/// @nodoc
+mixin _$StoryOriginalModel {
+  String get id => throw _privateConstructorUsedError;
+  StoryUserModel? get user => throw _privateConstructorUsedError;
+
+  /// Serializes this StoryOriginalModel to a JSON map.
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+
+  /// Create a copy of StoryOriginalModel
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  $StoryOriginalModelCopyWith<StoryOriginalModel> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $StoryOriginalModelCopyWith<$Res> {
+  factory $StoryOriginalModelCopyWith(
+    StoryOriginalModel value,
+    $Res Function(StoryOriginalModel) then,
+  ) = _$StoryOriginalModelCopyWithImpl<$Res, StoryOriginalModel>;
+  @useResult
+  $Res call({String id, StoryUserModel? user});
+
+  $StoryUserModelCopyWith<$Res>? get user;
+}
+
+/// @nodoc
+class _$StoryOriginalModelCopyWithImpl<$Res, $Val extends StoryOriginalModel>
+    implements $StoryOriginalModelCopyWith<$Res> {
+  _$StoryOriginalModelCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  /// Create a copy of StoryOriginalModel
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? id = null, Object? user = freezed}) {
+    return _then(
+      _value.copyWith(
+            id: null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                      as String,
+            user: freezed == user
+                ? _value.user
+                : user // ignore: cast_nullable_to_non_nullable
+                      as StoryUserModel?,
+          )
+          as $Val,
+    );
+  }
+
+  /// Create a copy of StoryOriginalModel
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $StoryUserModelCopyWith<$Res>? get user {
+    if (_value.user == null) {
+      return null;
+    }
+
+    return $StoryUserModelCopyWith<$Res>(_value.user!, (value) {
+      return _then(_value.copyWith(user: value) as $Val);
+    });
+  }
+}
+
+/// @nodoc
+abstract class _$$StoryOriginalModelImplCopyWith<$Res>
+    implements $StoryOriginalModelCopyWith<$Res> {
+  factory _$$StoryOriginalModelImplCopyWith(
+    _$StoryOriginalModelImpl value,
+    $Res Function(_$StoryOriginalModelImpl) then,
+  ) = __$$StoryOriginalModelImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({String id, StoryUserModel? user});
+
+  @override
+  $StoryUserModelCopyWith<$Res>? get user;
+}
+
+/// @nodoc
+class __$$StoryOriginalModelImplCopyWithImpl<$Res>
+    extends _$StoryOriginalModelCopyWithImpl<$Res, _$StoryOriginalModelImpl>
+    implements _$$StoryOriginalModelImplCopyWith<$Res> {
+  __$$StoryOriginalModelImplCopyWithImpl(
+    _$StoryOriginalModelImpl _value,
+    $Res Function(_$StoryOriginalModelImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of StoryOriginalModel
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? id = null, Object? user = freezed}) {
+    return _then(
+      _$StoryOriginalModelImpl(
+        id: null == id
+            ? _value.id
+            : id // ignore: cast_nullable_to_non_nullable
+                  as String,
+        user: freezed == user
+            ? _value.user
+            : user // ignore: cast_nullable_to_non_nullable
+                  as StoryUserModel?,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$StoryOriginalModelImpl implements _StoryOriginalModel {
+  const _$StoryOriginalModelImpl({required this.id, this.user});
+
+  factory _$StoryOriginalModelImpl.fromJson(Map<String, dynamic> json) =>
+      _$$StoryOriginalModelImplFromJson(json);
+
+  @override
+  final String id;
+  @override
+  final StoryUserModel? user;
+
+  @override
+  String toString() {
+    return 'StoryOriginalModel(id: $id, user: $user)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$StoryOriginalModelImpl &&
+            (identical(other.id, id) || other.id == id) &&
+            (identical(other.user, user) || other.user == user));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode => Object.hash(runtimeType, id, user);
+
+  /// Create a copy of StoryOriginalModel
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$StoryOriginalModelImplCopyWith<_$StoryOriginalModelImpl> get copyWith =>
+      __$$StoryOriginalModelImplCopyWithImpl<_$StoryOriginalModelImpl>(
+        this,
+        _$identity,
+      );
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$StoryOriginalModelImplToJson(this);
+  }
+}
+
+abstract class _StoryOriginalModel implements StoryOriginalModel {
+  const factory _StoryOriginalModel({
+    required final String id,
+    final StoryUserModel? user,
+  }) = _$StoryOriginalModelImpl;
+
+  factory _StoryOriginalModel.fromJson(Map<String, dynamic> json) =
+      _$StoryOriginalModelImpl.fromJson;
+
+  @override
+  String get id;
+  @override
+  StoryUserModel? get user;
+
+  /// Create a copy of StoryOriginalModel
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$StoryOriginalModelImplCopyWith<_$StoryOriginalModelImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

@@ -5,8 +5,9 @@ class AppTheme {
   // Цветовая палитра приложения
   // Основные цвета из дизайна
   static const darkColor = Color(0xFF202020); // #202020 - Темный
-  static const blueColor = Color(0xFF6366FF); // #6366ff - Синий (Accent)
-  static const limeColor = Color(0xFFC9FF58); // #c9ff58 - Салатовый (резерв)
+  static const blueColor = Color(0xFF6366FF); // #6366ff - Синий (резерв)
+  static const tealColor = Color(0xFF277070); // #277070 - Бирюзовый (основной)
+  static const limeColor = Color(0xFFC9F158); // #c9f158 - Салатовый (резерв)
   static const lightGrayColor = Color(0xFFF2F3F5); // #f2f3f5 - Светло-серый
   static const whiteColor = Color(0xFFFFFFFF); // #ffffff - Белый
   static const appBackgroundColor = Color(
@@ -20,22 +21,28 @@ class AppTheme {
   ); // rgba(21, 20, 24, 1) - Фон хедера
 
   // Алиасы для совместимости
-  static const primaryColor = blueColor; // Синий как основной
+  static const primaryColor = tealColor; // Бирюзовый как основной
   static const secondaryColor = Color(0xFF8B5CF6); // Purple как вторичный
-  static const accentColor = blueColor; // Синий accent
+  static const accentColor = tealColor; // Бирюзовый accent
   static const backgroundColor = appBackgroundColor; // Фон приложения
   static const surfaceColor = Color(0xFF2A2A2A); // Темная поверхность
   static const cardColor = Color(0xFF36373C); // Карточки (чуть светлее фона)
 
   // Градиенты
   static const primaryGradient = LinearGradient(
-    colors: [blueColor, Color(0xFF8B5CF6)], // Синий градиент
+    colors: [
+      Color(0xFF277070), // Темный бирюзовый
+      Color(0xFF34D399), // Светлый зеленый
+    ],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
   static const accentGradient = LinearGradient(
-    colors: [blueColor, Color(0xFF7C3AED)],
+    colors: [
+      Color(0xFF277070), // Темный бирюзовый
+      Color(0xFF2D9B9B), // Средний бирюзовый
+    ],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
