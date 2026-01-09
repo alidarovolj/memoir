@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:memoir/core/theme/app_theme.dart';
 import 'package:memoir/features/analytics/data/models/analytics_model.dart';
 import 'package:intl/intl.dart';
 
@@ -55,20 +54,27 @@ class ActivityHeatmap extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color.fromRGBO(255, 255, 255, 0.2),
+            Color.fromRGBO(233, 233, 233, 0.2),
+            Color.fromRGBO(242, 242, 242, 0),
+          ],
+          stops: [0.0, 0.5, 1.0],
+        ),
       ),
-      child: Column(
+      child: Container(
+        margin: const EdgeInsets.all(1),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color.fromRGBO(44, 44, 44, 1),
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Week day labels
@@ -186,6 +192,7 @@ class ActivityHeatmap extends StatelessWidget {
             ],
           ),
         ],
+        ),
       ),
     );
   }

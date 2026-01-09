@@ -25,6 +25,9 @@ mixin _$TaskModel {
   String get user_id => throw _privateConstructorUsedError;
   String get title => throw _privateConstructorUsedError;
   String? get description => throw _privateConstructorUsedError;
+  String? get color =>
+      throw _privateConstructorUsedError; // Hex color format: #RRGGBB
+  String? get icon => throw _privateConstructorUsedError; // Icon name
   DateTime? get due_date => throw _privateConstructorUsedError;
   String? get scheduled_time =>
       throw _privateConstructorUsedError; // Format: "HH:MM" (e.g. "08:00")
@@ -34,6 +37,12 @@ mixin _$TaskModel {
   TimeScope get time_scope => throw _privateConstructorUsedError;
   String? get category_id => throw _privateConstructorUsedError;
   String? get category_name => throw _privateConstructorUsedError;
+  String? get task_group_id =>
+      throw _privateConstructorUsedError; // ID группы задач (привычки)
+  String? get task_group_name =>
+      throw _privateConstructorUsedError; // Название группы (например, "Бросить курить")
+  String? get task_group_icon =>
+      throw _privateConstructorUsedError; // Иконка группы (emoji, например "🚭")
   String? get related_memory_id => throw _privateConstructorUsedError;
   bool get ai_suggested => throw _privateConstructorUsedError;
   double? get ai_confidence => throw _privateConstructorUsedError;
@@ -66,6 +75,8 @@ abstract class $TaskModelCopyWith<$Res> {
     String user_id,
     String title,
     String? description,
+    String? color,
+    String? icon,
     DateTime? due_date,
     String? scheduled_time,
     DateTime? completed_at,
@@ -74,6 +85,9 @@ abstract class $TaskModelCopyWith<$Res> {
     TimeScope time_scope,
     String? category_id,
     String? category_name,
+    String? task_group_id,
+    String? task_group_name,
+    String? task_group_icon,
     String? related_memory_id,
     bool ai_suggested,
     double? ai_confidence,
@@ -106,6 +120,8 @@ class _$TaskModelCopyWithImpl<$Res, $Val extends TaskModel>
     Object? user_id = null,
     Object? title = null,
     Object? description = freezed,
+    Object? color = freezed,
+    Object? icon = freezed,
     Object? due_date = freezed,
     Object? scheduled_time = freezed,
     Object? completed_at = freezed,
@@ -114,6 +130,9 @@ class _$TaskModelCopyWithImpl<$Res, $Val extends TaskModel>
     Object? time_scope = null,
     Object? category_id = freezed,
     Object? category_name = freezed,
+    Object? task_group_id = freezed,
+    Object? task_group_name = freezed,
+    Object? task_group_icon = freezed,
     Object? related_memory_id = freezed,
     Object? ai_suggested = null,
     Object? ai_confidence = freezed,
@@ -142,6 +161,14 @@ class _$TaskModelCopyWithImpl<$Res, $Val extends TaskModel>
             description: freezed == description
                 ? _value.description
                 : description // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            color: freezed == color
+                ? _value.color
+                : color // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            icon: freezed == icon
+                ? _value.icon
+                : icon // ignore: cast_nullable_to_non_nullable
                       as String?,
             due_date: freezed == due_date
                 ? _value.due_date
@@ -174,6 +201,18 @@ class _$TaskModelCopyWithImpl<$Res, $Val extends TaskModel>
             category_name: freezed == category_name
                 ? _value.category_name
                 : category_name // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            task_group_id: freezed == task_group_id
+                ? _value.task_group_id
+                : task_group_id // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            task_group_name: freezed == task_group_name
+                ? _value.task_group_name
+                : task_group_name // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            task_group_icon: freezed == task_group_icon
+                ? _value.task_group_icon
+                : task_group_icon // ignore: cast_nullable_to_non_nullable
                       as String?,
             related_memory_id: freezed == related_memory_id
                 ? _value.related_memory_id
@@ -235,6 +274,8 @@ abstract class _$$TaskModelImplCopyWith<$Res>
     String user_id,
     String title,
     String? description,
+    String? color,
+    String? icon,
     DateTime? due_date,
     String? scheduled_time,
     DateTime? completed_at,
@@ -243,6 +284,9 @@ abstract class _$$TaskModelImplCopyWith<$Res>
     TimeScope time_scope,
     String? category_id,
     String? category_name,
+    String? task_group_id,
+    String? task_group_name,
+    String? task_group_icon,
     String? related_memory_id,
     bool ai_suggested,
     double? ai_confidence,
@@ -274,6 +318,8 @@ class __$$TaskModelImplCopyWithImpl<$Res>
     Object? user_id = null,
     Object? title = null,
     Object? description = freezed,
+    Object? color = freezed,
+    Object? icon = freezed,
     Object? due_date = freezed,
     Object? scheduled_time = freezed,
     Object? completed_at = freezed,
@@ -282,6 +328,9 @@ class __$$TaskModelImplCopyWithImpl<$Res>
     Object? time_scope = null,
     Object? category_id = freezed,
     Object? category_name = freezed,
+    Object? task_group_id = freezed,
+    Object? task_group_name = freezed,
+    Object? task_group_icon = freezed,
     Object? related_memory_id = freezed,
     Object? ai_suggested = null,
     Object? ai_confidence = freezed,
@@ -310,6 +359,14 @@ class __$$TaskModelImplCopyWithImpl<$Res>
         description: freezed == description
             ? _value.description
             : description // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        color: freezed == color
+            ? _value.color
+            : color // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        icon: freezed == icon
+            ? _value.icon
+            : icon // ignore: cast_nullable_to_non_nullable
                   as String?,
         due_date: freezed == due_date
             ? _value.due_date
@@ -342,6 +399,18 @@ class __$$TaskModelImplCopyWithImpl<$Res>
         category_name: freezed == category_name
             ? _value.category_name
             : category_name // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        task_group_id: freezed == task_group_id
+            ? _value.task_group_id
+            : task_group_id // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        task_group_name: freezed == task_group_name
+            ? _value.task_group_name
+            : task_group_name // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        task_group_icon: freezed == task_group_icon
+            ? _value.task_group_icon
+            : task_group_icon // ignore: cast_nullable_to_non_nullable
                   as String?,
         related_memory_id: freezed == related_memory_id
             ? _value.related_memory_id
@@ -396,6 +465,8 @@ class _$TaskModelImpl implements _TaskModel {
     required this.user_id,
     required this.title,
     this.description,
+    this.color,
+    this.icon,
     this.due_date,
     this.scheduled_time,
     this.completed_at,
@@ -404,6 +475,9 @@ class _$TaskModelImpl implements _TaskModel {
     required this.time_scope,
     this.category_id,
     this.category_name,
+    this.task_group_id,
+    this.task_group_name,
+    this.task_group_icon,
     this.related_memory_id,
     required this.ai_suggested,
     this.ai_confidence,
@@ -429,6 +503,12 @@ class _$TaskModelImpl implements _TaskModel {
   @override
   final String? description;
   @override
+  final String? color;
+  // Hex color format: #RRGGBB
+  @override
+  final String? icon;
+  // Icon name
+  @override
   final DateTime? due_date;
   @override
   final String? scheduled_time;
@@ -445,6 +525,15 @@ class _$TaskModelImpl implements _TaskModel {
   final String? category_id;
   @override
   final String? category_name;
+  @override
+  final String? task_group_id;
+  // ID группы задач (привычки)
+  @override
+  final String? task_group_name;
+  // Название группы (например, "Бросить курить")
+  @override
+  final String? task_group_icon;
+  // Иконка группы (emoji, например "🚭")
   @override
   final String? related_memory_id;
   @override
@@ -485,7 +574,7 @@ class _$TaskModelImpl implements _TaskModel {
 
   @override
   String toString() {
-    return 'TaskModel(id: $id, user_id: $user_id, title: $title, description: $description, due_date: $due_date, scheduled_time: $scheduled_time, completed_at: $completed_at, status: $status, priority: $priority, time_scope: $time_scope, category_id: $category_id, category_name: $category_name, related_memory_id: $related_memory_id, ai_suggested: $ai_suggested, ai_confidence: $ai_confidence, tags: $tags, is_recurring: $is_recurring, recurrence_rule: $recurrence_rule, parent_task_id: $parent_task_id, subtasks: $subtasks, created_at: $created_at, updated_at: $updated_at)';
+    return 'TaskModel(id: $id, user_id: $user_id, title: $title, description: $description, color: $color, icon: $icon, due_date: $due_date, scheduled_time: $scheduled_time, completed_at: $completed_at, status: $status, priority: $priority, time_scope: $time_scope, category_id: $category_id, category_name: $category_name, task_group_id: $task_group_id, task_group_name: $task_group_name, task_group_icon: $task_group_icon, related_memory_id: $related_memory_id, ai_suggested: $ai_suggested, ai_confidence: $ai_confidence, tags: $tags, is_recurring: $is_recurring, recurrence_rule: $recurrence_rule, parent_task_id: $parent_task_id, subtasks: $subtasks, created_at: $created_at, updated_at: $updated_at)';
   }
 
   @override
@@ -498,6 +587,8 @@ class _$TaskModelImpl implements _TaskModel {
             (identical(other.title, title) || other.title == title) &&
             (identical(other.description, description) ||
                 other.description == description) &&
+            (identical(other.color, color) || other.color == color) &&
+            (identical(other.icon, icon) || other.icon == icon) &&
             (identical(other.due_date, due_date) ||
                 other.due_date == due_date) &&
             (identical(other.scheduled_time, scheduled_time) ||
@@ -513,6 +604,12 @@ class _$TaskModelImpl implements _TaskModel {
                 other.category_id == category_id) &&
             (identical(other.category_name, category_name) ||
                 other.category_name == category_name) &&
+            (identical(other.task_group_id, task_group_id) ||
+                other.task_group_id == task_group_id) &&
+            (identical(other.task_group_name, task_group_name) ||
+                other.task_group_name == task_group_name) &&
+            (identical(other.task_group_icon, task_group_icon) ||
+                other.task_group_icon == task_group_icon) &&
             (identical(other.related_memory_id, related_memory_id) ||
                 other.related_memory_id == related_memory_id) &&
             (identical(other.ai_suggested, ai_suggested) ||
@@ -541,6 +638,8 @@ class _$TaskModelImpl implements _TaskModel {
     user_id,
     title,
     description,
+    color,
+    icon,
     due_date,
     scheduled_time,
     completed_at,
@@ -549,6 +648,9 @@ class _$TaskModelImpl implements _TaskModel {
     time_scope,
     category_id,
     category_name,
+    task_group_id,
+    task_group_name,
+    task_group_icon,
     related_memory_id,
     ai_suggested,
     ai_confidence,
@@ -581,6 +683,8 @@ abstract class _TaskModel implements TaskModel {
     required final String user_id,
     required final String title,
     final String? description,
+    final String? color,
+    final String? icon,
     final DateTime? due_date,
     final String? scheduled_time,
     final DateTime? completed_at,
@@ -589,6 +693,9 @@ abstract class _TaskModel implements TaskModel {
     required final TimeScope time_scope,
     final String? category_id,
     final String? category_name,
+    final String? task_group_id,
+    final String? task_group_name,
+    final String? task_group_icon,
     final String? related_memory_id,
     required final bool ai_suggested,
     final double? ai_confidence,
@@ -613,6 +720,10 @@ abstract class _TaskModel implements TaskModel {
   @override
   String? get description;
   @override
+  String? get color; // Hex color format: #RRGGBB
+  @override
+  String? get icon; // Icon name
+  @override
   DateTime? get due_date;
   @override
   String? get scheduled_time; // Format: "HH:MM" (e.g. "08:00")
@@ -628,6 +739,12 @@ abstract class _TaskModel implements TaskModel {
   String? get category_id;
   @override
   String? get category_name;
+  @override
+  String? get task_group_id; // ID группы задач (привычки)
+  @override
+  String? get task_group_name; // Название группы (например, "Бросить курить")
+  @override
+  String? get task_group_icon; // Иконка группы (emoji, например "🚭")
   @override
   String? get related_memory_id;
   @override
@@ -668,6 +785,7 @@ mixin _$TaskAnalyzeResponse {
   String? get suggested_time =>
       throw _privateConstructorUsedError; // Format: "HH:MM"
   bool get needs_deadline => throw _privateConstructorUsedError;
+  bool get is_recurring => throw _privateConstructorUsedError;
   String? get category => throw _privateConstructorUsedError;
   double get confidence => throw _privateConstructorUsedError;
   String get reasoning => throw _privateConstructorUsedError;
@@ -694,6 +812,7 @@ abstract class $TaskAnalyzeResponseCopyWith<$Res> {
     TaskPriority priority,
     String? suggested_time,
     bool needs_deadline,
+    bool is_recurring,
     String? category,
     double confidence,
     String reasoning,
@@ -719,6 +838,7 @@ class _$TaskAnalyzeResponseCopyWithImpl<$Res, $Val extends TaskAnalyzeResponse>
     Object? priority = null,
     Object? suggested_time = freezed,
     Object? needs_deadline = null,
+    Object? is_recurring = null,
     Object? category = freezed,
     Object? confidence = null,
     Object? reasoning = null,
@@ -740,6 +860,10 @@ class _$TaskAnalyzeResponseCopyWithImpl<$Res, $Val extends TaskAnalyzeResponse>
             needs_deadline: null == needs_deadline
                 ? _value.needs_deadline
                 : needs_deadline // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            is_recurring: null == is_recurring
+                ? _value.is_recurring
+                : is_recurring // ignore: cast_nullable_to_non_nullable
                       as bool,
             category: freezed == category
                 ? _value.category
@@ -773,6 +897,7 @@ abstract class _$$TaskAnalyzeResponseImplCopyWith<$Res>
     TaskPriority priority,
     String? suggested_time,
     bool needs_deadline,
+    bool is_recurring,
     String? category,
     double confidence,
     String reasoning,
@@ -797,6 +922,7 @@ class __$$TaskAnalyzeResponseImplCopyWithImpl<$Res>
     Object? priority = null,
     Object? suggested_time = freezed,
     Object? needs_deadline = null,
+    Object? is_recurring = null,
     Object? category = freezed,
     Object? confidence = null,
     Object? reasoning = null,
@@ -818,6 +944,10 @@ class __$$TaskAnalyzeResponseImplCopyWithImpl<$Res>
         needs_deadline: null == needs_deadline
             ? _value.needs_deadline
             : needs_deadline // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        is_recurring: null == is_recurring
+            ? _value.is_recurring
+            : is_recurring // ignore: cast_nullable_to_non_nullable
                   as bool,
         category: freezed == category
             ? _value.category
@@ -844,6 +974,7 @@ class _$TaskAnalyzeResponseImpl implements _TaskAnalyzeResponse {
     required this.priority,
     this.suggested_time,
     this.needs_deadline = false,
+    this.is_recurring = false,
     this.category,
     required this.confidence,
     required this.reasoning,
@@ -863,6 +994,9 @@ class _$TaskAnalyzeResponseImpl implements _TaskAnalyzeResponse {
   @JsonKey()
   final bool needs_deadline;
   @override
+  @JsonKey()
+  final bool is_recurring;
+  @override
   final String? category;
   @override
   final double confidence;
@@ -871,7 +1005,7 @@ class _$TaskAnalyzeResponseImpl implements _TaskAnalyzeResponse {
 
   @override
   String toString() {
-    return 'TaskAnalyzeResponse(time_scope: $time_scope, priority: $priority, suggested_time: $suggested_time, needs_deadline: $needs_deadline, category: $category, confidence: $confidence, reasoning: $reasoning)';
+    return 'TaskAnalyzeResponse(time_scope: $time_scope, priority: $priority, suggested_time: $suggested_time, needs_deadline: $needs_deadline, is_recurring: $is_recurring, category: $category, confidence: $confidence, reasoning: $reasoning)';
   }
 
   @override
@@ -887,6 +1021,8 @@ class _$TaskAnalyzeResponseImpl implements _TaskAnalyzeResponse {
                 other.suggested_time == suggested_time) &&
             (identical(other.needs_deadline, needs_deadline) ||
                 other.needs_deadline == needs_deadline) &&
+            (identical(other.is_recurring, is_recurring) ||
+                other.is_recurring == is_recurring) &&
             (identical(other.category, category) ||
                 other.category == category) &&
             (identical(other.confidence, confidence) ||
@@ -903,6 +1039,7 @@ class _$TaskAnalyzeResponseImpl implements _TaskAnalyzeResponse {
     priority,
     suggested_time,
     needs_deadline,
+    is_recurring,
     category,
     confidence,
     reasoning,
@@ -931,6 +1068,7 @@ abstract class _TaskAnalyzeResponse implements TaskAnalyzeResponse {
     required final TaskPriority priority,
     final String? suggested_time,
     final bool needs_deadline,
+    final bool is_recurring,
     final String? category,
     required final double confidence,
     required final String reasoning,
@@ -947,6 +1085,8 @@ abstract class _TaskAnalyzeResponse implements TaskAnalyzeResponse {
   String? get suggested_time; // Format: "HH:MM"
   @override
   bool get needs_deadline;
+  @override
+  bool get is_recurring;
   @override
   String? get category;
   @override

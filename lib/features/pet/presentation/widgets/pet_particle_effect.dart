@@ -18,7 +18,8 @@ class PetParticleEffect extends StatefulWidget {
   State<PetParticleEffect> createState() => _PetParticleEffectState();
 }
 
-class _PetParticleEffectState extends State<PetParticleEffect> with SingleTickerProviderStateMixin {
+class _PetParticleEffectState extends State<PetParticleEffect>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   final List<Particle> _particles = [];
   final Random _random = Random();
@@ -33,13 +34,15 @@ class _PetParticleEffectState extends State<PetParticleEffect> with SingleTicker
 
     // Generate particles
     for (int i = 0; i < 20; i++) {
-      _particles.add(Particle(
-        x: _random.nextDouble(),
-        y: _random.nextDouble(),
-        size: _random.nextDouble() * 6 + 2,
-        speed: _random.nextDouble() * 0.5 + 0.3,
-        angle: _random.nextDouble() * 2 * pi,
-      ));
+      _particles.add(
+        Particle(
+          x: _random.nextDouble(),
+          y: _random.nextDouble(),
+          size: _random.nextDouble() * 6 + 2,
+          speed: _random.nextDouble() * 0.5 + 0.3,
+          angle: _random.nextDouble() * 2 * pi,
+        ),
+      );
     }
   }
 
@@ -121,11 +124,7 @@ class ParticlePainter extends CustomPainter {
       paint.color = color.withOpacity(opacity * 0.6);
 
       // Draw particle
-      canvas.drawCircle(
-        Offset(x, y),
-        particle.size,
-        paint,
-      );
+      canvas.drawCircle(Offset(x, y), particle.size, paint);
 
       // Draw sparkle cross
       if (particle.size > 4) {
@@ -147,5 +146,6 @@ class ParticlePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(ParticlePainter oldDelegate) => animation != oldDelegate.animation;
+  bool shouldRepaint(ParticlePainter oldDelegate) =>
+      animation != oldDelegate.animation;
 }

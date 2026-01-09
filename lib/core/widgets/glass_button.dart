@@ -1,0 +1,58 @@
+import 'dart:ui';
+import 'package:flutter/material.dart';
+
+/// Кнопка с эффектом Liquid Glass
+/// Использует BackdropFilter с blur эффектом идентичным tabbar
+class GlassButton extends StatelessWidget {
+  final Widget child;
+  final VoidCallback onTap;
+  final double size;
+  final EdgeInsets padding;
+
+  const GlassButton({
+    super.key,
+    required this.child,
+    required this.onTap,
+    this.size = 36,
+    this.padding = const EdgeInsets.all(8),
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(size / 2),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(size / 2),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(size / 2),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.2),
+                  width: 1,
+                ),
+              ),
+              child: Center(child: child),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

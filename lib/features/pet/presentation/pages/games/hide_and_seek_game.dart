@@ -12,7 +12,8 @@ class HideAndSeekGame extends StatefulWidget {
   State<HideAndSeekGame> createState() => _HideAndSeekGameState();
 }
 
-class _HideAndSeekGameState extends State<HideAndSeekGame> with SingleTickerProviderStateMixin {
+class _HideAndSeekGameState extends State<HideAndSeekGame>
+    with SingleTickerProviderStateMixin {
   int _score = 0;
   int _attempts = 3;
   int? _hidingSpot;
@@ -72,14 +73,23 @@ class _HideAndSeekGameState extends State<HideAndSeekGame> with SingleTickerProv
         context: context,
         builder: (context) => AlertDialog(
           backgroundColor: AppTheme.surfaceColor,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('🎮 Игра окончена!', style: TextStyle(color: Colors.white)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text(
+            '🎮 Игра окончена!',
+            style: TextStyle(color: Colors.white),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 'Счёт: $_score',
-                style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 8),
               Text(
@@ -123,7 +133,10 @@ class _HideAndSeekGameState extends State<HideAndSeekGame> with SingleTickerProv
             color: AppTheme.headerBackgroundColor,
             child: const SafeArea(
               bottom: false,
-              child: CustomHeader(title: '🔍 Hide & Seek', type: HeaderType.pop),
+              child: CustomHeader(
+                title: '🔍 Hide & Seek',
+                type: HeaderType.pop,
+              ),
             ),
           ),
           Padding(
@@ -131,8 +144,18 @@ class _HideAndSeekGameState extends State<HideAndSeekGame> with SingleTickerProv
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Счёт: $_score', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                Text('Попытки: $_attempts', style: const TextStyle(color: Colors.white, fontSize: 18)),
+                Text(
+                  'Счёт: $_score',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  'Попытки: $_attempts',
+                  style: const TextStyle(color: Colors.white, fontSize: 18),
+                ),
               ],
             ),
           ),
@@ -144,14 +167,21 @@ class _HideAndSeekGameState extends State<HideAndSeekGame> with SingleTickerProv
                       children: [
                         const Text(
                           '🔍 Hide & Seek',
-                          style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         const SizedBox(height: 16),
                         const Padding(
                           padding: EdgeInsets.symmetric(horizontal: 32),
                           child: Text(
                             'Найдите питомца!\nУ вас 3 попытки',
-                            style: TextStyle(color: Colors.white70, fontSize: 16),
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 16,
+                            ),
                             textAlign: TextAlign.center,
                           ),
                         ),
@@ -160,9 +190,15 @@ class _HideAndSeekGameState extends State<HideAndSeekGame> with SingleTickerProv
                           onPressed: _startRound,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.primaryColor,
-                            padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 48,
+                              vertical: 16,
+                            ),
                           ),
-                          child: const Text('Начать игру', style: TextStyle(fontSize: 18)),
+                          child: const Text(
+                            'Начать игру',
+                            style: TextStyle(fontSize: 18),
+                          ),
                         ),
                       ],
                     ),
@@ -171,18 +207,20 @@ class _HideAndSeekGameState extends State<HideAndSeekGame> with SingleTickerProv
                     child: GridView.builder(
                       shrinkWrap: true,
                       padding: const EdgeInsets.all(32),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
-                      ),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 3,
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16,
+                          ),
                       itemCount: 9,
                       itemBuilder: (context, index) {
                         final isHiding = index == _hidingSpot && _isRevealed;
                         return AnimatedBuilder(
                           animation: _shakeController,
                           builder: (context, child) {
-                            final shake = sin(_shakeController.value * pi * 2) * 10;
+                            final shake =
+                                sin(_shakeController.value * pi * 2) * 10;
                             return Transform.translate(
                               offset: Offset(shake, 0),
                               child: child,

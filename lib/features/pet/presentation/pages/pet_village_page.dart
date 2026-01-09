@@ -23,7 +23,77 @@ class _PetVillagePageState extends State<PetVillagePage> {
 
   Future<void> _loadVillage() async {
     // TODO: Load from API
-    setState(() => _isLoading = false);
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    setState(() {
+      _pets = [
+        VillagePet(
+          name: 'Луна',
+          ownerName: '@maria_k',
+          emoji: '🐱',
+          level: 15,
+          evolutionStage: 'Взрослый',
+          isShiny: true,
+        ),
+        VillagePet(
+          name: 'Дракоша',
+          ownerName: '@alex_fire',
+          emoji: '🐉',
+          level: 28,
+          evolutionStage: 'Легенда',
+          isShiny: false,
+        ),
+        VillagePet(
+          name: 'Снежок',
+          ownerName: '@snow_white',
+          emoji: '🦊',
+          level: 12,
+          evolutionStage: 'Ребёнок',
+          isShiny: false,
+        ),
+        VillagePet(
+          name: 'Бамбук',
+          ownerName: '@panda_lover',
+          emoji: '🐼',
+          level: 20,
+          evolutionStage: 'Взрослый',
+          isShiny: false,
+        ),
+        VillagePet(
+          name: 'Радуга',
+          ownerName: '@unicorn_magic',
+          emoji: '🦄',
+          level: 35,
+          evolutionStage: 'Легенда',
+          isShiny: true,
+        ),
+        VillagePet(
+          name: 'Банни',
+          ownerName: '@fast_rabbit',
+          emoji: '🐰',
+          level: 8,
+          evolutionStage: 'Малыш',
+          isShiny: false,
+        ),
+        VillagePet(
+          name: 'Мудрец',
+          ownerName: '@night_owl',
+          emoji: '🦉',
+          level: 22,
+          evolutionStage: 'Взрослый',
+          isShiny: false,
+        ),
+        VillagePet(
+          name: 'Пушок',
+          ownerName: '@fluffy_bird',
+          emoji: '🐦',
+          level: 10,
+          evolutionStage: 'Ребёнок',
+          isShiny: false,
+        ),
+      ];
+      _isLoading = false;
+    });
   }
 
   @override
@@ -36,16 +106,46 @@ class _PetVillagePageState extends State<PetVillagePage> {
             color: AppTheme.headerBackgroundColor,
             child: const SafeArea(
               bottom: false,
-              child: CustomHeader(title: '🏘️ Pet Village', type: HeaderType.pop),
+              child: CustomHeader(
+                title: '🏘️ Pet Village',
+                type: HeaderType.pop,
+              ),
             ),
           ),
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
+                : _pets.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text('🏘️', style: TextStyle(fontSize: 64)),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Pet Village пуст',
+                          style: TextStyle(color: Colors.white, fontSize: 20),
+                        ),
+                        const SizedBox(height: 8),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 48),
+                          child: Text(
+                            'Здесь появятся питомцы\nдругих пользователей',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.6),
+                              fontSize: 14,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
                 : ListView.builder(
                     padding: const EdgeInsets.all(16),
                     itemCount: _pets.length,
-                    itemBuilder: (context, index) => _buildPetCard(_pets[index]),
+                    itemBuilder: (context, index) =>
+                        _buildPetCard(_pets[index]),
                   ),
           ),
         ],
@@ -136,7 +236,10 @@ class _PetVillagePageState extends State<PetVillagePage> {
                         ),
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: AppTheme.primaryColor.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(8),
@@ -155,7 +258,10 @@ class _PetVillagePageState extends State<PetVillagePage> {
                     const SizedBox(height: 4),
                     Text(
                       pet.ownerName,
-                      style: const TextStyle(color: Colors.white70, fontSize: 14),
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -177,7 +283,10 @@ class _PetVillagePageState extends State<PetVillagePage> {
                   ),
                   IconButton(
                     onPressed: () => _sendGift(pet),
-                    icon: const Icon(Ionicons.gift_outline, color: Colors.white),
+                    icon: const Icon(
+                      Ionicons.gift_outline,
+                      color: Colors.white,
+                    ),
                   ),
                 ],
               ),
@@ -195,7 +304,10 @@ class _PetVillagePageState extends State<PetVillagePage> {
       builder: (context) => AlertDialog(
         backgroundColor: AppTheme.surfaceColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Вы навестили ${pet.name}!', style: const TextStyle(color: Colors.white)),
+        title: Text(
+          'Вы навестили ${pet.name}!',
+          style: const TextStyle(color: Colors.white),
+        ),
         content: Text(
           '${pet.ownerName} будет рад вашему визиту! 👋',
           style: const TextStyle(color: Colors.white70),
@@ -216,7 +328,10 @@ class _PetVillagePageState extends State<PetVillagePage> {
       builder: (context) => AlertDialog(
         backgroundColor: AppTheme.surfaceColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Отправить подарок', style: TextStyle(color: Colors.white)),
+        title: const Text(
+          'Отправить подарок',
+          style: TextStyle(color: Colors.white),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -242,9 +357,9 @@ class _PetVillagePageState extends State<PetVillagePage> {
       onTap: () {
         Navigator.pop(context);
         // TODO: Send gift API call
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Подарок отправлен! $emoji')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Подарок отправлен! $emoji')));
       },
       child: Container(
         padding: const EdgeInsets.all(16),
@@ -260,8 +375,18 @@ class _PetVillagePageState extends State<PetVillagePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(name, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                  Text(effect, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    effect,
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
                 ],
               ),
             ),

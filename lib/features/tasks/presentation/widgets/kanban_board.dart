@@ -191,15 +191,7 @@ class KanbanBoard extends StatelessWidget {
                       onTaskTap!(task);
                     }
                   },
-                  onComplete: task.status != TaskStatus.completed
-                      ? () => _handleTaskComplete(context, task)
-                      : null,
-                  onDelete: () {
-                    if (onTaskDelete != null) {
-                      onTaskDelete!(task);
-                    }
-                  },
-                  compact: true, // Compact mode for Kanban
+                  onToggleStatus: () => _handleTaskComplete(context, task),
                 ),
               ),
             ),

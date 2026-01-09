@@ -44,6 +44,8 @@ class TaskModel with _$TaskModel {
     required String user_id,
     required String title,
     String? description,
+    String? color, // Hex color format: #RRGGBB
+    String? icon, // Icon name
     DateTime? due_date,
     String? scheduled_time, // Format: "HH:MM" (e.g. "08:00")
     DateTime? completed_at,
@@ -52,6 +54,9 @@ class TaskModel with _$TaskModel {
     required TimeScope time_scope,
     String? category_id,
     String? category_name,
+    String? task_group_id, // ID группы задач (привычки)
+    String? task_group_name, // Название группы (например, "Бросить курить")
+    String? task_group_icon, // Иконка группы (emoji, например "🚭")
     String? related_memory_id,
     required bool ai_suggested,
     double? ai_confidence,
@@ -75,6 +80,7 @@ class TaskAnalyzeResponse with _$TaskAnalyzeResponse {
     required TaskPriority priority,
     String? suggested_time, // Format: "HH:MM"
     @Default(false) bool needs_deadline,
+    @Default(false) bool is_recurring,
     String? category,
     required double confidence,
     required String reasoning,

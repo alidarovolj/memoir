@@ -12,37 +12,59 @@ class ProductivityChart extends StatelessWidget {
   Widget build(BuildContext context) {
     if (trends.isEmpty) {
       return Container(
-        padding: const EdgeInsets.all(40),
         decoration: BoxDecoration(
-          color: AppTheme.cardColor,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withOpacity(0.1)),
+          gradient: const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color.fromRGBO(255, 255, 255, 0.2),
+              Color.fromRGBO(233, 233, 233, 0.2),
+              Color.fromRGBO(242, 242, 242, 0),
+            ],
+            stops: [0.0, 0.5, 1.0],
+          ),
         ),
-        child: Center(
-          child: Text(
-            'Недостаточно данных для графика',
-            style: TextStyle(color: Colors.white.withOpacity(0.6)),
+        child: Container(
+          margin: const EdgeInsets.all(1),
+          padding: const EdgeInsets.all(40),
+          decoration: BoxDecoration(
+            color: const Color.fromRGBO(44, 44, 44, 1),
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: Center(
+            child: Text(
+              'Недостаточно данных для графика',
+              style: TextStyle(color: Colors.white.withOpacity(0.6)),
+            ),
           ),
         ),
       );
     }
 
     return Container(
-      padding: const EdgeInsets.all(16),
-      height: 300,
       decoration: BoxDecoration(
-        color: AppTheme.cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color.fromRGBO(255, 255, 255, 0.2),
+            Color.fromRGBO(233, 233, 233, 0.2),
+            Color.fromRGBO(242, 242, 242, 0),
+          ],
+          stops: [0.0, 0.5, 1.0],
+        ),
       ),
-      child: LineChart(
+      child: Container(
+        margin: const EdgeInsets.all(1),
+        padding: const EdgeInsets.all(16),
+        height: 300,
+        decoration: BoxDecoration(
+          color: const Color.fromRGBO(44, 44, 44, 1),
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: LineChart(
         LineChartData(
           gridData: FlGridData(
             show: true,
@@ -165,6 +187,7 @@ class ProductivityChart extends StatelessWidget {
               },
             ),
           ),
+        ),
         ),
       ),
     );

@@ -11,6 +11,7 @@ abstract class TaskRemoteDataSource {
     TimeScope? timeScope,
     TaskPriority? priority,
     String? categoryId,
+    DateTime? date,
     int page = 1,
     int pageSize = 50,
   });
@@ -20,7 +21,15 @@ abstract class TaskRemoteDataSource {
   Future<TaskModel> updateTask(String taskId, Map<String, dynamic> taskData);
   Future<void> completeTask(String taskId);
   Future<void> deleteTask(String taskId);
+  Future<Map<String, dynamic>> generateRecurringInstances(
+    String taskId, {
+    int daysAhead = 7,
+  });
   Future<Map<String, dynamic>> analyzeTask(String title);
+  Future<Map<String, dynamic>> analyzeHabit(String title);
+  Future<Map<String, dynamic>> createHabitWithSubtasks(
+    Map<String, dynamic> habitData,
+  );
   Future<List<TaskSuggestionModel>> getSuggestedTasksFromMemory(
     String memoryId,
   );
@@ -54,6 +63,7 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
     TimeScope? timeScope,
     TaskPriority? priority,
     String? categoryId,
+    DateTime? date,
     int page = 1,
     int pageSize = 50,
   }) async {
@@ -75,13 +85,18 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
       if (categoryId != null) {
         queryParams['category_id'] = categoryId;
       }
+      if (date != null) {
+        // Format date as YYYY-MM-DD
+        queryParams['date'] = 
+            '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+      }
 
       final response = await dio.get(
         ApiConfig.tasks,
         queryParameters: queryParams,
       );
 
-      log('📋 [TASKS] Fetched ${response.data['items'].length} tasks');
+      log('📋 [TASKS] Fetched ${response.data['items'].length} tasks for date: ${date != null ? queryParams['date'] : 'all'}');
       return response.data;
     } catch (e, stackTrace) {
       log(
@@ -156,6 +171,71 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
     }
   }
 
+  @override
+  Future<Map<String, dynamic>> generateRecurringInstances(
+    String taskId, {
+    int daysAhead = 7,
+  }) async {
+    try {
+      final response = await dio.post(
+        '${ApiConfig.tasks}/$taskId/generate-instances',
+        queryParameters: {'days_ahead': daysAhead},
+      );
+      log('✅ [TASKS] Generated recurring instances for task: $taskId');
+      return response.data;
+    } catch (e) {
+      log('❌ [TASKS] Error generating recurring instances: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> analyzeTask(String title) async {
+    try {
+      final response = await dio.post(
+        ApiConfig.tasksAnalyze,
+        data: {'title': title},
+      );
+      log('✨ [TASKS_AI] Task analyzed: ${response.data}');
+      return response.data;
+    } catch (e) {
+      log('❌ [TASKS_AI] Error analyzing task: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> analyzeHabit(String title) async {
+    try {
+      final response = await dio.post(
+        '${ApiConfig.tasksAI}/analyze-habit',
+        data: {'title': title},
+      );
+      log('✨ [HABIT_AI] Habit analyzed: ${response.data}');
+      return response.data;
+    } catch (e) {
+      log('❌ [HABIT_AI] Error analyzing habit: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> createHabitWithSubtasks(
+    Map<String, dynamic> habitData,
+  ) async {
+    try {
+      final response = await dio.post(
+        '${ApiConfig.tasks}/create-habit',
+        data: habitData,
+      );
+      log('✅ [HABIT] Habit created with ${response.data['subtasks_created']} subtasks');
+      return response.data;
+    } catch (e) {
+      log('❌ [HABIT] Error creating habit: $e');
+      rethrow;
+    }
+  }
+
   String _statusToString(TaskStatus status) {
     switch (status) {
       case TaskStatus.pending:
@@ -192,21 +272,6 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
         return 'high';
       case TaskPriority.urgent:
         return 'urgent';
-    }
-  }
-
-  @override
-  Future<Map<String, dynamic>> analyzeTask(String title) async {
-    try {
-      final response = await dio.post(
-        ApiConfig.tasksAnalyze,
-        data: {'title': title},
-      );
-      log('✨ [TASKS_AI] Task analyzed: ${response.data}');
-      return response.data;
-    } catch (e) {
-      log('❌ [TASKS_AI] Error analyzing task: $e');
-      rethrow;
     }
   }
 

@@ -22,12 +22,33 @@ class CategoryChart extends StatelessWidget {
   Widget build(BuildContext context) {
     if (categoryStats.isEmpty) {
       return Container(
-        padding: const EdgeInsets.all(40),
         decoration: BoxDecoration(
-          color: Colors.white,
           borderRadius: BorderRadius.circular(16),
+          gradient: const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color.fromRGBO(255, 255, 255, 0.2),
+              Color.fromRGBO(233, 233, 233, 0.2),
+              Color.fromRGBO(242, 242, 242, 0),
+            ],
+            stops: [0.0, 0.5, 1.0],
+          ),
         ),
-        child: const Center(child: Text('Нет данных по категориям')),
+        child: Container(
+          margin: const EdgeInsets.all(1),
+          padding: const EdgeInsets.all(40),
+          decoration: BoxDecoration(
+            color: const Color.fromRGBO(44, 44, 44, 1),
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: const Center(
+            child: Text(
+              'Нет данных по категориям',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ),
       );
     }
 
@@ -43,19 +64,27 @@ class CategoryChart extends StatelessWidget {
     final topStats = sortedStats.take(5).toList();
 
     return Container(
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color.fromRGBO(255, 255, 255, 0.2),
+            Color.fromRGBO(233, 233, 233, 0.2),
+            Color.fromRGBO(242, 242, 242, 0),
+          ],
+          stops: [0.0, 0.5, 1.0],
+        ),
       ),
-      child: Column(
+      child: Container(
+        margin: const EdgeInsets.all(1),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color.fromRGBO(44, 44, 44, 1),
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Column(
         children: topStats.asMap().entries.map((entry) {
           final index = entry.key;
           final stat = entry.value;
@@ -98,7 +127,7 @@ class CategoryChart extends StatelessWidget {
                     Container(
                       height: 8,
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
+                        color: Colors.white.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
@@ -123,7 +152,7 @@ class CategoryChart extends StatelessWidget {
                       '${stat.memoriesCount} воспоминаний · ${stat.tasksCount} задач',
                       style: TextStyle(
                         fontSize: 11,
-                        color: Colors.black.withOpacity(0.5),
+                        color: Colors.white.withOpacity(0.6),
                       ),
                     ),
                     Text(
@@ -140,6 +169,7 @@ class CategoryChart extends StatelessWidget {
             ),
           );
         }).toList(),
+        ),
       ),
     );
   }

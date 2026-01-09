@@ -12,10 +12,8 @@ class AchievementsPage extends StatefulWidget {
   State<AchievementsPage> createState() => _AchievementsPageState();
 }
 
-class _AchievementsPageState extends State<AchievementsPage>
-    with SingleTickerProviderStateMixin {
+class _AchievementsPageState extends State<AchievementsPage> {
   late AchievementRemoteDataSource _dataSource;
-  late TabController _tabController;
 
   AchievementList? _achievements;
   bool _isLoading = true;
@@ -24,14 +22,7 @@ class _AchievementsPageState extends State<AchievementsPage>
   void initState() {
     super.initState();
     _dataSource = AchievementRemoteDataSourceImpl(dio: DioClient.instance);
-    _tabController = TabController(length: 3, vsync: this);
     _loadAchievements();
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
   }
 
   Future<void> _loadAchievements() async {
@@ -55,81 +46,76 @@ class _AchievementsPageState extends State<AchievementsPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.pageBackgroundColor, // rgba(28, 27, 32, 1)
-      body: Column(
+      backgroundColor: AppTheme.pageBackgroundColor,
+      body: Stack(
         children: [
-          Container(
-            color: AppTheme.headerBackgroundColor, // rgba(21, 20, 24, 1)
+          // Content
+          _isLoading
+              ? const Center(
+                  child: CircularProgressIndicator(color: Colors.white),
+                )
+              : _achievements == null
+              ? const Center(
+                  child: Text(
+                    'Нет данных',
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                )
+              : (_achievements!.unlocked.isEmpty &&
+                    _achievements!.inProgress.isEmpty &&
+                    _achievements!.locked.isEmpty)
+              ? const Center(
+                  child: Text('Пусто', style: TextStyle(color: Colors.white54)),
+                )
+              : CustomScrollView(
+                  slivers: [
+                    // Отступ для CustomHeader
+                    SliverPadding(
+                      padding: EdgeInsets.only(
+                        top:
+                            MediaQuery.of(context).padding.top +
+                            64, // SafeArea + высота CustomHeader
+                      ),
+                    ),
+                    // Основной контент
+                    SliverPadding(
+                      padding: const EdgeInsets.all(16),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            final allAchievements = <AchievementProgress>[
+                              ..._achievements!.unlocked,
+                              ..._achievements!.inProgress,
+                              ..._achievements!.locked,
+                            ];
+                            final achievement = allAchievements[index];
+                            final showDate = achievement.unlocked;
+                            return _AchievementCard(
+                              achievement: achievement,
+                              showDate: showDate,
+                            );
+                          },
+                          childCount:
+                              _achievements!.unlocked.length +
+                              _achievements!.inProgress.length +
+                              _achievements!.locked.length,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+          // CustomHeader поверх контента
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
             child: SafeArea(
               bottom: false,
-              child: Column(
-                children: [
-                  const CustomHeader(title: 'Достижения', type: HeaderType.pop),
-                  TabBar(
-                    controller: _tabController,
-                    indicatorColor: Colors.white,
-                    labelColor: Colors.white,
-                    unselectedLabelColor: Colors.white60,
-                    tabs: [
-                      Tab(
-                        text:
-                            'Открытые (${_achievements?.unlocked.length ?? 0})',
-                      ),
-                      Tab(
-                        text:
-                            'В процессе (${_achievements?.inProgress.length ?? 0})',
-                      ),
-                      Tab(
-                        text: 'Закрытые (${_achievements?.locked.length ?? 0})',
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+              child: CustomHeader(title: 'Достижения', type: HeaderType.pop),
             ),
           ),
-          Expanded(
-            child: _isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(color: Colors.white),
-                  )
-                : _achievements == null
-                ? const Center(
-                    child: Text(
-                      'Нет данных',
-                      style: TextStyle(color: Colors.white70),
-                    ),
-                  )
-                : TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildList(_achievements!.unlocked, true),
-                      _buildList(_achievements!.inProgress, false),
-                      _buildList(_achievements!.locked, false),
-                    ],
-                  ),
-          ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildList(List<AchievementProgress> achievements, bool showDate) {
-    if (achievements.isEmpty) {
-      return const Center(
-        child: Text('Пусто', style: TextStyle(color: Colors.white54)),
-      );
-    }
-
-    return RefreshIndicator(
-      onRefresh: _loadAchievements,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: achievements.length,
-        itemBuilder: (context, index) {
-          final achievement = achievements[index];
-          return _AchievementCard(achievement: achievement, showDate: showDate);
-        },
       ),
     );
   }

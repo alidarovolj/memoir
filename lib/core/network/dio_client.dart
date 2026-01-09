@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:memoir/core/network/auth_interceptor.dart';
 import 'package:memoir/core/config/api_config.dart';
+import 'package:memoir/core/config/app_config.dart';
 import 'package:memoir/core/services/auth_service.dart';
 import 'package:chucker_flutter/chucker_flutter.dart';
 
@@ -21,7 +22,7 @@ class DioClient {
   static Dio createDio(SharedPreferences prefs) {
     final dio = Dio(
       BaseOptions(
-        baseUrl: ApiConfig.baseUrl,
+        baseUrl: ApiConfig.baseUrl, // Возвращаем baseUrl
         connectTimeout: Duration(milliseconds: ApiConfig.connectTimeout),
         receiveTimeout: Duration(milliseconds: ApiConfig.receiveTimeout),
         headers: {
@@ -32,7 +33,9 @@ class DioClient {
     );
 
     // Add Chucker interceptor for network debugging (first, so it captures everything)
-    dio.interceptors.add(ChuckerDioInterceptor());
+    if (AppConfig.enableChucker) {
+      dio.interceptors.add(ChuckerDioInterceptor());
+    }
 
     // Add logging interceptor
     dio.interceptors.add(
@@ -76,7 +79,9 @@ class DioClient {
       );
 
       // Add Chucker interceptor
-      _instance!.interceptors.add(ChuckerDioInterceptor());
+      if (AppConfig.enableChucker) {
+        _instance!.interceptors.add(ChuckerDioInterceptor());
+      }
 
       _instance!.interceptors.add(
         LogInterceptor(

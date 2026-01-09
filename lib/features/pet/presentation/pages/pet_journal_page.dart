@@ -23,7 +23,85 @@ class _PetJournalPageState extends State<PetJournalPage> {
 
   Future<void> _loadJournal() async {
     // TODO: Load from API
-    setState(() => _isLoading = false);
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    setState(() {
+      _entries = [
+        JournalEntry(
+          type: 'evolution',
+          title: 'Эволюция в Легенду! 🎉',
+          description:
+              'Ваш питомец достиг высшей стадии эволюции! Теперь это настоящая легенда.',
+          level: 30,
+          timestamp: DateTime.now().subtract(const Duration(hours: 2)),
+        ),
+        JournalEntry(
+          type: 'milestone',
+          title: 'Первые 100 XP! ⭐',
+          description:
+              'Поздравляем! Вы заработали свои первые 100 очков опыта.',
+          level: 8,
+          timestamp: DateTime.now().subtract(const Duration(days: 1)),
+        ),
+        JournalEntry(
+          type: 'achievement',
+          title: 'Победа в 10 играх 🏆',
+          description:
+              'Вы выиграли 10 мини-игр подряд! Невероятное достижение.',
+          level: 12,
+          timestamp: DateTime.now().subtract(const Duration(days: 2)),
+        ),
+        JournalEntry(
+          type: 'photo',
+          title: 'Первое фото с питомцем 📸',
+          description:
+              'Вы сделали первую памятную фотографию со своим питомцем.',
+          level: 5,
+          timestamp: DateTime.now().subtract(const Duration(days: 5)),
+        ),
+        JournalEntry(
+          type: 'evolution',
+          title: 'Эволюция во Взрослого! 🌟',
+          description:
+              'Ваш питомец вырос и стал взрослым. Новые возможности разблокированы.',
+          level: 15,
+          timestamp: DateTime.now().subtract(const Duration(days: 7)),
+        ),
+        JournalEntry(
+          type: 'milestone',
+          title: '7 дней подряд! 🔥',
+          description:
+              'Вы поддерживали активность 7 дней подряд. Продолжайте в том же духе!',
+          level: 10,
+          timestamp: DateTime.now().subtract(const Duration(days: 10)),
+        ),
+        JournalEntry(
+          type: 'achievement',
+          title: 'Первый визит в Village 🏘️',
+          description:
+              'Вы впервые посетили Pet Village и познакомились с другими питомцами.',
+          level: 6,
+          timestamp: DateTime.now().subtract(const Duration(days: 12)),
+        ),
+        JournalEntry(
+          type: 'evolution',
+          title: 'Эволюция в Ребёнка! 🌱',
+          description:
+              'Ваш питомец повзрослел и перешёл на следующую стадию развития.',
+          level: 5,
+          timestamp: DateTime.now().subtract(const Duration(days: 14)),
+        ),
+        JournalEntry(
+          type: 'photo',
+          title: 'Рождение питомца 🥚',
+          description:
+              'Ваше удивительное путешествие началось! Питомец вылупился из яйца.',
+          level: 1,
+          timestamp: DateTime.now().subtract(const Duration(days: 20)),
+        ),
+      ];
+      _isLoading = false;
+    });
   }
 
   @override
@@ -36,37 +114,44 @@ class _PetJournalPageState extends State<PetJournalPage> {
             color: AppTheme.headerBackgroundColor,
             child: const SafeArea(
               bottom: false,
-              child: CustomHeader(title: '📖 Pet Journal', type: HeaderType.pop),
+              child: CustomHeader(
+                title: '📖 Pet Journal',
+                type: HeaderType.pop,
+              ),
             ),
           ),
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _entries.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text('📖', style: TextStyle(fontSize: 64)),
-                            const SizedBox(height: 16),
-                            const Text(
-                              'Журнал пуст',
-                              style: TextStyle(color: Colors.white, fontSize: 20),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'История вашего питомца\nпоявится здесь',
-                              style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 14),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text('📖', style: TextStyle(fontSize: 64)),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Журнал пуст',
+                          style: TextStyle(color: Colors.white, fontSize: 20),
                         ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _entries.length,
-                        itemBuilder: (context, index) => _buildTimelineItem(_entries[index], index),
-                      ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'История вашего питомца\nпоявится здесь',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.6),
+                            fontSize: 14,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _entries.length,
+                    itemBuilder: (context, index) =>
+                        _buildTimelineItem(_entries[index], index),
+                  ),
           ),
         ],
       ),
@@ -100,7 +185,12 @@ class _PetJournalPageState extends State<PetJournalPage> {
                     ),
                   ],
                 ),
-                child: Center(child: Text(_getEntryIcon(entry.type), style: const TextStyle(fontSize: 20))),
+                child: Center(
+                  child: Text(
+                    _getEntryIcon(entry.type),
+                    style: const TextStyle(fontSize: 20),
+                  ),
+                ),
               ),
               if (index < _entries.length - 1)
                 Expanded(
@@ -161,7 +251,10 @@ class _PetJournalPageState extends State<PetJournalPage> {
                           ),
                           if (entry.level != null)
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: AppTheme.primaryColor.withOpacity(0.2),
                                 borderRadius: BorderRadius.circular(8),
@@ -181,11 +274,16 @@ class _PetJournalPageState extends State<PetJournalPage> {
                       if (entry.description != null)
                         Text(
                           entry.description!,
-                          style: const TextStyle(color: Colors.white70, fontSize: 14),
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                          ),
                         ),
                       const SizedBox(height: 8),
                       Text(
-                        DateFormat('dd MMM yyyy, HH:mm').format(entry.timestamp),
+                        DateFormat(
+                          'dd MMM yyyy, HH:mm',
+                        ).format(entry.timestamp),
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.4),
                           fontSize: 12,
@@ -250,7 +348,10 @@ class _PetJournalPageState extends State<PetJournalPage> {
       builder: (context) => AlertDialog(
         backgroundColor: AppTheme.surfaceColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Новая запись', style: TextStyle(color: Colors.white)),
+        title: const Text(
+          'Новая запись',
+          style: TextStyle(color: Colors.white),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

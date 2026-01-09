@@ -5,12 +5,10 @@ import 'package:memoir/core/services/auth_service.dart';
 import 'package:memoir/core/services/notification_service.dart';
 import 'package:memoir/core/network/dio_client.dart';
 import 'package:memoir/core/utils/snackbar_utils.dart';
+import 'package:memoir/core/widgets/custom_header.dart';
 import 'package:memoir/features/analytics/presentation/pages/analytics_page.dart';
 import 'package:memoir/features/challenges/presentation/pages/challenges_page.dart';
-import 'package:memoir/features/ai_stories/presentation/pages/ai_stories_page.dart';
 import 'package:memoir/features/achievements/presentation/pages/achievements_page.dart';
-import 'package:memoir/features/profile/data/models/user_stats_model.dart';
-import 'package:memoir/features/profile/data/datasources/user_stats_remote_datasource.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -26,55 +24,28 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  String? _phoneNumber;
   String? _firstName;
   String? _lastName;
   String? _avatarUrl;
-  UserStatsModel? _stats;
   bool _isLoading = true;
-  late UserStatsRemoteDataSource _statsDataSource;
-  final _scrollController = ScrollController();
-  final _headerOpacity = ValueNotifier<double>(0.0);
   bool _notificationsEnabled = true;
   final _imagePicker = ImagePicker();
 
   @override
   void initState() {
     super.initState();
-    _statsDataSource = UserStatsRemoteDataSourceImpl(dio: DioClient.instance);
     _loadUserData();
-
-    // Добавляем слушатель для анимации header
-    _scrollController.addListener(() {
-      final offset = _scrollController.offset;
-      final newOpacity = (offset / 100).clamp(0.0, 1.0);
-      if (_headerOpacity.value != newOpacity) {
-        _headerOpacity.value = newOpacity;
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    _headerOpacity.dispose();
-    super.dispose();
   }
 
   Future<void> _loadUserData() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
       final dio = DioClient.instance;
 
       // Load user info from API
       final response = await dio.get('/api/v1/users/me');
       final user = response.data;
 
-      // Load stats from API
-      final stats = await _statsDataSource.getUserStats();
-
       setState(() {
-        _phoneNumber = user['phone_number'];
         _firstName = user['first_name'];
         _lastName = user['last_name'];
         // Add base URL if avatar_url starts with /uploads
@@ -83,7 +54,6 @@ class _ProfilePageState extends State<ProfilePage> {
                 user['avatar_url'].toString().startsWith('/uploads')
             ? 'http://localhost:8000${user['avatar_url']}'
             : user['avatar_url'];
-        _stats = stats;
         _isLoading = false;
       });
     } catch (e) {
@@ -383,187 +353,144 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.pageBackgroundColor,
-      body: Column(
+      body: Stack(
         children: [
-          // Custom Header с анимацией
-          Container(
-            color: AppTheme.headerBackgroundColor,
-            child: SafeArea(
-              bottom: false,
-              child: Container(
-                height: 64,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Stack(
-                  children: [
-                    // Анимированный заголовок
-                    Center(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 48),
-                        child: ValueListenableBuilder<double>(
-                          valueListenable: _headerOpacity,
-                          builder: (context, opacity, child) {
-                            return Opacity(
-                              opacity: opacity,
-                              child: const Text(
-                                'Профиль',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                textAlign: TextAlign.center,
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                    // Кнопка назад (всегда видна)
-                    // Positioned(
-                    //   left: 0,
-                    //   top: 0,
-                    //   bottom: 0,
-                    //   child: Center(
-                    //     child: GestureDetector(
-                    //       behavior: HitTestBehavior.opaque,
-                    //       onTap: () {
-                    //         if (Navigator.canPop(context)) {
-                    //           Navigator.of(context).pop();
-                    //         }
-                    //       },
-                    //       child: Container(
-                    //         padding: const EdgeInsets.all(8),
-                    //         child: const Icon(
-                    //           Ionicons.chevron_back,
-                    //           color: AppTheme.primaryColor,
-                    //           size: 24,
-                    //         ),
-                    //       ),
-                    //     ),
-                    //   ),
-                    // ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
           // Content
-          Expanded(
-            child: _isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        AppTheme.primaryColor,
+          _isLoading
+              ? const Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      AppTheme.primaryColor,
+                    ),
+                  ),
+                )
+              : CustomScrollView(
+                  slivers: [
+                    // Отступ для CustomHeader
+                    SliverPadding(
+                      padding: EdgeInsets.only(
+                        top:
+                            MediaQuery.of(context).padding.top +
+                            64, // SafeArea + высота CustomHeader
                       ),
                     ),
-                  )
-                : CustomScrollView(
-                    controller: _scrollController,
-                    slivers: [
-                      // Основной контент
-                      SliverPadding(
-                        padding: const EdgeInsets.all(20),
-                        sliver: SliverList(
-                          delegate: SliverChildListDelegate([
-                            const SizedBox(height: 20),
-                            // User Avatar
-                            Center(
-                              child: GestureDetector(
-                                onTap: _pickAndUploadAvatar,
-                                child: Stack(
-                                  children: [
-                                    Container(
-                                      width: 100,
-                                      height: 100,
-                                      decoration: BoxDecoration(
-                                        gradient: _avatarUrl == null
-                                            ? AppTheme.primaryGradient
-                                            : null,
-                                        shape: BoxShape.circle,
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: AppTheme.primaryColor
-                                                .withOpacity(0.3),
-                                            blurRadius: 20,
-                                            spreadRadius: 5,
-                                          ),
-                                        ],
-                                      ),
-                                      child: _avatarUrl != null
-                                          ? ClipOval(
-                                              child: CachedNetworkImage(
-                                                imageUrl: _avatarUrl!,
-                                                fit: BoxFit.cover,
-                                                placeholder: (context, url) =>
-                                                    const Center(
-                                                      child:
-                                                          CircularProgressIndicator(),
-                                                    ),
-                                                errorWidget:
-                                                    (context, url, error) =>
-                                                        const Icon(
-                                                          Ionicons.person,
-                                                          size: 50,
-                                                          color: Colors.white,
-                                                        ),
-                                              ),
-                                            )
-                                          : const Icon(
-                                              Ionicons.person,
-                                              size: 50,
-                                              color: Colors.white,
+                    // Основной контент
+                    SliverPadding(
+                      padding: const EdgeInsets.all(20),
+                      sliver: SliverList(
+                        delegate: SliverChildListDelegate([
+                          const SizedBox(height: 20),
+                          // User Avatar
+                          Center(
+                            child: GestureDetector(
+                              onTap: _pickAndUploadAvatar,
+                              child: Stack(
+                                children: [
+                                  Container(
+                                    width: 100,
+                                    height: 100,
+                                    decoration: BoxDecoration(
+                                      color: _avatarUrl == null
+                                          ? AppTheme.primaryColor
+                                          : null,
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: AppTheme.primaryColor
+                                              .withOpacity(0.3),
+                                          blurRadius: 20,
+                                          spreadRadius: 5,
+                                        ),
+                                      ],
+                                    ),
+                                    child: _avatarUrl != null
+                                        ? ClipOval(
+                                            child: CachedNetworkImage(
+                                              imageUrl: _avatarUrl!,
+                                              fit: BoxFit.cover,
+                                              placeholder: (context, url) =>
+                                                  const Center(
+                                                    child:
+                                                        CircularProgressIndicator(),
+                                                  ),
+                                              errorWidget:
+                                                  (context, url, error) =>
+                                                      const Icon(
+                                                        Ionicons.person,
+                                                        size: 50,
+                                                        color: Colors.white,
+                                                      ),
                                             ),
-                                    ),
-                                    Positioned(
-                                      right: 0,
-                                      bottom: 0,
-                                      child: Container(
-                                        width: 32,
-                                        height: 32,
-                                        decoration: BoxDecoration(
-                                          color: AppTheme.primaryColor,
-                                          shape: BoxShape.circle,
-                                          border: Border.all(
-                                            color: AppTheme.pageBackgroundColor,
-                                            width: 2,
+                                          )
+                                        : const Icon(
+                                            Ionicons.person,
+                                            size: 50,
+                                            color: Colors.white,
                                           ),
-                                        ),
-                                        child: const Icon(
-                                          Ionicons.camera,
-                                          color: Colors.white,
-                                          size: 16,
+                                  ),
+                                  Positioned(
+                                    right: 0,
+                                    bottom: 0,
+                                    child: Container(
+                                      width: 32,
+                                      height: 32,
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.primaryColor,
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: AppTheme.pageBackgroundColor,
+                                          width: 2,
                                         ),
                                       ),
+                                      child: const Icon(
+                                        Ionicons.camera,
+                                        color: Colors.white,
+                                        size: 16,
+                                      ),
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
                             ),
-                            const SizedBox(height: 24),
-                            // User Info
-                            _buildInfoCard(),
-                            const SizedBox(height: 24),
-                            // Settings Section
-                            _buildSectionTitle('Настройки'),
-                            const SizedBox(height: 12),
-                            _buildSettingsCard(),
-                            const SizedBox(height: 24),
-                            // About Section
-                            _buildSectionTitle('О приложении'),
-                            const SizedBox(height: 12),
-                            _buildAboutCard(),
-                            const SizedBox(height: 24),
-                            // Logout Button
-                            _buildLogoutButton(),
-                            const SizedBox(height: 20),
-                          ]),
-                        ),
+                          ),
+                          const SizedBox(height: 24),
+                          // User Info
+                          _buildInfoCard(),
+                          const SizedBox(height: 24),
+                          // Settings Section
+                          _buildSectionTitle('Настройки'),
+                          const SizedBox(height: 12),
+                          _buildSettingsCard(),
+                          const SizedBox(height: 24),
+                          // About Section
+                          _buildSectionTitle('О приложении'),
+                          const SizedBox(height: 12),
+                          _buildAboutCard(),
+                          const SizedBox(height: 24),
+                          // Logout Button
+                          _buildLogoutButton(),
+                          const SizedBox(height: 20),
+                        ]),
                       ),
-                    ],
-                  ),
+                    ),
+                    // Отступ снизу для таббара
+                    SliverPadding(
+                      padding: EdgeInsets.only(
+                        bottom: MediaQuery.of(context).padding.bottom,
+                      ),
+                    ),
+                  ],
+                ),
+
+          // CustomHeader поверх контента
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              bottom: false,
+              child: CustomHeader(title: 'Профиль', type: HeaderType.none),
+            ),
           ),
         ],
       ),
@@ -572,18 +499,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget _buildInfoCard() {
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(20)),
       child: Column(
         children: [
           // Name
@@ -593,83 +509,13 @@ class _ProfilePageState extends State<ProfilePage> {
                 : _firstName ?? _lastName ?? 'Пользователь',
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 24,
+              fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 8),
-          // Phone
-          if (_phoneNumber != null)
-            Text(
-              _phoneNumber!,
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.7),
-                fontSize: 16,
-              ),
-            ),
-          const SizedBox(height: 16),
-          const Divider(color: Colors.white12),
-          const SizedBox(height: 16),
-          // Stats Row
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildStatItem('${_stats?.memoriesCount ?? 0}', 'Воспоминаний'),
-              Container(width: 1, height: 40, color: Colors.white12),
-              _buildStatItem(
-                '${_stats?.tasksCompleted ?? 0}/${_stats?.tasksTotal ?? 0}',
-                'Задач',
-              ),
-              Container(width: 1, height: 40, color: Colors.white12),
-              _buildStatItem('${_stats?.storiesCount ?? 0}', 'Stories'),
-            ],
-          ),
-          if (_stats != null && _stats!.totalTimeTracked > 0) ...[
-            const SizedBox(height: 16),
-            const Divider(color: Colors.white12),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(
-                  Ionicons.time_outline,
-                  color: Colors.white70,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Отслежено: ${_stats!.totalTimeTracked.toHoursString()}',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-          ],
         ],
       ),
-    );
-  }
-
-  Widget _buildStatItem(String value, String label) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12),
-        ),
-      ],
     );
   }
 
@@ -700,17 +546,17 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
       child: Column(
         children: [
-          _buildSettingsItem(
-            icon: Ionicons.stats_chart_outline,
-            title: 'Аналитика',
-            subtitle: 'Графики и статистика продуктивности',
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => const AnalyticsPage()),
-              );
-            },
-          ),
-          const Divider(height: 1, color: Colors.white12),
+          // _buildSettingsItem(
+          //   icon: Ionicons.stats_chart_outline,
+          //   title: 'Аналитика',
+          //   subtitle: 'Графики и статистика продуктивности',
+          //   onTap: () {
+          //     Navigator.of(context).push(
+          //       MaterialPageRoute(builder: (context) => const AnalyticsPage()),
+          //     );
+          //   },
+          // ),
+          // const Divider(height: 1, color: Colors.white12),
           _buildSettingsItem(
             icon: Ionicons.trophy_outline,
             title: 'Челленджи',
@@ -718,17 +564,6 @@ class _ProfilePageState extends State<ProfilePage> {
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute(builder: (context) => const ChallengesPage()),
-              );
-            },
-          ),
-          const Divider(height: 1, color: Colors.white12),
-          _buildSettingsItem(
-            icon: Ionicons.sparkles_outline,
-            title: 'AI Истории',
-            subtitle: 'Создайте стихи и рассказы из воспоминаний',
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => const AIStoriesPage()),
               );
             },
           ),
@@ -829,7 +664,7 @@ class _ProfilePageState extends State<ProfilePage> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                gradient: AppTheme.primaryGradient,
+                color: AppTheme.primaryColor,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(icon, color: Colors.white, size: 20),

@@ -1,5 +1,7 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:memoir/core/theme/app_theme.dart';
+import 'package:memoir/core/widgets/glass_button.dart';
 import 'package:ionicons/ionicons.dart';
 
 enum HeaderType { pop, close, back, none }
@@ -40,47 +42,50 @@ class CustomHeader extends StatelessWidget {
 
     return Container(
       height: 64,
-      color: AppTheme.headerBackgroundColor,
       padding: const EdgeInsets.symmetric(horizontal: 16),
+      color: Colors.transparent, // Прозрачный фон
       child: Stack(
         children: [
           // Центрированный заголовок с отступами для кнопок
-          Center(
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal:
-                    (effectiveType == HeaderType.pop ||
-                        effectiveType == HeaderType.close ||
-                        effectiveType == HeaderType.back)
-                    ? 48 // Отступ для кнопок слева/справа
-                    : trailing != null
-                    ? 120 // Отступ для trailing виджета (несколько кнопок)
-                    : 0,
-              ),
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 300),
-                transitionBuilder: (Widget child, Animation<double> animation) {
-                  return FadeTransition(
-                    opacity: animation,
-                    child: SlideTransition(
-                      position:
-                          Tween<Offset>(
-                            begin: const Offset(0.0, -0.3),
-                            end: Offset.zero,
-                          ).animate(
-                            CurvedAnimation(
-                              parent: animation,
-                              curve: Curves.easeOut,
-                            ),
+          if (title.isNotEmpty)
+            Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal:
+                      (effectiveType == HeaderType.pop ||
+                          effectiveType == HeaderType.close ||
+                          effectiveType == HeaderType.back)
+                      ? 48 // Отступ для кнопок слева/справа
+                      : trailing != null
+                      ? 120 // Отступ для trailing виджета (несколько кнопок)
+                      : 0,
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.2),
+                          width: 1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
                           ),
-                      child: child,
-                    ),
-                  );
-                },
-                child: title.isNotEmpty
-                    ? Text(
+                        ],
+                      ),
+                      child: Text(
                         title,
-                        key: const ValueKey('title'),
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -89,11 +94,12 @@ class CustomHeader extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.center,
-                      )
-                    : const SizedBox.shrink(key: ValueKey('empty')),
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
-          ),
           // Левая кнопка (pop/back)
           if (effectiveType == HeaderType.pop ||
               effectiveType == HeaderType.back)
@@ -102,8 +108,7 @@ class CustomHeader extends StatelessWidget {
               top: 0,
               bottom: 0,
               child: Center(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
+                child: GlassButton(
                   onTap: () {
                     if (onBack != null) {
                       onBack!();
@@ -113,13 +118,10 @@ class CustomHeader extends StatelessWidget {
                       }
                     }
                   },
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    child: Icon(
-                      Ionicons.chevron_back,
-                      color: AppTheme.primaryColor,
-                      size: 24,
-                    ),
+                  child: Icon(
+                    Ionicons.chevron_back,
+                    color: AppTheme.primaryColor,
+                    size: 20,
                   ),
                 ),
               ),
@@ -131,7 +133,7 @@ class CustomHeader extends StatelessWidget {
               top: 0,
               bottom: 0,
               child: Center(
-                child: GestureDetector(
+                child: GlassButton(
                   onTap: () {
                     // Крестик закрывает модуль полностью и возвращает на главную
                     if (onBack != null) {
@@ -148,7 +150,7 @@ class CustomHeader extends StatelessWidget {
                   child: Icon(
                     Ionicons.close,
                     color: AppTheme.primaryColor,
-                    size: 24,
+                    size: 20,
                   ),
                 ),
               ),

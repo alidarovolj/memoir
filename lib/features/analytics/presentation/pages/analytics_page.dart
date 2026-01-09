@@ -54,82 +54,88 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.pageBackgroundColor,
-      body: Column(
+      body: Stack(
         children: [
-          // Custom Header
-          Container(
-            color: AppTheme.headerBackgroundColor,
-            child: const SafeArea(
-              bottom: false,
-              child: CustomHeader(title: 'Аналитика', type: HeaderType.pop),
-            ),
-          ),
-
           // Content
-          Expanded(
-            child: _isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        AppTheme.primaryColor,
-                      ),
-                    ),
-                  )
-                : _analytics == null
-                ? const Center(
-                    child: EmptyState(
-                      title: 'Аналитика недоступна',
-                      subtitle: 'Данные не загружены',
-                    ),
-                  )
-                : RefreshIndicator(
-                    onRefresh: _loadAnalytics,
-                    color: AppTheme.primaryColor,
-                    backgroundColor: AppTheme.cardColor,
-                    child: ListView(
-                      padding: const EdgeInsets.all(20),
-                      children: [
-                        // Header Stats
-                        _buildHeaderStats(),
-                        const SizedBox(height: 24),
-
-                        // This Week Overview
-                        _buildThisWeekCard(),
-                        const SizedBox(height: 24),
-
-                        // Streaks
-                        _buildStreaksCard(),
-                        const SizedBox(height: 24),
-
-                        // Activity Heatmap
-                        _buildSectionTitle('Активность за месяц'),
-                        const SizedBox(height: 12),
-                        ActivityHeatmap(
-                          dailyActivities:
-                              _analytics!.currentMonth.dailyActivities,
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Productivity Trends
-                        _buildSectionTitle('Продуктивность (6 месяцев)'),
-                        const SizedBox(height: 12),
-                        ProductivityChart(
-                          trends: _analytics!.productivityTrends,
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Category Stats
-                        if (_analytics!.categoryStats.isNotEmpty) ...[
-                          _buildSectionTitle('Категории'),
-                          const SizedBox(height: 12),
-                          CategoryChart(
-                            categoryStats: _analytics!.categoryStats,
-                          ),
-                          const SizedBox(height: 24),
-                        ],
-                      ],
+          _isLoading
+              ? const Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      AppTheme.primaryColor,
                     ),
                   ),
+                )
+              : _analytics == null
+              ? const Center(
+                  child: EmptyState(
+                    title: 'Аналитика недоступна',
+                    subtitle: 'Данные не загружены',
+                  ),
+                )
+              : CustomScrollView(
+                  slivers: [
+                    // Отступ для CustomHeader
+                    SliverPadding(
+                      padding: EdgeInsets.only(
+                        top:
+                            MediaQuery.of(context).padding.top +
+                            64, // SafeArea + высота CustomHeader
+                      ),
+                    ),
+                    // Основной контент
+                    SliverPadding(
+                      padding: const EdgeInsets.all(20),
+                      sliver: SliverList(
+                        delegate: SliverChildListDelegate([
+                          // Header Stats
+                          _buildHeaderStats(),
+                          const SizedBox(height: 24),
+
+                          // Streaks
+                          _buildStreaksCard(),
+                          const SizedBox(height: 24),
+
+                          // Activity Heatmap
+                          _buildSectionTitle('Активность за месяц'),
+                          const SizedBox(height: 12),
+                          ActivityHeatmap(
+                            dailyActivities:
+                                _analytics!.currentMonth.dailyActivities,
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Productivity Trends
+                          _buildSectionTitle('Продуктивность (6 месяцев)'),
+                          const SizedBox(height: 12),
+                          ProductivityChart(
+                            trends: _analytics!.productivityTrends,
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Category Stats
+                          if (_analytics!.categoryStats.isNotEmpty) ...[
+                            _buildSectionTitle('Категории'),
+                            const SizedBox(height: 12),
+                            CategoryChart(
+                              categoryStats: _analytics!.categoryStats,
+                            ),
+                            const SizedBox(height: 24),
+                          ],
+                        ]),
+                      ),
+                    ),
+                  ],
+                ),
+
+          // CustomHeader поверх контента
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              bottom: false,
+              child: CustomHeader(title: 'Аналитика', type: HeaderType.none),
+            ),
           ),
         ],
       ),

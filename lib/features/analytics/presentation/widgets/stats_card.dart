@@ -64,9 +64,10 @@ class StatsCard extends StatelessWidget {
                   Text(
                     label,
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 11,
                       color: Colors.white.withOpacity(0.6),
                     ),
+                    maxLines: 1,
                   ),
                 ],
               ),

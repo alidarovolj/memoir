@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:memoir/core/theme/app_theme.dart';
 import 'package:memoir/core/widgets/custom_header.dart';
-import 'package:memoir/features/pet/presentation/pages/games/feed_frenzy_game.dart';
 import 'package:memoir/features/pet/presentation/pages/games/hide_and_seek_game.dart';
 import 'package:memoir/features/pet/presentation/pages/games/memory_match_game.dart';
 
@@ -25,16 +24,6 @@ class PetGamesPage extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                _buildGameCard(
-                  context,
-                  icon: '🍖',
-                  title: 'Feed Frenzy',
-                  description: 'Ловите хорошую еду, избегайте плохую',
-                  reward: 'До 50 XP',
-                  color: Colors.orange,
-                  onTap: () => _launchGame(context, const FeedFrenzyGame()),
-                ),
-                const SizedBox(height: 16),
                 _buildGameCard(
                   context,
                   icon: '🔍',
@@ -65,7 +54,11 @@ class PetGamesPage extends StatelessWidget {
                     children: [
                       const Text(
                         '📊 Ваша статистика',
-                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 12),
                       _buildStatRow('Игр сегодня', '0 / 3'),
@@ -138,18 +131,28 @@ class PetGamesPage extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       description,
-                      style: const TextStyle(color: Colors.white70, fontSize: 14),
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: color.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         reward,
-                        style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          color: color,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],
@@ -168,8 +171,18 @@ class PetGamesPage extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Colors.white70, fontSize: 14)),
-          Text(value, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white70, fontSize: 14),
+          ),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ],
       ),
     );
@@ -180,12 +193,12 @@ class PetGamesPage extends StatelessWidget {
       context,
       MaterialPageRoute(builder: (context) => game),
     );
-    
+
     if (score != null && context.mounted) {
       // TODO: Submit score to API
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Игра завершена! Счёт: $score')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Игра завершена! Счёт: $score')));
     }
   }
 }

@@ -9,6 +9,7 @@ export 'category_card.dart';
 export 'empty_state.dart';
 export 'loading_state.dart';
 export 'glass_card.dart';
+export 'glass_button.dart';
 export 'gradient_icon.dart';
 export 'page_transitions.dart';
 export 'banner_carousel.dart';

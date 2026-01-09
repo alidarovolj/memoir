@@ -6,14 +6,15 @@ import 'package:memoir/core/widgets/custom_header.dart';
 import 'package:memoir/core/utils/snackbar_utils.dart';
 import 'package:memoir/features/pet/data/datasources/pet_remote_datasource.dart';
 import 'package:memoir/features/pet/data/models/pet_model.dart';
-import 'package:memoir/features/pet/data/services/pet_service.dart';
 import 'package:memoir/core/network/dio_client.dart';
 // Pet 2.0 pages
 import 'package:memoir/features/pet/presentation/pages/pet_games_page.dart';
 import 'package:memoir/features/pet/presentation/pages/pet_shop_page.dart';
 import 'package:memoir/features/pet/presentation/pages/pet_village_page.dart';
 import 'package:memoir/features/pet/presentation/pages/pet_journal_page.dart';
+import 'package:memoir/features/pet/presentation/pages/games/feed_frenzy_game.dart';
 import 'package:memoir/features/pet/presentation/widgets/pet_particle_effect.dart';
+import 'package:memoir/features/pet/presentation/widgets/animated_pet_sprite.dart';
 
 /// Full-screen pet interaction page
 class PetPage extends StatefulWidget {
@@ -64,57 +65,72 @@ class _PetPageState extends State<PetPage> with TickerProviderStateMixin {
   }
 
   Future<void> _feedPet() async {
-    setState(() => _isLoading = true);
+    // Launch Feed Frenzy game for feeding
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const FeedFrenzyGame()),
+    );
 
-    try {
-      final result = await _petDataSource.feedPet();
+    if (result != null && result is Map<String, dynamic>) {
+      final foodCaught = result['foodCaught'] as int;
+      final happinessGain = result['happiness'] as int;
 
-      if (mounted) {
-        setState(() {
-          _pet = result.pet;
-          _isLoading = false;
-        });
+      setState(() => _isLoading = true);
 
-        SnackBarUtils.showSuccess(context, result.message);
+      try {
+        // Call backend feed API
+        final apiResult = await _petDataSource.feedPet();
 
-        // Show celebration if leveled up or evolved
-        if (result.levelUps > 0 || result.evolved) {
-          _showCelebration(result);
+        if (mounted) {
+          setState(() {
+            _pet = apiResult.pet.copyWith(
+              happiness: (_pet.happiness + happinessGain).clamp(0, 100),
+              health: (_pet.health + (foodCaught * 3).clamp(0, 30)).clamp(
+                0,
+                100,
+              ),
+            );
+            _isLoading = false;
+          });
+
+          SnackBarUtils.showSuccess(
+            context,
+            '🍖 Питомец покормлен! Поймано еды: $foodCaught',
+          );
+
+          // Show celebration if leveled up or evolved
+          if (apiResult.levelUps > 0 || apiResult.evolved) {
+            _showCelebration(apiResult);
+          }
         }
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-        SnackBarUtils.showError(context, 'Не удалось покормить питомца');
+      } catch (e) {
+        if (mounted) {
+          setState(() {
+            // Still apply game results even if API fails
+            _pet = _pet.copyWith(
+              happiness: (_pet.happiness + happinessGain).clamp(0, 100),
+              health: (_pet.health + (foodCaught * 3).clamp(0, 30)).clamp(
+                0,
+                100,
+              ),
+            );
+            _isLoading = false;
+          });
+          SnackBarUtils.showSuccess(
+            context,
+            '🍖 Покормлено! Поймано еды: $foodCaught',
+          );
+        }
       }
     }
   }
 
   Future<void> _playWithPet() async {
-    setState(() => _isLoading = true);
-
-    try {
-      final result = await _petDataSource.playWithPet();
-
-      if (mounted) {
-        setState(() {
-          _pet = result.pet;
-          _isLoading = false;
-        });
-
-        SnackBarUtils.showSuccess(context, result.message);
-
-        // Show celebration if leveled up or evolved
-        if (result.levelUps > 0 || result.evolved) {
-          _showCelebration(result);
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-        SnackBarUtils.showError(context, 'Не удалось поиграть с питомцем');
-      }
-    }
+    // Launch games selection page
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const PetGamesPage()),
+    );
   }
 
   void _showCelebration(PetActionResponse result) {
@@ -266,10 +282,12 @@ class _PetPageState extends State<PetPage> with TickerProviderStateMixin {
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   children: [
-                    // Pet display (emoji)
+                    // Pet display (animated sprite)
                     PetParticleEffect(
                       isActive: _pet.happiness >= 80,
-                      particleColor: _pet.isShiny ? Colors.amber : AppTheme.primaryColor,
+                      particleColor: _pet.isShiny
+                          ? Colors.amber
+                          : AppTheme.primaryColor,
                       child: AnimatedBuilder(
                         animation: _bounceAnimation,
                         builder: (context, child) {
@@ -278,9 +296,10 @@ class _PetPageState extends State<PetPage> with TickerProviderStateMixin {
                             child: child,
                           );
                         },
-                        child: Text(
-                          _pet.petTypeEmoji,
-                          style: const TextStyle(fontSize: 120),
+                        child: AnimatedPetSprite(
+                          emotion: _pet.currentEmotion ?? 'happy',
+                          size: 120,
+                          isShiny: _pet.isShiny,
                         ),
                       ),
                     ),
@@ -472,6 +491,33 @@ class _PetPageState extends State<PetPage> with TickerProviderStateMixin {
                           _buildInfoRow(
                             '⭐ Питомец эволюционирует на уровнях 5, 15, 30',
                           ),
+                          const SizedBox(height: 16),
+                          const Divider(color: Colors.white24),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              const Icon(
+                                Ionicons.star,
+                                color: AppTheme.primaryColor,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Как заработать XP',
+                                style: const TextStyle(
+                                  color: AppTheme.primaryColor,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          _buildInfoRow('📝 Создавайте воспоминания (+XP)'),
+                          _buildInfoRow('✅ Выполняйте задачи (+XP)'),
+                          _buildInfoRow('🔥 Поддерживайте стрики (+XP)'),
+                          _buildInfoRow('🎮 Играйте в мини-игры (до 40 XP)'),
+                          _buildInfoRow('🍖 Кормите питомца через Feed Frenzy'),
                         ],
                       ),
                     ),
@@ -646,7 +692,7 @@ class _PetPageState extends State<PetPage> with TickerProviderStateMixin {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const PetShopPage(),
+                      builder: (context) => PetShopPage(currentXp: _pet.xp),
                     ),
                   );
                 },

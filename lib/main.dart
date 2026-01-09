@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:memoir/injection_container.dart' as di;
+import 'package:memoir/core/config/app_config.dart';
 import 'package:memoir/core/theme/app_theme.dart';
 import 'package:memoir/core/widgets/widgets.dart';
 import 'package:memoir/core/utils/snackbar_utils.dart';
@@ -11,7 +12,6 @@ import 'package:ionicons/ionicons.dart';
 import 'package:memoir/features/memories/presentation/pages/create_memory_page.dart';
 import 'package:memoir/features/memories/presentation/pages/memory_detail_page.dart';
 import 'package:memoir/features/memories/presentation/widgets/widgets.dart';
-import 'package:memoir/features/search/presentation/pages/search_page.dart';
 import 'package:memoir/core/network/dio_client.dart';
 import 'package:memoir/features/memories/data/datasources/memory_remote_datasource.dart';
 import 'package:memoir/core/services/auth_service.dart';
@@ -22,36 +22,53 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:memoir/features/stories/data/datasources/story_remote_datasource.dart';
 import 'package:memoir/features/stories/data/models/story_model.dart';
 import 'package:memoir/features/stories/presentation/widgets/stories_list.dart';
-import 'package:memoir/features/tasks/presentation/pages/tasks_page.dart';
 import 'package:memoir/features/memories/presentation/pages/edit_memory_page.dart';
 import 'package:memoir/features/tasks/data/datasources/task_remote_datasource.dart';
+import 'package:memoir/features/tasks/data/models/task_model.dart';
 import 'package:memoir/features/tasks/data/models/task_suggestion_model.dart';
 import 'package:memoir/features/tasks/presentation/widgets/task_suggestions_modal.dart';
+import 'package:memoir/features/tasks/presentation/widgets/week_calendar.dart';
+import 'package:memoir/features/tasks/presentation/widgets/task_card.dart';
+import 'package:memoir/features/tasks/presentation/pages/task_details_page.dart';
+import 'package:memoir/features/tasks/presentation/pages/create_task_page.dart';
+import 'dart:developer';
+import 'package:confetti/confetti.dart';
+import 'dart:math' as math;
 import 'package:memoir/features/profile/presentation/pages/profile_page.dart';
+import 'package:memoir/features/friends/presentation/pages/friends_page.dart';
+import 'package:memoir/features/analytics/presentation/pages/analytics_page.dart';
 import 'package:chucker_flutter/chucker_flutter.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:memoir/features/analytics/data/datasources/analytics_remote_datasource.dart';
 import 'package:memoir/features/analytics/data/models/analytics_model.dart';
-import 'package:memoir/features/analytics/presentation/widgets/header_stats.dart';
-import 'package:memoir/features/analytics/presentation/widgets/this_week_card.dart';
-import 'package:memoir/features/analytics/presentation/widgets/streaks_card.dart';
-import 'package:memoir/core/widgets/referral_banner.dart';
 // Pet imports
 import 'package:memoir/features/pet/data/models/pet_model.dart';
-import 'package:memoir/features/pet/data/datasources/pet_remote_datasource.dart';
-import 'package:memoir/features/pet/presentation/widgets/pet_widget.dart';
-import 'package:memoir/features/pet/presentation/pages/pet_page.dart';
+// import 'package:memoir/features/pet/data/datasources/pet_remote_datasource.dart';
 import 'package:memoir/features/pet/presentation/pages/pet_onboarding_page.dart';
 import 'package:memoir/features/pet/data/services/pet_service.dart';
 // Time Capsule imports
 import 'package:memoir/features/time_capsule/data/datasources/time_capsule_remote_datasource.dart';
 import 'package:memoir/features/time_capsule/presentation/widgets/throwback_modal.dart';
-import 'package:memoir/features/time_capsule/presentation/pages/time_capsule_page.dart';
 // Daily Prompts imports
 import 'package:memoir/features/daily_prompts/presentation/widgets/daily_prompt_card.dart';
 
 // Global navigation key для навигации из interceptor
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+// Helper class for grouping tasks
+class TaskGroup {
+  final String id;
+  final String name;
+  final String? icon;
+  final List<TaskModel> tasks;
+
+  TaskGroup({
+    required this.id,
+    required this.name,
+    this.icon,
+    required this.tasks,
+  });
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -91,8 +108,8 @@ class MemoirApp extends StatelessWidget {
     return MaterialApp(
       navigatorKey: navigatorKey, // Добавляем глобальный ключ
       navigatorObservers: [
-        ChuckerFlutter.navigatorObserver,
-      ], // Добавляем Chucker observer
+        if (AppConfig.enableChucker) ChuckerFlutter.navigatorObserver,
+      ],
       title: 'Memoir',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
@@ -301,7 +318,7 @@ class _HomePageState extends State<HomePage>
   late StoryRemoteDataSource _storyDataSource;
   late TaskRemoteDataSource _taskDataSource;
   late AnalyticsRemoteDataSource _analyticsDataSource;
-  late PetRemoteDataSource _petDataSource;
+  // late PetRemoteDataSource _petDataSource;
   late TimeCapsuleRemoteDataSource _timeCapsuleDataSource;
   List<Map<String, dynamic>> _memories = [];
   List<StoryModel> _stories = [];
@@ -310,11 +327,23 @@ class _HomePageState extends State<HomePage>
   AnalyticsDashboard? _analytics;
   bool _isLoadingAnalytics = true;
   PetModel? _pet;
-  bool _isLoadingPet = true;
   bool _petOnboardingShown =
       false; // Flag to prevent showing onboarding multiple times
   bool _throwbackShown =
       false; // Flag to prevent showing throwback multiple times
+
+  // Tasks data
+  List<TaskModel> _tasks = []; // Ежедневные задачи
+  List<TaskModel> _longTermTasks = []; // Долгосрочные задачи
+  Map<String, TaskGroup> _taskGroups = {}; // Группы задач (привычки)
+  List<TaskModel> _ungroupedTasks = []; // Задачи без группы
+  Map<String, bool> _expandedGroups = {}; // Состояние раскрытия групп
+  bool _isLoadingTasks = false;
+  DateTime _selectedDate = DateTime.now();
+  int _streakCount = 0;
+
+  // Confetti controller for task completion
+  late ConfettiController _confettiController;
 
   // User data for display
   String? _userName;
@@ -327,6 +356,11 @@ class _HomePageState extends State<HomePage>
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
 
+    // Initialize confetti controller
+    _confettiController = ConfettiController(
+      duration: const Duration(seconds: 2),
+    );
+
     // Initialize PetService with properly configured DioClient
     PetService().initialize();
 
@@ -336,7 +370,7 @@ class _HomePageState extends State<HomePage>
     _analyticsDataSource = AnalyticsRemoteDataSourceImpl(
       dio: DioClient.instance,
     );
-    _petDataSource = PetRemoteDataSourceImpl(dio: DioClient.instance);
+    // _petDataSource = PetRemoteDataSourceImpl(dio: DioClient.instance);
     _timeCapsuleDataSource = TimeCapsuleRemoteDataSourceImpl(
       dio: DioClient.instance,
     );
@@ -345,6 +379,8 @@ class _HomePageState extends State<HomePage>
     _loadStories();
     _loadAnalytics();
     _loadPet();
+    _loadTasks();
+    _loadStreak();
     _checkThrowback(); // Check for throwback memory
   }
 
@@ -362,6 +398,7 @@ class _HomePageState extends State<HomePage>
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _confettiController.dispose();
     super.dispose();
   }
 
@@ -418,7 +455,6 @@ class _HomePageState extends State<HomePage>
       if (mounted) {
         setState(() {
           _pet = pet;
-          _isLoadingPet = false;
         });
 
         // Show onboarding ONLY if no pet AND flag not set
@@ -436,8 +472,201 @@ class _HomePageState extends State<HomePage>
       if (mounted) {
         setState(() {
           _pet = null;
-          _isLoadingPet = false;
         });
+      }
+    }
+  }
+
+  Future<void> _loadTasks() async {
+    setState(() => _isLoadingTasks = true);
+
+    try {
+      // Загружаем ежедневные задачи
+      final dailyResponse = await _taskDataSource.getTasks(
+        timeScope: TimeScope.daily,
+        date: _selectedDate,
+      );
+
+      final dailyItems = dailyResponse['items'] as List;
+      final dailyTasks = dailyItems
+          .map((item) => TaskModel.fromJson(item))
+          .toList();
+
+      // Загружаем долгосрочные задачи (без фильтра по дате)
+      final longTermResponse = await _taskDataSource.getTasks(
+        timeScope: TimeScope.longTerm,
+      );
+
+      final longTermItems = longTermResponse['items'] as List;
+      final longTermTasks = longTermItems
+          .map((item) => TaskModel.fromJson(item))
+          .toList();
+
+      // Группируем ежедневные задачи по task_group_id
+      final Map<String, TaskGroup> groups = {};
+      final List<TaskModel> ungrouped = [];
+
+      for (final task in dailyTasks) {
+        log(
+          '📋 [TASKS] Task: ${task.title}, group_id: ${task.task_group_id}, group_name: ${task.task_group_name}',
+        );
+
+        if (task.task_group_id != null && task.task_group_name != null) {
+          if (!groups.containsKey(task.task_group_id)) {
+            groups[task.task_group_id!] = TaskGroup(
+              id: task.task_group_id!,
+              name: task.task_group_name!,
+              icon: task.task_group_icon,
+              tasks: [],
+            );
+            // Инициализируем группу как открытую по умолчанию
+            if (!_expandedGroups.containsKey(task.task_group_id!)) {
+              _expandedGroups[task.task_group_id!] = true;
+            }
+            log(
+              '📁 [TASKS] Created group: ${task.task_group_name} (${task.task_group_icon})',
+            );
+          }
+          groups[task.task_group_id!]!.tasks.add(task);
+        } else {
+          ungrouped.add(task);
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _tasks = dailyTasks;
+          _longTermTasks = longTermTasks;
+          _taskGroups = groups;
+          _ungroupedTasks = ungrouped;
+          _isLoadingTasks = false;
+        });
+        log(
+          '📋 [TASKS] Loaded ${ungrouped.length} ungrouped tasks, ${groups.length} groups, ${_longTermTasks.length} long-term tasks for ${_selectedDate.toString().split(' ')[0]}',
+        );
+      }
+    } catch (e, stackTrace) {
+      log(
+        '❌ [TASKS] Error loading tasks: $e',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      if (mounted) {
+        setState(() => _isLoadingTasks = false);
+      }
+    }
+  }
+
+  Future<void> _loadStreak() async {
+    // TODO: Load real streak from backend
+    setState(() {
+      _streakCount = 1;
+    });
+  }
+
+  Future<void> _toggleTaskStatus(TaskModel task) async {
+    if (task.status == TaskStatus.completed) {
+      SnackBarUtils.showInfo(context, 'Задача уже выполнена');
+      return;
+    }
+
+    try {
+      await _taskDataSource.completeTask(task.id);
+      await PetService().playWithPet();
+
+      // Show confetti animation
+      _confettiController.play();
+
+      // Обновляем задачу локально без полной перезагрузки
+      final updatedTask = task.copyWith(
+        status: TaskStatus.completed,
+        completed_at: DateTime.now(),
+      );
+
+      // Обновляем задачу напрямую в списках без создания новых объектов
+      // Это предотвратит полное перестроение виджета
+      final taskIndex = _tasks.indexWhere((t) => t.id == task.id);
+      if (taskIndex != -1) {
+        _tasks[taskIndex] = updatedTask;
+      }
+
+      final longTermIndex = _longTermTasks.indexWhere((t) => t.id == task.id);
+      if (longTermIndex != -1) {
+        _longTermTasks[longTermIndex] = updatedTask;
+      }
+
+      // Обновляем в группах
+      for (final group in _taskGroups.values) {
+        final groupTaskIndex = group.tasks.indexWhere((t) => t.id == task.id);
+        if (groupTaskIndex != -1) {
+          group.tasks[groupTaskIndex] = updatedTask;
+        }
+      }
+
+      // Обновляем в негруппированных задачах
+      final ungroupedIndex = _ungroupedTasks.indexWhere((t) => t.id == task.id);
+      if (ungroupedIndex != -1) {
+        _ungroupedTasks[ungroupedIndex] = updatedTask;
+      }
+
+      // Вызываем setState только для уведомления Flutter об изменении
+      setState(() {});
+
+      // Не перезагружаем задачи сразу - мы уже обновили локально
+      // Синхронизация произойдет при следующей загрузке страницы или при обновлении списка
+    } catch (e) {
+      log('❌ [TASKS] Error completing task: $e');
+      SnackBarUtils.showError(
+        context,
+        'Ошибка: ${ErrorMessages.getErrorMessage(e)}',
+      );
+    }
+  }
+
+  Future<void> _openTaskDetails(TaskModel task) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            TaskDetailsPage(task: task, onTaskUpdated: _loadTasks),
+      ),
+    );
+  }
+
+  Future<void> _openCreateTask() async {
+    final result = await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) =>
+          const CreateTaskPage(initialTimeScope: TimeScope.daily),
+    );
+
+    if (result != null) {
+      try {
+        final task = await _taskDataSource.createTask(result);
+
+        // Если задача повторяющаяся, генерируем экземпляры на 30 дней вперед
+        if (result['is_recurring'] == true) {
+          try {
+            await _taskDataSource.generateRecurringInstances(
+              task.id,
+              daysAhead: 30,
+            );
+            log('✅ [TASKS] Generated recurring instances for task: ${task.id}');
+          } catch (e) {
+            log('⚠️ [TASKS] Warning: Could not generate instances: $e');
+          }
+        }
+
+        SnackBarUtils.showSuccess(context, 'Задача создана!');
+        await _loadTasks();
+      } catch (e) {
+        log('❌ [TASKS] Error creating task: $e');
+        SnackBarUtils.showError(
+          context,
+          'Не удалось создать задачу: ${ErrorMessages.getErrorMessage(e)}',
+        );
       }
     }
   }
@@ -797,59 +1026,8 @@ class _HomePageState extends State<HomePage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          _buildCurrentPage(),
-          // Фиксированная кнопка справа для создания воспоминания
-          Positioned(
-            right: 0,
-            bottom: 20, // Над таббаром
-            child: GestureDetector(
-              onTap: () async {
-                final result = await Navigator.of(context).push(
-                  PageTransitions.slideFromBottom(const CreateMemoryPage()),
-                );
-
-                if (result != null && result is Map<String, dynamic>) {
-                  await _createMemory(result);
-                }
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 20,
-                ),
-                decoration: BoxDecoration(
-                  gradient: AppTheme.primaryGradient,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    bottomLeft: Radius.circular(16),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppTheme.primaryColor.withOpacity(0.3),
-                      blurRadius: 20,
-                      offset: const Offset(-5, 0),
-                    ),
-                  ],
-                ),
-                child: RotatedBox(
-                  quarterTurns: 3, // Поворачиваем текст вертикально
-                  child: const Text(
-                    'Создать воспоминание',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.black,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+      extendBody: true, // Позволяет контенту идти под tabbar
+      body: _buildCurrentPage(),
       bottomNavigationBar: CustomBottomNav(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (index) {
@@ -864,9 +1042,9 @@ class _HomePageState extends State<HomePage>
       case 0:
         return _buildHomePage(); // Главная страница с хедером
       case 1:
-        return const SearchPage(); // Поиск
+        return const FriendsPage(); // Друзья
       case 2:
-        return const TasksPage(); // AI/Задачи
+        return const AnalyticsPage(); // Аналитика
       case 3:
         return const ProfilePage(); // Профиль
       default:
@@ -877,52 +1055,51 @@ class _HomePageState extends State<HomePage>
   Widget _buildHomePage() {
     return Container(
       color: AppTheme.pageBackgroundColor, // Фон страницы rgba(28, 27, 32, 1)
-      child: Column(
+      child: Stack(
         children: [
-          // SafeArea с хедером только для главной
-          Container(
-            color: AppTheme
-                .headerBackgroundColor, // Фон хедера и SafeArea rgba(21, 20, 24, 1)
+          // Body content - весь контент на весь экран
+          _buildBody(),
+          // CustomHeader поверх контента
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
             child: SafeArea(
               bottom: false,
               child: CustomHeader(
-                title: _showHeaderTitle ? 'Главная' : '',
+                title: 'Главная',
                 type: HeaderType.none,
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    IconButton(
-                      icon: const Icon(Ionicons.add_outline, size: 24),
-                      color: Colors.white,
-                      onPressed: () async {
-                        final result = await Navigator.of(context).push(
-                          PageTransitions.slideFromBottom(
-                            const CreateMemoryPage(),
-                          ),
-                        );
+                    // GlassButton(
+                    //   onTap: () async {
+                    //     final result = await Navigator.of(context).push(
+                    //       PageTransitions.slideFromBottom(
+                    //         const CreateMemoryPage(),
+                    //       ),
+                    //     );
 
-                        if (result != null && result is Map<String, dynamic>) {
-                          await _createMemory(result);
-                        }
-                      },
-                    ),
-                    IconButton(
-                      icon: const Icon(Ionicons.bookmark_outline, size: 22),
-                      color: Colors.white,
-                      onPressed: () => SnackBarUtils.showInfo(
-                        context,
-                        'Закладки - в разработке',
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(
-                        Ionicons.notifications_outline,
-                        size: 22,
-                      ),
-                      color: Colors.white,
-                      onPressed: () => SnackBarUtils.showInfo(
+                    //     if (result != null && result is Map<String, dynamic>) {
+                    //       await _createMemory(result);
+                    //     }
+                    //   },
+                    //   child: const Icon(
+                    //     Ionicons.add_outline,
+                    //     color: Colors.white,
+                    //     size: 20,
+                    //   ),
+                    // ),
+                    // const SizedBox(width: 8),
+                    GlassButton(
+                      onTap: () => SnackBarUtils.showInfo(
                         context,
                         'Уведомления - в разработке',
+                      ),
+                      child: const Icon(
+                        Ionicons.notifications_outline,
+                        color: Colors.white,
+                        size: 18,
                       ),
                     ),
                   ],
@@ -930,8 +1107,28 @@ class _HomePageState extends State<HomePage>
               ),
             ),
           ),
-          // Body content
-          Expanded(child: _buildBody()),
+          // Confetti Widget
+          Align(
+            alignment: Alignment.topCenter,
+            child: ConfettiWidget(
+              confettiController: _confettiController,
+              blastDirection: math.pi / 2, // Down
+              blastDirectionality: BlastDirectionality.explosive,
+              emissionFrequency: 0.05,
+              numberOfParticles: 30,
+              maxBlastForce: 100,
+              minBlastForce: 80,
+              gravity: 0.3,
+              colors: const [
+                Colors.green,
+                Colors.blue,
+                Colors.pink,
+                Colors.orange,
+                Colors.purple,
+                Colors.yellow,
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -949,6 +1146,14 @@ class _HomePageState extends State<HomePage>
       child: CustomScrollView(
         controller: _scrollController,
         slivers: [
+          // Отступ для CustomHeader
+          SliverPadding(
+            padding: EdgeInsets.only(
+              top:
+                  MediaQuery.of(context).padding.top +
+                  64, // SafeArea + высота CustomHeader
+            ),
+          ),
           // Заголовок "Главная" над сторисами
           if (_stories.isNotEmpty || _isLoadingStories)
             SliverToBoxAdapter(
@@ -1015,71 +1220,433 @@ class _HomePageState extends State<HomePage>
           // ),
 
           // Реферальный баннер
-          SliverToBoxAdapter(
-            child: ReferralBanner(
-              onTap: () {
-                SnackBarUtils.showInfo(
-                  context,
-                  'Функция приглашения друзей - в разработке',
-                );
-              },
-            ),
-          ),
+          // SliverToBoxAdapter(
+          //   child: ReferralBanner(
+          //     onTap: () {
+          //       SnackBarUtils.showInfo(
+          //         context,
+          //         'Функция приглашения друзей - в разработке',
+          //       );
+          //     },
+          //   ),
+          // ),
 
           // Pet Widget
-          if (_pet != null && !_isLoadingPet)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                child: PetWidget(
-                  pet: _pet!,
-                  onTap: () {
-                    Navigator.of(context)
-                        .push(
-                          PageTransitions.slideFromRight(
-                            PetPage(initialPet: _pet!),
-                          ),
-                        )
-                        .then((_) => _loadPet()); // Reload pet after returning
-                  },
-                ),
-              ),
-            ),
+          // if (_pet != null && !_isLoadingPet)
+          //   SliverToBoxAdapter(
+          //     child: Padding(
+          //       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          //       child: PetWidget(
+          //         pet: _pet!,
+          //         onTap: () {
+          //           Navigator.of(context)
+          //               .push(
+          //                 PageTransitions.slideFromRight(
+          //                   PetPage(initialPet: _pet!),
+          //                 ),
+          //               )
+          //               .then((_) => _loadPet()); // Reload pet after returning
+          //         },
+          //       ),
+          //     ),
+          //   ),
 
           // Блоки аналитики
           if (_analytics != null && !_isLoadingAnalytics) ...[
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                child: HeaderStats(
-                  totalMemories: _analytics!.totalMemories,
-                  totalTasksCompleted: _analytics!.totalTasksCompleted,
-                ),
-              ),
-            ),
+            // SliverToBoxAdapter(
+            //   child: Padding(
+            //     padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            //     child: HeaderStats(
+            //       totalMemories: _analytics!.totalMemories,
+            //       totalTasksCompleted: _analytics!.totalTasksCompleted,
+            //     ),
+            //   ),
+            // ),
 
             // Daily Prompt Card
-            const SliverToBoxAdapter(child: DailyPromptCard()),
+            const SliverToBoxAdapter(
+              child: DailyPromptCard(),
+            ), // Tasks List Header
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Задачи',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        // Streak badge
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Ionicons.flame,
+                                color: Colors.orange,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                _streakCount.toString(),
+                                style: const TextStyle(
+                                  color: Colors.orange,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        // Add task button
+                        GestureDetector(
+                          onTap: _openCreateTask,
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryColor,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Ionicons.add,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
 
+            // Week Calendar
             SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                child: ThisWeekCard(
-                  thisWeekMemories: _analytics!.thisWeekMemories,
-                  thisWeekTasks: _analytics!.thisWeekTasks,
-                  thisWeekTime: _analytics!.thisWeekTime,
-                ),
+              child: WeekCalendar(
+                selectedDate: _selectedDate,
+                onDateSelected: (date) {
+                  setState(() {
+                    _selectedDate = date;
+                  });
+                  _loadTasks();
+                },
               ),
             ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                child: StreaksCard(
-                  currentStreak: _analytics!.currentStreak,
-                  longestStreak: _analytics!.longestStreak,
+
+            // Tasks List
+            if (_isLoadingTasks)
+              const SliverToBoxAdapter(
+                child: Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(32.0),
+                    child: CircularProgressIndicator(),
+                  ),
                 ),
-              ),
-            ),
+              )
+            else if (_tasks.isEmpty && _longTermTasks.isEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 32,
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Ionicons.checkbox_outline,
+                        size: 64,
+                        color: Colors.white.withOpacity(0.3),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Нет задач на этот день',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.5),
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextButton.icon(
+                        onPressed: _openCreateTask,
+                        icon: const Icon(Ionicons.add_circle_outline),
+                        label: const Text('Создать задачу'),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else ...[
+              // Группы задач (привычки) - аккордеоны
+              if (_taskGroups.isNotEmpty)
+                ..._taskGroups.values.map((group) {
+                  final isExpanded = _expandedGroups[group.id] ?? true;
+                  final completedCount = group.tasks
+                      .where((t) => t.status == TaskStatus.completed)
+                      .length;
+
+                  return SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.1),
+                            width: 1,
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Заголовок группы (кликабельный)
+                            InkWell(
+                              onTap: () {
+                                setState(() {
+                                  _expandedGroups[group.id] = !isExpanded;
+                                });
+                              },
+                              borderRadius: BorderRadius.circular(16),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Row(
+                                  children: [
+                                    // Иконка группы
+                                    if (group.icon != null)
+                                      Text(
+                                        group.icon!,
+                                        style: const TextStyle(fontSize: 24),
+                                      ),
+                                    if (group.icon != null)
+                                      const SizedBox(width: 12),
+
+                                    // Название группы
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            group.name,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 17,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            '$completedCount из ${group.tasks.length} выполнено',
+                                            style: TextStyle(
+                                              color: Colors.white.withOpacity(
+                                                0.5,
+                                              ),
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+
+                                    // Прогресс
+                                    Container(
+                                      width: 40,
+                                      height: 40,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.1),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          '${((completedCount / group.tasks.length) * 100).toInt()}%',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+
+                                    const SizedBox(width: 8),
+
+                                    // Стрелка раскрытия
+                                    AnimatedRotation(
+                                      turns: isExpanded ? 0.5 : 0,
+                                      duration: const Duration(
+                                        milliseconds: 200,
+                                      ),
+                                      child: Icon(
+                                        Ionicons.chevron_down,
+                                        color: Colors.white.withOpacity(0.5),
+                                        size: 20,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+
+                            // Задачи группы (анимированные)
+                            AnimatedSize(
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeInOut,
+                              child: isExpanded
+                                  ? Padding(
+                                      padding: const EdgeInsets.only(
+                                        left: 16,
+                                        right: 16,
+                                        bottom: 12,
+                                      ),
+                                      child: Column(
+                                        children: group.tasks.map((task) {
+                                          return Padding(
+                                            key: ValueKey(task.id),
+                                            padding: const EdgeInsets.only(
+                                              bottom: 8,
+                                            ),
+                                            child: TaskCard(
+                                              task: task,
+                                              onTap: () =>
+                                                  _openTaskDetails(task),
+                                              onToggleStatus: () =>
+                                                  _toggleTaskStatus(task),
+                                            ),
+                                          );
+                                        }).toList(),
+                                      ),
+                                    )
+                                  : const SizedBox.shrink(),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+
+              // Негруппированные ежедневные задачи
+              if (_ungroupedTasks.isNotEmpty)
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final task = _ungroupedTasks[index];
+                      return TaskCard(
+                        key: ValueKey(task.id),
+                        task: task,
+                        onTap: () => _openTaskDetails(task),
+                        onToggleStatus: () => _toggleTaskStatus(task),
+                      );
+                    }, childCount: _ungroupedTasks.length),
+                  ),
+                ),
+
+              // Разделитель между ежедневными и долгосрочными задачами
+              if (_tasks.isNotEmpty && _longTermTasks.isNotEmpty)
+                SliverToBoxAdapter(
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 16,
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            height: 1,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.white.withOpacity(0),
+                                  Colors.white.withOpacity(0.2),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Text(
+                            'Долгосрочные цели',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.5),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Container(
+                            height: 1,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.white.withOpacity(0.2),
+                                  Colors.white.withOpacity(0),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+              // Долгосрочные задачи
+              if (_longTermTasks.isNotEmpty)
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final task = _longTermTasks[index];
+                      return TaskCard(
+                        key: ValueKey(task.id),
+                        task: task,
+                        onTap: () => _openTaskDetails(task),
+                        onToggleStatus: () => _toggleTaskStatus(task),
+                      );
+                    }, childCount: _longTermTasks.length),
+                  ),
+                ),
+            ],
+
+            // SliverToBoxAdapter(
+            //   child: Padding(
+            //     padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            //     child: ThisWeekCard(
+            //       thisWeekMemories: _analytics!.thisWeekMemories,
+            //       thisWeekTasks: _analytics!.thisWeekTasks,
+            //       thisWeekTime: _analytics!.thisWeekTime,
+            //     ),
+            //   ),
+            // ),
+            // SliverToBoxAdapter(
+            //   child: Padding(
+            //     padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            //     child: StreaksCard(
+            //       currentStreak: _analytics!.currentStreak,
+            //       longestStreak: _analytics!.longestStreak,
+            //     ),
+            //   ),
+            // ),
           ],
 
           // Заголовок "Вспоминаем вместе"
@@ -1100,32 +1667,9 @@ class _HomePageState extends State<HomePage>
             ),
 
           // Memories list
-          if (_memories.isEmpty)
-            SliverFillRemaining(
-              hasScrollBody: false,
-              child: EmptyState(
-                title: 'У вас пока нет воспоминаний',
-                subtitle: 'Начните сохранять важные моменты,\nидеи и мысли',
-                buttonText: 'Создать первое воспоминание',
-                buttonIcon: Ionicons.add_circle_outline,
-                showIcon: false, // Убираем большую иконку
-                onButtonPressed: () async {
-                  final result = await Navigator.of(context).push(
-                    PageTransitions.slideFromBottom(const CreateMemoryPage()),
-                  );
-
-                  if (result != null && result is Map<String, dynamic>) {
-                    await _createMemory(result);
-                  }
-                },
-              ),
-            )
-          else
+          if (_memories.isNotEmpty)
             SliverPadding(
-              padding: const EdgeInsets.only(
-                top: 16,
-                bottom: 16, // Уменьшенный отступ, так как нет FAB
-              ),
+              padding: const EdgeInsets.only(top: 16, bottom: 16),
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
@@ -1202,6 +1746,9 @@ class _HomePageState extends State<HomePage>
                 ), // Удваиваем количество для разделителей
               ),
             ),
+
+          // Отступ снизу для навигации (всегда)
+          SliverPadding(padding: const EdgeInsets.only(bottom: 100)),
         ],
       ),
     );

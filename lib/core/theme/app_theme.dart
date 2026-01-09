@@ -21,7 +21,7 @@ class AppTheme {
   ); // rgba(21, 20, 24, 1) - Фон хедера
 
   // Алиасы для совместимости
-  static const primaryColor = tealColor; // Бирюзовый как основной
+  static const primaryColor = Color(0xFFE91E63); // Бирюзовый как основной
   static const secondaryColor = Color(0xFF8B5CF6); // Purple как вторичный
   static const accentColor = tealColor; // Бирюзовый accent
   static const backgroundColor = appBackgroundColor; // Фон приложения

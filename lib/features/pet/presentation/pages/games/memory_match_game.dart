@@ -56,7 +56,7 @@ class _MemoryMatchGameState extends State<MemoryMatchGame> {
 
   void _checkMatch() {
     _isChecking = true;
-    
+
     Timer(const Duration(milliseconds: 1000), () {
       if (_cards[_firstCard!] == _cards[_secondCard!]) {
         setState(() {
@@ -91,17 +91,29 @@ class _MemoryMatchGameState extends State<MemoryMatchGame> {
         context: context,
         builder: (context) => AlertDialog(
           backgroundColor: AppTheme.surfaceColor,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('🎉 Победа!', style: TextStyle(color: Colors.white)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text(
+            '🎉 Победа!',
+            style: TextStyle(color: Colors.white),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 'Счёт: $_score',
-                style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 8),
-              Text('Ходов: $_moves', style: const TextStyle(color: Colors.white70, fontSize: 16)),
+              Text(
+                'Ходов: $_moves',
+                style: const TextStyle(color: Colors.white70, fontSize: 16),
+              ),
               const SizedBox(height: 8),
               Text(
                 'XP: ${min(_score, 40)}',
@@ -140,7 +152,10 @@ class _MemoryMatchGameState extends State<MemoryMatchGame> {
             color: AppTheme.headerBackgroundColor,
             child: const SafeArea(
               bottom: false,
-              child: CustomHeader(title: '🧠 Memory Match', type: HeaderType.pop),
+              child: CustomHeader(
+                title: '🧠 Memory Match',
+                type: HeaderType.pop,
+              ),
             ),
           ),
           Padding(
@@ -148,8 +163,18 @@ class _MemoryMatchGameState extends State<MemoryMatchGame> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Счёт: $_score', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                Text('Ходы: $_moves', style: const TextStyle(color: Colors.white, fontSize: 18)),
+                Text(
+                  'Счёт: $_score',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  'Ходы: $_moves',
+                  style: const TextStyle(color: Colors.white, fontSize: 18),
+                ),
               ],
             ),
           ),
@@ -161,14 +186,21 @@ class _MemoryMatchGameState extends State<MemoryMatchGame> {
                       children: [
                         const Text(
                           '🧠 Memory Match',
-                          style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         const SizedBox(height: 16),
                         const Padding(
                           padding: EdgeInsets.symmetric(horizontal: 32),
                           child: Text(
                             'Найдите все пары!\nЗапоминайте карточки',
-                            style: TextStyle(color: Colors.white70, fontSize: 16),
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 16,
+                            ),
                             textAlign: TextAlign.center,
                           ),
                         ),
@@ -177,9 +209,15 @@ class _MemoryMatchGameState extends State<MemoryMatchGame> {
                           onPressed: _initGame,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.primaryColor,
-                            padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 48,
+                              vertical: 16,
+                            ),
                           ),
-                          child: const Text('Начать игру', style: TextStyle(fontSize: 18)),
+                          child: const Text(
+                            'Начать игру',
+                            style: TextStyle(fontSize: 18),
+                          ),
                         ),
                       ],
                     ),
@@ -188,11 +226,12 @@ class _MemoryMatchGameState extends State<MemoryMatchGame> {
                     child: GridView.builder(
                       shrinkWrap: true,
                       padding: const EdgeInsets.all(16),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 4,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                      ),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 4,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                          ),
                       itemCount: 16,
                       itemBuilder: (context, index) => GestureDetector(
                         onTap: () => _onCardTap(index),
@@ -222,7 +261,9 @@ class _MemoryMatchGameState extends State<MemoryMatchGame> {
                             ),
                             child: Center(
                               child: Text(
-                                _revealed[index] || _matched[index] ? _cards[index] : '❓',
+                                _revealed[index] || _matched[index]
+                                    ? _cards[index]
+                                    : '❓',
                                 style: const TextStyle(fontSize: 32),
                               ),
                             ),
