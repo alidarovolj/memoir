@@ -458,13 +458,14 @@ class _HomePageState extends State<HomePage>
         });
 
         // Show onboarding ONLY if no pet AND flag not set
-        if (pet == null && !_petOnboardingShown) {
-          print('🐾 [HOME] No pet found, showing onboarding');
-          _petOnboardingShown = true;
-          _showPetOnboarding();
-        } else if (pet != null) {
-          print('🐾 [HOME] Pet exists: ${pet.name}, NOT showing onboarding');
-        }
+        // ВРЕМЕННО ЗАКОММЕНТИРОВАНО: Автоматический показ выбора питомца при запуске
+        // if (pet == null && !_petOnboardingShown) {
+        //   print('🐾 [HOME] No pet found, showing onboarding');
+        //   _petOnboardingShown = true;
+        //   _showPetOnboarding();
+        // } else if (pet != null) {
+        //   print('🐾 [HOME] Pet exists: ${pet.name}, NOT showing onboarding');
+        // }
       }
     } catch (e, stackTrace) {
       print('❌ [HOME] Error loading pet: $e');
@@ -1262,11 +1263,6 @@ class _HomePageState extends State<HomePage>
             //     ),
             //   ),
             // ),
-
-            // Daily Prompt Card
-            const SliverToBoxAdapter(
-              child: DailyPromptCard(),
-            ), // Tasks List Header
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
@@ -1519,7 +1515,7 @@ class _HomePageState extends State<HomePage>
                                           return Padding(
                                             key: ValueKey(task.id),
                                             padding: const EdgeInsets.only(
-                                              bottom: 8,
+                                              bottom: 6,
                                             ),
                                             child: TaskCard(
                                               task: task,
@@ -1626,6 +1622,10 @@ class _HomePageState extends State<HomePage>
                     }, childCount: _longTermTasks.length),
                   ),
                 ),
+              // Daily Prompt Card
+              const SliverToBoxAdapter(
+                child: DailyPromptCard(),
+              ), // Tasks List Header
             ],
 
             // SliverToBoxAdapter(

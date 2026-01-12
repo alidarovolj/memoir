@@ -22,26 +22,26 @@ class TaskCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.all(14),
+        margin: const EdgeInsets.only(bottom: 6),
+        padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: color,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           children: [
             // Icon
             Container(
-              width: 40,
-              height: 40,
+              width: 32,
+              height: 32,
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(_getTaskIcon(task), color: Colors.white, size: 22),
+              child: Icon(_getTaskIcon(task), color: Colors.white, size: 18),
             ),
 
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
 
             // Task info
             Expanded(
@@ -49,7 +49,7 @@ class TaskCard extends StatelessWidget {
                 task.title,
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 16,
+                  fontSize: 14,
                   fontWeight: FontWeight.w600,
                   decoration: isCompleted
                       ? TextDecoration.lineThrough
@@ -60,14 +60,14 @@ class TaskCard extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
 
             // Completion indicator
             GestureDetector(
               onTap: onToggleStatus,
               child: Container(
-                width: 32,
-                height: 32,
+                width: 28,
+                height: 28,
                 decoration: BoxDecoration(
                   color: isCompleted
                       ? Colors.white
@@ -78,7 +78,7 @@ class TaskCard extends StatelessWidget {
                       : null,
                 ),
                 child: isCompleted
-                    ? Icon(Ionicons.checkmark, color: color, size: 20)
+                    ? Icon(Ionicons.checkmark, color: color, size: 18)
                     : null,
               ),
             ),
