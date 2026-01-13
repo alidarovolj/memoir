@@ -48,3 +48,4 @@ app.*.map.json
 .env
 .env.local
 .env.*.local
+memoir-c7600-firebase-adminsdk-fbsvc-d49c703f29.json
