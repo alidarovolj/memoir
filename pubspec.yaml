@@ -121,6 +121,7 @@ flutter:
   assets:
     - assets/images/
     - assets/icons/
+    - assets/icons/auth/
     - assets/glbs/
     - .env
 

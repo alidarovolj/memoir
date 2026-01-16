@@ -17,6 +17,7 @@ import 'package:memoir/features/memories/data/datasources/memory_remote_datasour
 import 'package:memoir/core/services/auth_service.dart';
 import 'package:memoir/core/services/notification_service.dart';
 import 'package:memoir/features/auth/presentation/pages/phone_login_page.dart';
+import 'package:memoir/features/auth/presentation/pages/signup_page.dart';
 import 'package:memoir/features/auth/presentation/pages/profile_setup_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:memoir/features/stories/data/datasources/story_remote_datasource.dart';
@@ -85,10 +86,11 @@ void main() async {
   // Note: PetService will be initialized after DioClient is ready (in HomePage)
 
   // Настройка системных UI элементов
+  // Статус-бар всегда с черным текстом (темный стиль)
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
+      statusBarIconBrightness: Brightness.dark, // Черный текст в статус-баре
       systemNavigationBarColor: Colors.transparent,
       systemNavigationBarIconBrightness: Brightness.light,
     ),
@@ -113,12 +115,13 @@ class MemoirApp extends StatelessWidget {
       title: 'Memoir',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.light, // Светлая тема по умолчанию
+      darkTheme: AppTheme.lightTheme, // Используем светлую тему всегда
+      themeMode: ThemeMode.light, // Всегда светлая тема
       initialRoute: '/',
       routes: {
         '/': (context) => const SplashScreen(),
         '/phone-login': (context) => const PhoneLoginPage(),
+        '/signup': (context) => const SignUpPage(),
         '/profile-setup': (context) => const ProfileSetupPage(),
         '/home': (context) => const HomePage(),
       },
@@ -217,7 +220,7 @@ class _SplashScreenState extends State<SplashScreen>
           Navigator.of(context).pushReplacementNamed('/home');
         }
       } else {
-        Navigator.of(context).pushReplacementNamed('/phone-login');
+        Navigator.of(context).pushReplacementNamed('/signup');
       }
     }
   }

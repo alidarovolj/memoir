@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
-import 'package:ionicons/ionicons.dart';
 import 'package:memoir/core/theme/app_theme.dart';
 import 'package:memoir/core/utils/snackbar_utils.dart';
 import 'package:memoir/core/services/sms_auth_service.dart';
@@ -31,15 +30,14 @@ class _PhoneVerifyPageState extends State<PhoneVerifyPage> {
   SmsAuthService? _smsAuthService;
 
   bool _isLoading = false;
-  bool _canResend = false;
-  int _resendCountdown = 60;
+  int _remainingSeconds = 140; // 2:20 в секундах
   Timer? _timer;
 
   @override
   void initState() {
     super.initState();
     _initSmsAuthService();
-    _startResendTimer();
+    _startTimer();
   }
 
   Future<void> _initSmsAuthService() async {
@@ -58,9 +56,8 @@ class _PhoneVerifyPageState extends State<PhoneVerifyPage> {
     super.dispose();
   }
 
-  void _startResendTimer() {
-    _resendCountdown = 60;
-    _canResend = false;
+  void _startTimer() {
+    _remainingSeconds = widget.expiresIn;
 
     _timer?.cancel(); // Cancel any existing timer
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -69,10 +66,9 @@ class _PhoneVerifyPageState extends State<PhoneVerifyPage> {
         return;
       }
 
-      if (_resendCountdown > 0) {
-        _resendCountdown--;
+      if (_remainingSeconds > 0) {
+        _remainingSeconds--;
       } else {
-        _canResend = true;
         timer.cancel();
       }
 
@@ -82,8 +78,20 @@ class _PhoneVerifyPageState extends State<PhoneVerifyPage> {
     });
   }
 
+  String _formatTimer(int seconds) {
+    final minutes = seconds ~/ 60;
+    final secs = seconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
+  }
+
   Future<void> _verifyCode(String code) async {
-    if (code.length != 6) return;
+    // Бэкенд ожидает 6-значный код, но на дизайне 5 полей
+    // Если введено 5 символов, добавляем ведущий ноль
+    String finalCode = code;
+    if (code.length == 5) {
+      finalCode = '0$code'; // Добавляем ведущий ноль для 6-значного кода
+    }
+    if (finalCode.length != 6) return;
 
     if (_smsAuthService == null) {
       SnackBarUtils.showError(context, 'Сервис инициализируется...');
@@ -100,7 +108,7 @@ class _PhoneVerifyPageState extends State<PhoneVerifyPage> {
       // Verify code with backend
       final response = await _smsAuthService!.verifyCode(
         phoneNumber: widget.phoneNumber,
-        code: code,
+        code: finalCode,
       );
 
       developer.log('✅ [PHONE_VERIFY] Code verified successfully');
@@ -169,222 +177,182 @@ class _PhoneVerifyPageState extends State<PhoneVerifyPage> {
           _isLoading = false;
         });
 
-        // Clear controller only if not disposed
-        if (_codeController.hasListeners) {
-          _codeController.clear();
-        }
+        // Clear controller
+        _codeController.clear();
 
         SnackBarUtils.showError(context, errorMessage);
       }
     }
   }
 
-  Future<void> _resendCode() async {
-    if (!_canResend || _smsAuthService == null) return;
-
-    developer.log('🔄 [PHONE_VERIFY] Resending code to: ${widget.phoneNumber}');
-
-    try {
-      await _smsAuthService!.resendCode(phoneNumber: widget.phoneNumber);
-
-      developer.log('✅ [PHONE_VERIFY] Code resent');
-
-      if (mounted) {
-        SnackBarUtils.showSuccess(context, 'Код отправлен повторно');
-        _startResendTimer();
-      }
-    } catch (e) {
-      developer.log('❌ [PHONE_VERIFY] Resend error: $e');
-
-      if (mounted) {
-        SnackBarUtils.showError(context, 'Не удалось отправить код');
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    // Оранжево-красный цвет для таймера
+    const timerColor = Color(0xFFFF6B35);
+
     return Scaffold(
-      backgroundColor: AppTheme.pageBackgroundColor,
-      body: Column(
-        children: [
-          // Custom Header
-          Container(
-            color: AppTheme.headerBackgroundColor,
-            child: SafeArea(
-              bottom: false,
-              child: Container(
-                height: 64,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Stack(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header with back button
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => Navigator.of(context).pop(),
+                    child: const Icon(
+                      Icons.arrow_back,
+                      color: Color(0xFF202020),
+                      size: 24,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Content
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Заголовок
-                    const Center(
-                      child: Text(
-                        'Подтверждение',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
+                    const SizedBox(height: 32),
+
+                    // Title
+                    const Text(
+                      'Verification',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF202020),
                       ),
                     ),
-                    // Кнопка назад
-                    Positioned(
-                      left: 0,
-                      top: 0,
-                      bottom: 0,
-                      child: Center(
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: () => Navigator.of(context).pop(),
-                          child: Container(
-                            padding: const EdgeInsets.all(8),
-                            child: const Icon(
-                              Ionicons.chevron_back,
-                              color: AppTheme.primaryColor,
-                              size: 24,
+
+                    const SizedBox(height: 16),
+
+                    // Subtitle
+                    const Text(
+                      'An authentication code has been send your email',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF202020),
+                      ),
+                    ),
+
+                    const SizedBox(height: 48),
+
+                    // PIN Code Input with Timer
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // PIN Code Input
+                        Expanded(
+                          child: PinCodeTextField(
+                            key: _pinCodeKey,
+                            appContext: context,
+                            length: 5,
+                            controller: _codeController,
+                            animationType: AnimationType.fade,
+                            keyboardType: TextInputType.number,
+                            autoFocus: true,
+                            enabled: !_isLoading,
+                            cursorColor: const Color(0xFF202020),
+                            textStyle: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF202020),
                             ),
+                            pinTheme: PinTheme(
+                              shape: PinCodeFieldShape.box,
+                              borderRadius: BorderRadius.circular(8),
+                              fieldHeight: 56,
+                              fieldWidth: 56,
+                              activeFillColor: Colors.white,
+                              inactiveFillColor: Colors.white,
+                              selectedFillColor: Colors.white,
+                              activeColor: const Color(0xFFE0E0E0),
+                              inactiveColor: const Color(0xFFE0E0E0),
+                              selectedColor: const Color(0xFFE0E0E0),
+                              borderWidth: 1,
+                            ),
+                            animationDuration: const Duration(milliseconds: 200),
+                            backgroundColor: Colors.transparent,
+                            enableActiveFill: true,
+                            onCompleted: (code) {
+                              _verifyCode(code);
+                            },
+                            onChanged: (value) {},
                           ),
                         ),
+
+                        const SizedBox(width: 16),
+
+                        // Timer
+                        Text(
+                          _formatTimer(_remainingSeconds),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: timerColor,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const Spacer(),
+
+                    // Verify Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : () {
+                          if (_codeController.text.length == 5) {
+                            _verifyCode(_codeController.text);
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.greenButtonColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                          disabledBackgroundColor: AppTheme.greenButtonColor.withOpacity(0.5),
+                        ),
+                        child: _isLoading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
+                                ),
+                              )
+                            : const Text(
+                                'Verify',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
                       ),
                     ),
+
+                    const SizedBox(height: 32),
                   ],
                 ),
               ),
             ),
-          ),
-
-          // Content
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 32),
-
-                  // Title
-                  const Text(
-                    'Введите код',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Subtitle
-                  Text(
-                    'Мы отправили SMS с кодом на номер',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.white.withOpacity(0.6),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  // Phone Number
-                  Text(
-                    widget.phoneNumber,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.primaryColor,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-
-                  const SizedBox(height: 48),
-
-                  // PIN Code Input
-                  PinCodeTextField(
-                    key: _pinCodeKey,
-                    appContext: context,
-                    length: 6,
-                    controller: _codeController,
-                    animationType: AnimationType.fade,
-                    keyboardType: TextInputType.number,
-                    autoFocus: true,
-                    enabled: !_isLoading,
-                    cursorColor: Colors.white,
-                    textStyle: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                    pinTheme: PinTheme(
-                      shape: PinCodeFieldShape.box,
-                      borderRadius: BorderRadius.circular(12),
-                      fieldHeight: 60,
-                      fieldWidth: 50,
-                      activeFillColor: AppTheme.cardColor,
-                      inactiveFillColor: AppTheme.surfaceColor,
-                      selectedFillColor: AppTheme.cardColor,
-                      activeColor: AppTheme.primaryColor,
-                      inactiveColor: Colors.white.withOpacity(0.1),
-                      selectedColor: AppTheme.primaryColor,
-                      borderWidth: 1.5,
-                    ),
-                    animationDuration: const Duration(milliseconds: 200),
-                    backgroundColor: Colors.transparent,
-                    enableActiveFill: true,
-                    onCompleted: (code) {
-                      _verifyCode(code);
-                    },
-                    onChanged: (value) {},
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // Loading Indicator
-                  if (_isLoading)
-                    const Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          AppTheme.primaryColor,
-                        ),
-                      ),
-                    ),
-
-                  const Spacer(),
-
-                  // Resend Code Button
-                  Center(
-                    child: TextButton(
-                      onPressed: _canResend ? _resendCode : null,
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
-                        ),
-                      ),
-                      child: Text(
-                        _canResend
-                            ? 'Отправить код повторно'
-                            : 'Отправить повторно через $_resendCountdown сек',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: _canResend
-                              ? AppTheme.primaryColor
-                              : Colors.white.withOpacity(0.4),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-                ],
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

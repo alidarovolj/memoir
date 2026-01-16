@@ -4,24 +4,34 @@ import 'package:google_fonts/google_fonts.dart';
 class AppTheme {
   // Цветовая палитра приложения
   // Основные цвета из дизайна
-  static const darkColor = Color(0xFF202020); // #202020 - Темный
+  static const darkColor = Color(0xFF202020); // #202020 - Темный текст
   static const blueColor = Color(0xFF6366FF); // #6366ff - Синий (резерв)
   static const tealColor = Color(0xFF277070); // #277070 - Бирюзовый (основной)
   static const limeColor = Color(0xFFC9F158); // #c9f158 - Салатовый (резерв)
   static const lightGrayColor = Color(0xFFF2F3F5); // #f2f3f5 - Светло-серый
   static const whiteColor = Color(0xFFFFFFFF); // #ffffff - Белый
+  static const lightGrayBorder = Color(
+    0xFFE0E0E0,
+  ); // #E0E0E0 - Светло-серая рамка
+  static const greenButtonColor = Color(
+    0xFF00E676,
+  ); // #00E676 - Яркий зеленый для кнопок (Material Green A400)
+  static const timerColor = Color(
+    0xFFFF6B35,
+  ); // #FF6B35 - Оранжево-красный для таймера
+
   static const appBackgroundColor = Color(
     0xFF1C1B20,
-  ); // rgba(28, 27, 32, 1) - Фон приложения
+  ); // rgba(28, 27, 32, 1) - Фон приложения (темный)
   static const pageBackgroundColor = Color(
-    0xFF1C1B20,
-  ); // rgba(28, 27, 32, 1) - Фон страницы
+    0xFFFFFFFF,
+  ); // #ffffff - Белый фон для страниц авторизации
   static const headerBackgroundColor = Color(
     0xFF151418,
   ); // rgba(21, 20, 24, 1) - Фон хедера
 
   // Алиасы для совместимости
-  static const primaryColor = Color(0xFFE91E63); // Бирюзовый как основной
+  static const primaryColor = Color(0xFF00E676); // Яркий зеленый как основной
   static const secondaryColor = Color(0xFF8B5CF6); // Purple как вторичный
   static const accentColor = tealColor; // Бирюзовый accent
   static const backgroundColor = appBackgroundColor; // Фон приложения
@@ -175,33 +185,33 @@ class AppTheme {
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
-      brightness: Brightness.dark, // Изменили на dark
-      colorScheme: const ColorScheme.dark(
+      brightness: Brightness.light, // Светлая тема
+      colorScheme: const ColorScheme.light(
         primary: primaryColor,
         secondary: secondaryColor,
-        surface: cardColor,
+        surface: Colors.white,
       ),
-      scaffoldBackgroundColor: appBackgroundColor,
+      scaffoldBackgroundColor: Colors.white,
       cardTheme: CardThemeData(
-        color: cardColor.withOpacity(0.5),
-        elevation: 0,
+        color: Colors.white,
+        elevation: 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
-        foregroundColor: Colors.white,
+        foregroundColor: Color(0xFF202020),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: primaryColor,
-        foregroundColor: darkColor,
+        foregroundColor: Colors.white,
         elevation: 8,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: surfaceColor.withOpacity(0.5),
+        fillColor: Colors.grey[100],
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,
@@ -222,7 +232,7 @@ class AppTheme {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryColor,
-          foregroundColor: darkColor,
+          foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
           shape: RoundedRectangleBorder(
@@ -235,39 +245,39 @@ class AppTheme {
           headlineLarge: TextStyle(
             fontSize: 32,
             fontWeight: FontWeight.w800,
-            color: Colors.white,
+            color: Color(0xFF202020),
             letterSpacing: -1.0,
             height: 1.2,
           ),
           headlineMedium: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.w700,
-            color: Colors.white,
+            color: Color(0xFF202020),
             letterSpacing: -0.5,
             height: 1.3,
           ),
           titleLarge: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w600,
-            color: Colors.white,
+            color: Color(0xFF202020),
             letterSpacing: -0.3,
           ),
           titleMedium: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: Colors.white,
+            color: Color(0xFF202020),
             letterSpacing: -0.2,
           ),
           bodyLarge: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w400,
-            color: Colors.white70,
+            color: Color(0xFF202020),
             letterSpacing: 0,
           ),
           bodyMedium: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w400,
-            color: Colors.white60,
+            color: Color(0xFF666666),
             letterSpacing: 0,
           ),
         ),
