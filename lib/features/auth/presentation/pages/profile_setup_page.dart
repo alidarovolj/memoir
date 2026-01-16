@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:ionicons/ionicons.dart';
 import 'package:memoir/core/theme/app_theme.dart';
 import 'package:memoir/core/utils/snackbar_utils.dart';
 import 'package:memoir/core/network/dio_client.dart';
@@ -64,7 +63,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
     // Показываем диалог выбора источника
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
-      backgroundColor: AppTheme.surfaceColor,
+      backgroundColor: AppTheme.whiteColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -79,7 +78,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: AppTheme.darkColor,
                 ),
               ),
               const SizedBox(height: 20),
@@ -92,14 +91,14 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(
-                    Ionicons.camera,
-                    color: Colors.white,
+                    Icons.camera_alt,
+                    color: AppTheme.whiteColor,
                     size: 20,
                   ),
                 ),
                 title: const Text(
                   'Камера',
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(color: AppTheme.darkColor),
                 ),
                 onTap: () => Navigator.pop(context, ImageSource.camera),
               ),
@@ -112,14 +111,14 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(
-                    Ionicons.images,
-                    color: Colors.white,
+                    Icons.photo_library,
+                    color: AppTheme.whiteColor,
                     size: 20,
                   ),
                 ),
                 title: const Text(
                   'Галерея',
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(color: AppTheme.darkColor),
                 ),
                 onTap: () => Navigator.pop(context, ImageSource.gallery),
               ),
@@ -147,17 +146,17 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
           final shouldOpenSettings = await showDialog<bool>(
             context: context,
             builder: (context) => AlertDialog(
-              backgroundColor: AppTheme.surfaceColor,
+              backgroundColor: AppTheme.whiteColor,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),
               title: const Text(
                 'Разрешение не предоставлено',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: AppTheme.darkColor),
               ),
               content: Text(
                 'Для загрузки фото необходимо разрешение. Открыть настройки?',
-                style: TextStyle(color: Colors.white.withOpacity(0.7)),
+                style: TextStyle(color: AppTheme.darkColor.withOpacity(0.7)),
               ),
               actions: [
                 TextButton(
@@ -268,77 +267,27 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
       backgroundColor: AppTheme.pageBackgroundColor,
       body: Column(
         children: [
-          // Custom Header
-          Container(
-            color: AppTheme.headerBackgroundColor,
-            child: SafeArea(
-              bottom: false,
-              child: Container(
-                height: 64,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Stack(
-                  children: [
-                    Center(
-                      child: Text(
-                        _currentStep == 0 ? 'Шаг 1 из 2' : 'Шаг 2 из 2',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                    // Кнопка назад (только на втором шаге)
-                    if (_currentStep > 0)
-                      Positioned(
-                        left: 0,
-                        top: 0,
-                        bottom: 0,
-                        child: Center(
-                          child: GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: _previousStep,
-                            child: Container(
-                              padding: const EdgeInsets.all(8),
-                              child: const Icon(
-                                Ionicons.chevron_back,
-                                color: AppTheme.primaryColor,
-                                size: 24,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          // Progress indicator
-          Container(
-            height: 4,
-            color: AppTheme.surfaceColor,
-            child: Row(
-              children: [
-                Expanded(child: Container(color: AppTheme.primaryColor)),
-                Expanded(
-                  child: Container(
-                    color: _currentStep >= 1
-                        ? AppTheme.primaryColor
-                        : AppTheme.surfaceColor,
-                  ),
-                ),
-              ],
-            ),
-          ),
+          // Header Section with gradient
+          _buildHeader(context),
 
           // Content
           Expanded(
-            child: PageView(
-              controller: _pageController,
-              physics: const NeverScrollableScrollPhysics(),
-              children: [_buildNameStep(), _buildPhotoStep()],
+            child: Transform.translate(
+              offset: const Offset(0, -20), // Смещаем вверх, чтобы перекрыть зеленый блок
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: AppTheme.whiteColor,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(30),
+                    topRight: Radius.circular(30),
+                  ),
+                ),
+                child: PageView(
+                  controller: _pageController,
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: [_buildNameStep(), _buildPhotoStep()],
+                ),
+              ),
             ),
           ),
         ],
@@ -346,9 +295,107 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
     );
   }
 
+  Widget _buildHeader(BuildContext context) {
+    final statusBarHeight = MediaQuery.of(context).padding.top;
+
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: AppTheme.primaryGradient,
+      ),
+      child: Column(
+        children: [
+          // Status bar spacer and navigation
+          Padding(
+            padding: EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: statusBarHeight + 12,
+              bottom: 12,
+            ),
+            child: Row(
+              children: [
+                // Кнопка назад (только на втором шаге)
+                if (_currentStep > 0)
+                  GestureDetector(
+                    onTap: _previousStep,
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppTheme.whiteColor,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.darkColor.withOpacity(0.1),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.arrow_back,
+                        color: AppTheme.darkColor,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                // Заголовок по центру
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      _currentStep == 0 ? 'Шаг 1 из 2' : 'Шаг 2 из 2',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.whiteColor,
+                      ),
+                    ),
+                  ),
+                ),
+                // Невидимый элемент для баланса
+                if (_currentStep > 0) const SizedBox(width: 40),
+              ],
+            ),
+          ),
+
+          // Progress indicator
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppTheme.whiteColor,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Container(
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: _currentStep >= 1
+                          ? AppTheme.whiteColor
+                          : AppTheme.whiteColor.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+        ],
+      ),
+    );
+  }
+
   Widget _buildNameStep() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24.0),
+      padding: const EdgeInsets.symmetric(horizontal: 24.0),
       child: Form(
         key: _formKey,
         child: Column(
@@ -360,11 +407,10 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
             const Text(
               'Как вас зовут?',
               style: TextStyle(
-                fontSize: 28,
+                fontSize: 32,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: AppTheme.darkColor,
               ),
-              textAlign: TextAlign.center,
             ),
 
             const SizedBox(height: 8),
@@ -373,19 +419,19 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
               'Это поможет персонализировать ваш опыт',
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.white.withOpacity(0.6),
+                color: AppTheme.darkColor.withOpacity(0.6),
+                height: 1.5,
               ),
-              textAlign: TextAlign.center,
             ),
 
-            const SizedBox(height: 48),
+            const SizedBox(height: 40),
 
             // First name field
             _buildTextField(
               controller: _firstNameController,
               label: 'Имя',
               hint: 'Введите ваше имя',
-              icon: Ionicons.person_outline,
+              icon: Icons.person_outline,
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
                   return 'Введите имя';
@@ -404,7 +450,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
               controller: _lastNameController,
               label: 'Фамилия',
               hint: 'Введите вашу фамилию',
-              icon: Ionicons.person_outline,
+              icon: Icons.person_outline,
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
                   return 'Введите фамилию';
@@ -416,28 +462,34 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
               },
             ),
 
-            const SizedBox(height: 48),
+            const SizedBox(height: 40),
 
             // Next button
             SizedBox(
               width: double.infinity,
+              height: 56,
               child: ElevatedButton(
                 onPressed: _nextStep,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primaryColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  foregroundColor: AppTheme.whiteColor,
+                  minimumSize: const Size(double.infinity, 56),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(28),
                   ),
                   elevation: 0,
                 ),
                 child: const Text(
                   'Далее',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
+
+            const SizedBox(height: 32),
           ],
         ),
       ),
@@ -446,7 +498,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
 
   Widget _buildPhotoStep() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24.0),
+      padding: const EdgeInsets.symmetric(horizontal: 24.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -456,11 +508,10 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
           const Text(
             'Добавьте фото профиля',
             style: TextStyle(
-              fontSize: 28,
+              fontSize: 32,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: AppTheme.darkColor,
             ),
-            textAlign: TextAlign.center,
           ),
 
           const SizedBox(height: 8),
@@ -469,9 +520,9 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
             'Выберите фотографию для вашего профиля',
             style: TextStyle(
               fontSize: 14,
-              color: Colors.white.withOpacity(0.6),
+              color: AppTheme.darkColor.withOpacity(0.6),
+              height: 1.5,
             ),
-            textAlign: TextAlign.center,
           ),
 
           const SizedBox(height: 48),
@@ -489,11 +540,10 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
                       gradient: _selectedImage == null
                           ? AppTheme.primaryGradient
                           : null,
-                      color: _selectedImage != null ? null : null,
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: AppTheme.primaryColor.withOpacity(0.3),
+                          color: AppTheme.accentColor.withOpacity(0.3),
                           blurRadius: 20,
                           spreadRadius: 5,
                         ),
@@ -507,9 +557,9 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
                     ),
                     child: _selectedImage == null
                         ? const Icon(
-                            Ionicons.person,
+                            Icons.person,
                             size: 70,
-                            color: Colors.white,
+                            color: AppTheme.whiteColor,
                           )
                         : null,
                   ),
@@ -523,13 +573,13 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
                         color: AppTheme.primaryColor,
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: AppTheme.pageBackgroundColor,
+                          color: AppTheme.whiteColor,
                           width: 4,
                         ),
                       ),
                       child: const Icon(
-                        Ionicons.camera,
-                        color: Colors.white,
+                        Icons.camera_alt,
+                        color: AppTheme.whiteColor,
                         size: 24,
                       ),
                     ),
@@ -545,17 +595,17 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppTheme.surfaceColor,
+              color: AppTheme.lightGrayColor,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: Colors.white.withOpacity(0.1),
+                color: AppTheme.darkColor.withOpacity(0.1),
                 width: 1,
               ),
             ),
             child: Row(
               children: [
                 Icon(
-                  Ionicons.information_circle_outline,
+                  Icons.info_outline,
                   color: AppTheme.primaryColor,
                   size: 24,
                 ),
@@ -567,7 +617,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
                         : 'Вы можете изменить фото позже в настройках',
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.white.withOpacity(0.7),
+                      color: AppTheme.darkColor.withOpacity(0.7),
                     ),
                   ),
                 ),
@@ -575,30 +625,33 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
             ),
           ),
 
-          const SizedBox(height: 48),
+          const SizedBox(height: 40),
 
           // Save button
           SizedBox(
             width: double.infinity,
+            height: 56,
             child: ElevatedButton(
               onPressed: _isLoading ? null : _nextStep,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
+                foregroundColor: AppTheme.whiteColor,
+                minimumSize: const Size(double.infinity, 56),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(28),
                 ),
                 elevation: 0,
                 disabledBackgroundColor: AppTheme.primaryColor.withOpacity(0.5),
               ),
               child: _isLoading
                   ? const SizedBox(
-                      height: 20,
-                      width: 20,
+                      width: 24,
+                      height: 24,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppTheme.whiteColor,
+                        ),
                       ),
                     )
                   : const Text(
@@ -610,6 +663,8 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
                     ),
             ),
           ),
+
+          const SizedBox(height: 32),
         ],
       ),
     );
@@ -622,49 +677,35 @@ class _ProfileSetupPageState extends State<ProfileSetupPage> {
     required IconData icon,
     String? Function(String?)? validator,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.white.withOpacity(0.8),
+    return TextFormField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        prefixIcon: Icon(icon),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(
+            color: AppTheme.darkColor.withOpacity(0.2),
           ),
         ),
-        const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            color: AppTheme.surfaceColor,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
-          ),
-          child: TextFormField(
-            controller: controller,
-            style: const TextStyle(color: Colors.white, fontSize: 16),
-            decoration: InputDecoration(
-              hintText: hint,
-              hintStyle: TextStyle(
-                color: Colors.white.withOpacity(0.3),
-                fontSize: 16,
-              ),
-              prefixIcon: Icon(icon, color: AppTheme.primaryColor, size: 20),
-              border: InputBorder.none,
-              enabledBorder: InputBorder.none,
-              focusedBorder: InputBorder.none,
-              errorBorder: InputBorder.none,
-              focusedErrorBorder: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 16,
-              ),
-              errorStyle: const TextStyle(fontSize: 12, height: 0.5),
-            ),
-            validator: validator,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(
+            color: AppTheme.darkColor.withOpacity(0.2),
           ),
         ),
-      ],
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(
+            color: AppTheme.primaryColor,
+            width: 2,
+          ),
+        ),
+        filled: true,
+        fillColor: AppTheme.lightGrayColor,
+      ),
+      validator: validator,
     );
   }
 }

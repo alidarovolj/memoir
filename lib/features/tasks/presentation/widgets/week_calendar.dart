@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:memoir/core/theme/app_theme.dart';
 
 class WeekCalendar extends StatelessWidget {
   final DateTime selectedDate;
@@ -36,7 +37,7 @@ class WeekCalendar extends StatelessWidget {
                 Text(
                   DateFormat('E').format(date),
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.5),
+                    color: AppTheme.darkColor.withOpacity(0.5),
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
@@ -47,11 +48,11 @@ class WeekCalendar extends StatelessWidget {
                   height: 44,
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? const Color(0xFF6366F1)
+                        ? AppTheme.primaryColor
                         : Colors.transparent,
                     shape: BoxShape.circle,
                     border: isToday && !isSelected
-                        ? Border.all(color: const Color(0xFF6366F1), width: 2)
+                        ? Border.all(color: AppTheme.primaryColor, width: 2)
                         : null,
                   ),
                   child: Center(
@@ -59,10 +60,10 @@ class WeekCalendar extends StatelessWidget {
                       date.day.toString(),
                       style: TextStyle(
                         color: isSelected
-                            ? Colors.white
+                            ? AppTheme.whiteColor
                             : isToday
-                                ? const Color(0xFF6366F1)
-                                : Colors.white.withOpacity(0.7),
+                                ? AppTheme.primaryColor
+                                : AppTheme.darkColor.withOpacity(0.7),
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),

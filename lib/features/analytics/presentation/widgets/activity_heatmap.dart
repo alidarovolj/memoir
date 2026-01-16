@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:memoir/features/analytics/data/models/analytics_model.dart';
+import 'package:memoir/core/theme/app_theme.dart';
 import 'package:intl/intl.dart';
 
 class ActivityHeatmap extends StatelessWidget {
@@ -8,7 +9,7 @@ class ActivityHeatmap extends StatelessWidget {
   const ActivityHeatmap({super.key, required this.dailyActivities});
 
   Color _getColorForActivity(int totalActivity) {
-    if (totalActivity == 0) return Colors.white.withOpacity(0.1);
+    if (totalActivity == 0) return AppTheme.lightGrayColor;
     if (totalActivity <= 2) return const Color(0xFFc6e48b).withOpacity(0.5);
     if (totalActivity <= 5) return const Color(0xFF7bc96f);
     if (totalActivity <= 10) return const Color(0xFF49af5d);
@@ -54,26 +55,15 @@ class ActivityHeatmap extends StatelessWidget {
     }
 
     return Container(
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
+        color: AppTheme.whiteColor,
         borderRadius: BorderRadius.circular(16),
-        gradient: const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color.fromRGBO(255, 255, 255, 0.2),
-            Color.fromRGBO(233, 233, 233, 0.2),
-            Color.fromRGBO(242, 242, 242, 0),
-          ],
-          stops: [0.0, 0.5, 1.0],
+        border: Border.all(
+          color: AppTheme.darkColor.withOpacity(0.1),
+          width: 1,
         ),
       ),
-      child: Container(
-        margin: const EdgeInsets.all(1),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color.fromRGBO(44, 44, 44, 1),
-          borderRadius: BorderRadius.circular(15),
-        ),
         child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -88,7 +78,7 @@ class ActivityHeatmap extends StatelessWidget {
                       day,
                       style: TextStyle(
                         fontSize: 10,
-                        color: Colors.white.withOpacity(0.6),
+                        color: AppTheme.darkColor.withOpacity(0.6),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -115,7 +105,7 @@ class ActivityHeatmap extends StatelessWidget {
                       'W${weekIndex + 1}',
                       style: TextStyle(
                         fontSize: 10,
-                        color: Colors.white.withOpacity(0.4),
+                        color: AppTheme.darkColor.withOpacity(0.4),
                       ),
                     ),
                   ),
@@ -141,9 +131,11 @@ class ActivityHeatmap extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w600,
-                                color: totalActivity > 5
-                                    ? Colors.white
-                                    : Colors.white.withOpacity(0.8),
+                                color: totalActivity == 0
+                                    ? AppTheme.darkColor.withOpacity(0.3)
+                                    : totalActivity > 5
+                                    ? AppTheme.whiteColor
+                                    : AppTheme.darkColor,
                               ),
                             ),
                           ),
@@ -166,7 +158,7 @@ class ActivityHeatmap extends StatelessWidget {
                 'Меньше',
                 style: TextStyle(
                   fontSize: 10,
-                  color: Colors.white.withOpacity(0.6),
+                  color: AppTheme.darkColor.withOpacity(0.6),
                 ),
               ),
               const SizedBox(width: 8),
@@ -186,13 +178,12 @@ class ActivityHeatmap extends StatelessWidget {
                 'Больше',
                 style: TextStyle(
                   fontSize: 10,
-                  color: Colors.white.withOpacity(0.6),
+                  color: AppTheme.darkColor.withOpacity(0.6),
                 ),
               ),
             ],
           ),
         ],
-        ),
       ),
     );
   }

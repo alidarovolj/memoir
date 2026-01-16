@@ -88,40 +88,52 @@ class _UserSearchPageState extends State<UserSearchPage> {
               padding: const EdgeInsets.all(16),
               child: Container(
                 decoration: BoxDecoration(
-                  color: AppTheme.cardColor,
+                  color: AppTheme.lightGrayColor,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: AppTheme.primaryColor.withOpacity(0.3),
-                    width: 1,
-                  ),
                 ),
                 child: Row(
                   children: [
                     const SizedBox(width: 16),
                     Icon(
                       Ionicons.search_outline,
-                      color: Colors.white.withOpacity(0.6),
+                      color: AppTheme.darkColor.withOpacity(0.4),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: TextField(
-                        controller: _searchController,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: InputDecoration(
-                          hintText: 'Введите username...',
-                          hintStyle: TextStyle(
-                            color: Colors.white.withOpacity(0.4),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: AppTheme.whiteColor,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppTheme.primaryColor,
+                            width: 1,
                           ),
-                          border: InputBorder.none,
                         ),
-                        onSubmitted: (_) => _searchUsers(),
+                        child: TextField(
+                          controller: _searchController,
+                          style: const TextStyle(color: AppTheme.darkColor),
+                          decoration: InputDecoration(
+                            hintText: 'Введите username',
+                            hintStyle: TextStyle(
+                              color: AppTheme.darkColor.withOpacity(0.3),
+                            ),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 12,
+                            ),
+                          ),
+                          onSubmitted: (_) => _searchUsers(),
+                        ),
                       ),
                     ),
+                    const SizedBox(width: 12),
                     IconButton(
                       icon: const Icon(Ionicons.search),
                       color: AppTheme.primaryColor,
                       onPressed: _searchUsers,
                     ),
+                    const SizedBox(width: 8),
                   ],
                 ),
               ),
@@ -130,7 +142,13 @@ class _UserSearchPageState extends State<UserSearchPage> {
             // Results
             Expanded(
               child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppTheme.primaryColor,
+                        ),
+                      ),
+                    )
                   : !_hasSearched
                   ? _buildInitialState()
                   : _searchResults.isEmpty
@@ -158,13 +176,13 @@ class _UserSearchPageState extends State<UserSearchPage> {
           Icon(
             Ionicons.search_circle_outline,
             size: 100,
-            color: Colors.white.withOpacity(0.3),
+            color: AppTheme.darkColor.withOpacity(0.2),
           ),
           const SizedBox(height: 24),
           Text(
             'Найдите друзей',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.7),
+              color: AppTheme.darkColor.withOpacity(0.7),
               fontSize: 20,
               fontWeight: FontWeight.w600,
             ),
@@ -173,7 +191,7 @@ class _UserSearchPageState extends State<UserSearchPage> {
           Text(
             'Введите username для поиска',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.5),
+              color: AppTheme.darkColor.withOpacity(0.5),
               fontSize: 14,
             ),
           ),
@@ -190,13 +208,13 @@ class _UserSearchPageState extends State<UserSearchPage> {
           Icon(
             Ionicons.sad_outline,
             size: 80,
-            color: Colors.white.withOpacity(0.3),
+            color: AppTheme.darkColor.withOpacity(0.3),
           ),
           const SizedBox(height: 16),
           Text(
             'Ничего не найдено',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.7),
+              color: AppTheme.darkColor.withOpacity(0.7),
               fontSize: 18,
               fontWeight: FontWeight.w500,
             ),
@@ -205,7 +223,7 @@ class _UserSearchPageState extends State<UserSearchPage> {
           Text(
             'Попробуйте изменить запрос',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.5),
+              color: AppTheme.darkColor.withOpacity(0.5),
               fontSize: 14,
             ),
           ),
@@ -218,13 +236,11 @@ class _UserSearchPageState extends State<UserSearchPage> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppTheme.cardColor, AppTheme.cardColor.withOpacity(0.8)],
-        ),
+        color: AppTheme.whiteColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           width: 1,
-          color: AppTheme.primaryColor.withOpacity(0.3),
+          color: AppTheme.darkColor.withOpacity(0.1),
         ),
       ),
       child: Padding(
@@ -237,15 +253,13 @@ class _UserSearchPageState extends State<UserSearchPage> {
               height: 56,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [AppTheme.primaryColor, AppTheme.accentColor],
-                ),
+                gradient: AppTheme.primaryGradient,
               ),
               child: Center(
                 child: Text(
                   user.username[0].toUpperCase(),
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: AppTheme.whiteColor,
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
@@ -262,7 +276,7 @@ class _UserSearchPageState extends State<UserSearchPage> {
                   Text(
                     user.username,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppTheme.darkColor,
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
@@ -273,13 +287,13 @@ class _UserSearchPageState extends State<UserSearchPage> {
                       Icon(
                         Ionicons.book_outline,
                         size: 14,
-                        color: Colors.white.withOpacity(0.6),
+                        color: AppTheme.darkColor.withOpacity(0.6),
                       ),
                       const SizedBox(width: 4),
                       Text(
                         '${user.memoriesCount} воспоминаний',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.6),
+                          color: AppTheme.darkColor.withOpacity(0.6),
                           fontSize: 12,
                         ),
                       ),
@@ -296,7 +310,7 @@ class _UserSearchPageState extends State<UserSearchPage> {
               label: const Text('Добавить'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryColor,
-                foregroundColor: Colors.white,
+                foregroundColor: AppTheme.whiteColor,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 8,

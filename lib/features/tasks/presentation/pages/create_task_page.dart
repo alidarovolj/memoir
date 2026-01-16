@@ -27,10 +27,11 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
   bool _isAnalyzed = false; // Прошла ли задача AI анализ
   bool _isAnalyzing = false; // Идет ли анализ
   bool _isHabit = false; // Привычка или обычная задача
+  bool _showPreview = false; // Показать предпросмотр задач привычки
 
   // Task properties
   String _title = 'Новая задача';
-  Color _selectedColor = const Color(0xFFE91E63); // Magenta like in Grit
+  Color _selectedColor = AppTheme.primaryColor; // Primary color
   IconData _selectedIcon = Ionicons.checkbox_outline;
   TaskPriority _priority = TaskPriority.medium;
   late TimeScope _timeScope;
@@ -52,6 +53,10 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
 
   // Tags
   List<String> _tags = [];
+
+  // Habit preview data
+  Map<String, dynamic>? _habitAnalysis;
+  List<Map<String, dynamic>> _previewSubtasks = [];
 
   // Available colors (like in Grit)
   final List<Color> _availableColors = [
@@ -126,8 +131,17 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
 
         log('✨ [HABIT_AI] Habit analysis: $response');
 
-        // Сразу создаем привычку
-        await _createHabit(response);
+        // Сохраняем результат и показываем превью для редактирования
+        if (mounted) {
+          setState(() {
+            _habitAnalysis = response;
+            _previewSubtasks = List<Map<String, dynamic>>.from(
+              response['subtasks'] as List,
+            );
+            _isAnalyzing = false;
+            _showPreview = true;
+          });
+        }
       } else {
         // Анализ обычной задачи
         final response = await _taskDataSource.analyzeTask(
@@ -158,12 +172,18 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
     }
   }
 
-  Future<void> _createHabit(Map<String, dynamic> habitAnalysis) async {
+  Future<void> _saveHabitWithPreview() async {
+    if (_habitAnalysis == null) return;
+
+    setState(() => _isLoading = true);
+
     try {
+      // Используем отредактированные задачи из превью
       final habitData = {
-        'group_name': habitAnalysis['group_name'],
-        'group_icon': habitAnalysis['group_icon'],
-        'subtasks': habitAnalysis['subtasks'],
+        'habit_name': _habitAnalysis!['group_name'],
+        'group_name': _habitAnalysis!['group_name'],
+        'group_icon': _habitAnalysis!['group_icon'],
+        'subtasks': _previewSubtasks,
       };
 
       await _taskDataSource.createHabitWithSubtasks(habitData);
@@ -172,13 +192,13 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('✨ Привычка успешно создана!')),
         );
-        Navigator.of(context).pop(true); // Return true to indicate success
+        Navigator.of(context).pop();
       }
     } catch (e) {
       log('❌ [HABIT] Error creating habit: $e');
       if (mounted) {
         setState(() {
-          _isAnalyzing = false;
+          _isLoading = false;
         });
         ScaffoldMessenger.of(
           context,
@@ -437,9 +457,9 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
+      height: MediaQuery.of(context).size.height * 0.7,
       decoration: BoxDecoration(
-        color: AppTheme.pageBackgroundColor,
+        color: AppTheme.whiteColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
@@ -450,7 +470,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.3),
+              color: AppTheme.darkColor.withOpacity(0.3),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -466,31 +486,61 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
+                      color: AppTheme.lightGrayColor,
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
                       Ionicons.close,
-                      color: Colors.white,
+                      color: AppTheme.darkColor,
                       size: 20,
                     ),
                   ),
                 ),
-                if (_isAnalyzed)
+                const Spacer(),
+                if (_showPreview)
+                  Text(
+                    'Предпросмотр',
+                    style: TextStyle(
+                      color: AppTheme.darkColor,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                const Spacer(),
+                if (_showPreview)
                   GestureDetector(
-                    onTap: _isLoading ? () {} : _createTask,
+                    onTap: _isLoading ? () {} : _saveHabitWithPreview,
                     child: Container(
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
                         color: _isLoading
-                            ? Colors.white.withOpacity(0.1)
-                            : _selectedColor,
+                            ? AppTheme.lightGrayColor
+                            : AppTheme.primaryColor,
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         Ionicons.checkmark,
-                        color: _isLoading ? Colors.white38 : Colors.white,
+                        color: _isLoading ? AppTheme.darkColor.withOpacity(0.38) : AppTheme.whiteColor,
+                        size: 20,
+                      ),
+                    ),
+                  )
+                else if (_isAnalyzed)
+                  GestureDetector(
+                    onTap: _isLoading ? () {} : _createTask,
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                    decoration: BoxDecoration(
+                      color: _isLoading
+                          ? AppTheme.lightGrayColor
+                          : AppTheme.primaryColor,
+                      shape: BoxShape.circle,
+                    ),
+                      child: Icon(
+                        Ionicons.checkmark,
+                        color: _isLoading ? AppTheme.darkColor.withOpacity(0.38) : AppTheme.whiteColor,
                         size: 20,
                       ),
                     ),
@@ -506,7 +556,10 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (!_isAnalyzed) ...[
+                  if (_showPreview) ...[
+                    // ЭТАП ПРЕВЬЮ: Показываем задачи привычки для редактирования
+                    _buildHabitPreview(),
+                  ] else if (!_isAnalyzed) ...[
                     // ЭТАП 1: Только название и AI анализ
                     _buildInitialStage(),
                   ] else ...[
@@ -562,7 +615,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                       ? 'Какую привычку хотите сформировать?'
                       : 'Что нужно сделать?',
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: AppTheme.darkColor,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
@@ -573,7 +626,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                       ? 'AI разобьет привычку на ежедневные шаги'
                       : 'AI поможет определить приоритет и время выполнения',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.6),
+                    color: AppTheme.darkColor.withOpacity(0.6),
                     fontSize: 14,
                   ),
                 ),
@@ -583,12 +636,9 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                 // Переключатель типа: Задача/Привычка
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.05),
+                    color: AppTheme.lightGrayColor,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.1),
-                      width: 1,
-                    ),
+                    // Без границ для glassmorphism
                   ),
                   child: Row(
                     children: [
@@ -599,7 +649,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             decoration: BoxDecoration(
                               color: !_isHabit
-                                  ? _selectedColor
+                                  ? AppTheme.primaryColor
                                   : Colors.transparent,
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -608,14 +658,18 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                               children: [
                                 Icon(
                                   Ionicons.checkbox_outline,
-                                  color: Colors.white,
+                                  color: !_isHabit
+                                      ? AppTheme.whiteColor
+                                      : AppTheme.darkColor,
                                   size: 18,
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
                                   'Задача',
                                   style: TextStyle(
-                                    color: Colors.white,
+                                    color: !_isHabit
+                                        ? AppTheme.whiteColor
+                                        : AppTheme.darkColor,
                                     fontSize: 14,
                                     fontWeight: !_isHabit
                                         ? FontWeight.w600
@@ -634,7 +688,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             decoration: BoxDecoration(
                               color: _isHabit
-                                  ? _selectedColor
+                                  ? AppTheme.primaryColor
                                   : Colors.transparent,
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -643,14 +697,18 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                               children: [
                                 Icon(
                                   Ionicons.sparkles,
-                                  color: Colors.white,
+                                  color: _isHabit
+                                      ? AppTheme.whiteColor
+                                      : AppTheme.darkColor,
                                   size: 18,
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
                                   'Привычка',
                                   style: TextStyle(
-                                    color: Colors.white,
+                                    color: _isHabit
+                                        ? AppTheme.whiteColor
+                                        : AppTheme.darkColor,
                                     fontSize: 14,
                                     fontWeight: _isHabit
                                         ? FontWeight.w600
@@ -677,19 +735,16 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                       Expanded(
                         child: Container(
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.05),
+                            color: AppTheme.lightGrayColor,
                             borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: _selectedColor.withOpacity(0.3),
-                              width: 2,
-                            ),
+                            // Без границ для glassmorphism
                           ),
                           child: Center(
                             child: TextField(
                               controller: _titleController,
                               autofocus: true,
                               style: const TextStyle(
-                                color: Colors.white,
+                                color: AppTheme.darkColor,
                                 fontSize: 18,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -699,7 +754,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                                     ? 'Например: Бросить курить, Начать бегать...'
                                     : 'Например: Почистить зубы, Посмотреть фильм...',
                                 hintStyle: TextStyle(
-                                  color: Colors.white.withOpacity(0.3),
+                                  color: AppTheme.darkColor.withOpacity(0.3),
                                   fontSize: 16,
                                 ),
                                 border: InputBorder.none,
@@ -721,7 +776,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                         child: Container(
                           width: 56,
                           decoration: BoxDecoration(
-                            color: _selectedColor,
+                            color: AppTheme.primaryColor,
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: const Icon(
@@ -747,7 +802,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                   child: Text(
                     'Пропустить и заполнить вручную',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.5),
+                      color: AppTheme.darkColor.withOpacity(0.5),
                       fontSize: 14,
                     ),
                   ),
@@ -761,7 +816,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
     return Text(
       title.toUpperCase(),
       style: TextStyle(
-        color: Colors.white.withOpacity(0.5),
+        color: AppTheme.darkColor.withOpacity(0.5),
         fontSize: 13,
         fontWeight: FontWeight.w600,
         letterSpacing: 0.5,
@@ -837,7 +892,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
   Widget _buildAppearanceSection() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: AppTheme.lightGrayColor,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -845,24 +900,24 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
           // Title input
           _buildSettingTile(
             icon: Ionicons.text_outline,
-            iconColor: Colors.white,
+            iconColor: AppTheme.primaryColor,
             title: 'Название',
             trailing: Expanded(
               child: TextField(
                 controller: _titleController,
-                style: const TextStyle(color: Colors.white, fontSize: 15),
+                style: const TextStyle(color: AppTheme.darkColor, fontSize: 15),
                 textAlign: TextAlign.right,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   border: InputBorder.none,
                   hintText: 'Введите название',
-                  hintStyle: TextStyle(color: Colors.white38, fontSize: 15),
+                  hintStyle: TextStyle(color: AppTheme.darkColor.withOpacity(0.38), fontSize: 15),
                 ),
               ),
             ),
             onTap: null,
           ),
 
-          const Divider(height: 1, color: Colors.white12),
+          Divider(height: 1, color: AppTheme.darkColor.withOpacity(0.1)),
 
           // Color picker
           _buildSettingTile(
@@ -880,18 +935,18 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
             onTap: _showColorPicker,
           ),
 
-          const Divider(height: 1, color: Colors.white12),
+          Divider(height: 1, color: AppTheme.darkColor.withOpacity(0.1)),
 
           // Icon picker
           _buildSettingTile(
             icon: Ionicons.happy_outline,
             iconColor: Colors.orange,
             title: 'Иконка',
-            trailing: Icon(_selectedIcon, color: Colors.white70, size: 20),
+            trailing: Icon(_selectedIcon, color: AppTheme.darkColor.withOpacity(0.7), size: 20),
             onTap: _showIconPicker,
           ),
 
-          const Divider(height: 1, color: Colors.white12),
+          Divider(height: 1, color: AppTheme.darkColor.withOpacity(0.1)),
 
           // Description
           _buildSettingTile(
@@ -903,7 +958,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                   ? 'Пусто'
                   : _descriptionController.text,
               style: TextStyle(
-                color: Colors.white.withOpacity(0.5),
+                color: AppTheme.darkColor.withOpacity(0.5),
                 fontSize: 15,
               ),
               maxLines: 1,
@@ -912,7 +967,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
             onTap: _showDescriptionDialog,
           ),
 
-          const Divider(height: 1, color: Colors.white12),
+          Divider(height: 1, color: AppTheme.darkColor.withOpacity(0.1)),
 
           // Tags
           _buildSettingTile(
@@ -926,7 +981,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                   ? _tags[0]
                   : '${_tags.length} тегов',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.5),
+                color: AppTheme.darkColor.withOpacity(0.5),
                 fontSize: 15,
               ),
               maxLines: 1,
@@ -942,7 +997,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
   Widget _buildGeneralSection() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: AppTheme.lightGrayColor,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -970,7 +1025,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
             onTap: _showPriorityPicker,
           ),
 
-          const Divider(height: 1, color: Colors.white12),
+          Divider(height: 1, color: AppTheme.darkColor.withOpacity(0.1)),
 
           // Category
           _buildSettingTile(
@@ -986,7 +1041,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                 Text(
                   _categoryDisplayName ?? 'Не выбрана',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.5),
+                    color: AppTheme.darkColor.withOpacity(0.5),
                     fontSize: 15,
                   ),
                 ),
@@ -995,7 +1050,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
             onTap: _selectCategory,
           ),
 
-          const Divider(height: 1, color: Colors.white12),
+          Divider(height: 1, color: AppTheme.darkColor.withOpacity(0.1)),
 
           // Group
           _buildSettingTile(
@@ -1011,7 +1066,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                 Text(
                   _groupName ?? 'Не выбрана',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.5),
+                    color: AppTheme.darkColor.withOpacity(0.5),
                     fontSize: 15,
                   ),
                 ),
@@ -1020,7 +1075,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
             onTap: _selectGroup,
           ),
 
-          const Divider(height: 1, color: Colors.white12),
+          Divider(height: 1, color: AppTheme.darkColor.withOpacity(0.1)),
 
           // Time Scope
           _buildSettingTile(
@@ -1030,14 +1085,14 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
             trailing: Text(
               _getTimeScopeLabel(_timeScope),
               style: TextStyle(
-                color: Colors.white.withOpacity(0.5),
+                color: AppTheme.darkColor.withOpacity(0.5),
                 fontSize: 15,
               ),
             ),
             onTap: _showTimeScopePicker,
           ),
 
-          const Divider(height: 1, color: Colors.white12),
+          Divider(height: 1, color: AppTheme.darkColor.withOpacity(0.1)),
 
           // Scheduled Time
           _buildSettingTile(
@@ -1049,14 +1104,14 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                   ? _scheduledTime!.format(context)
                   : 'Не указано',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.5),
+                color: AppTheme.darkColor.withOpacity(0.5),
                 fontSize: 15,
               ),
             ),
             onTap: _pickScheduledTime,
           ),
 
-          const Divider(height: 1, color: Colors.white12),
+          Divider(height: 1, color: AppTheme.darkColor.withOpacity(0.1)),
 
           // Due Date
           _buildSettingTile(
@@ -1070,14 +1125,14 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                   ? 'Сегодня'
                   : 'Не указана',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.5),
+                color: AppTheme.darkColor.withOpacity(0.5),
                 fontSize: 15,
               ),
             ),
             onTap: _pickDueDate,
           ),
 
-          const Divider(height: 1, color: Colors.white12),
+          Divider(height: 1, color: AppTheme.darkColor.withOpacity(0.1)),
 
           // Repeat
           _buildSettingTile(
@@ -1087,7 +1142,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
             trailing: Text(
               _isRecurring ? _getRecurrenceLabel(_recurrenceRule) : 'Нет',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.5),
+                color: AppTheme.darkColor.withOpacity(0.5),
                 fontSize: 15,
               ),
             ),
@@ -1125,7 +1180,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
               child: Text(
                 title,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: AppTheme.darkColor,
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
                 ),
@@ -1141,7 +1196,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                         const SizedBox(width: 8),
                         Icon(
                           Ionicons.chevron_forward,
-                          color: Colors.white.withOpacity(0.3),
+                          color: AppTheme.darkColor.withOpacity(0.3),
                           size: 16,
                         ),
                       ],
@@ -1159,7 +1214,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         decoration: const BoxDecoration(
-          color: Color(0xFF1C1C1E),
+          color: AppTheme.whiteColor,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         padding: const EdgeInsets.all(20),
@@ -1170,7 +1225,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
             const Text(
               'Выберите цвет',
               style: TextStyle(
-                color: Colors.white,
+                color: AppTheme.darkColor,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -1201,7 +1256,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                     child: isSelected
                         ? const Icon(
                             Ionicons.checkmark,
-                            color: Colors.white,
+                            color: AppTheme.whiteColor,
                             size: 28,
                           )
                         : null,
@@ -1222,7 +1277,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         decoration: const BoxDecoration(
-          color: Color(0xFF1C1C1E),
+          color: AppTheme.whiteColor,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         padding: const EdgeInsets.all(20),
@@ -1233,7 +1288,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
             const Text(
               'Выберите иконку',
               style: TextStyle(
-                color: Colors.white,
+                color: AppTheme.darkColor,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -1260,7 +1315,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                           : Colors.white.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(icon, color: Colors.white, size: 28),
+                    child: Icon(icon, color: AppTheme.whiteColor, size: 28),
                   ),
                 );
               }).toList(),
@@ -1294,7 +1349,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
               const Text(
                 'Описание',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: AppTheme.darkColor,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
@@ -1302,13 +1357,13 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
               const SizedBox(height: 20),
               TextField(
                 controller: _descriptionController,
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: AppTheme.darkColor),
                 maxLines: 4,
                 decoration: InputDecoration(
                   hintText: 'Добавьте описание...',
-                  hintStyle: const TextStyle(color: Colors.white38),
+                  hintStyle: TextStyle(color: AppTheme.darkColor.withOpacity(0.38)),
                   filled: true,
-                  fillColor: Colors.white.withOpacity(0.05),
+                  fillColor: AppTheme.lightGrayColor,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
@@ -1322,7 +1377,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                 child: ElevatedButton(
                   onPressed: () => Navigator.pop(context),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _selectedColor,
+                    backgroundColor: AppTheme.primaryColor,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -1351,7 +1406,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         decoration: const BoxDecoration(
-          color: Color(0xFF1C1C1E),
+          color: AppTheme.whiteColor,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         padding: const EdgeInsets.all(20),
@@ -1362,7 +1417,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
             const Text(
               'Приоритет',
               style: TextStyle(
-                color: Colors.white,
+                color: AppTheme.darkColor,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -1386,10 +1441,10 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                 ),
                 title: Text(
                   _getPriorityLabel(priority),
-                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                  style: const TextStyle(color: AppTheme.darkColor, fontSize: 16),
                 ),
                 trailing: _priority == priority
-                    ? Icon(Ionicons.checkmark_circle, color: _selectedColor)
+                    ? Icon(Ionicons.checkmark_circle, color: AppTheme.primaryColor)
                     : null,
                 onTap: () {
                   setState(() {
@@ -1411,7 +1466,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         decoration: const BoxDecoration(
-          color: Color(0xFF1C1C1E),
+          color: AppTheme.whiteColor,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         padding: const EdgeInsets.all(20),
@@ -1422,7 +1477,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
             const Text(
               'Временной масштаб',
               style: TextStyle(
-                color: Colors.white,
+                color: AppTheme.darkColor,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -1433,10 +1488,10 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                 contentPadding: EdgeInsets.zero,
                 title: Text(
                   _getTimeScopeLabel(scope),
-                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                  style: const TextStyle(color: AppTheme.darkColor, fontSize: 16),
                 ),
                 trailing: _timeScope == scope
-                    ? Icon(Ionicons.checkmark_circle, color: _selectedColor)
+                    ? Icon(Ionicons.checkmark_circle, color: AppTheme.primaryColor)
                     : null,
                 onTap: () {
                   setState(() {
@@ -1484,7 +1539,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         decoration: const BoxDecoration(
-          color: Color(0xFF1C1C1E),
+          color: AppTheme.whiteColor,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         padding: const EdgeInsets.all(20),
@@ -1495,7 +1550,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
             const Text(
               'Повторение',
               style: TextStyle(
-                color: Colors.white,
+                color: AppTheme.darkColor,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -1505,10 +1560,10 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
               contentPadding: EdgeInsets.zero,
               title: const Text(
                 'Нет',
-                style: TextStyle(color: Colors.white, fontSize: 16),
+                style: TextStyle(color: AppTheme.darkColor, fontSize: 16),
               ),
               trailing: !_isRecurring
-                  ? Icon(Ionicons.checkmark_circle, color: _selectedColor)
+                  ? Icon(Ionicons.checkmark_circle, color: AppTheme.primaryColor)
                   : null,
               onTap: () {
                 setState(() {
@@ -1521,10 +1576,10 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
               contentPadding: EdgeInsets.zero,
               title: const Text(
                 'Ежедневно',
-                style: TextStyle(color: Colors.white, fontSize: 16),
+                style: TextStyle(color: AppTheme.darkColor, fontSize: 16),
               ),
               trailing: _isRecurring && _recurrenceRule == 'FREQ=DAILY'
-                  ? Icon(Ionicons.checkmark_circle, color: _selectedColor)
+                  ? Icon(Ionicons.checkmark_circle, color: AppTheme.primaryColor)
                   : null,
               onTap: () {
                 setState(() {
@@ -1538,12 +1593,12 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
               contentPadding: EdgeInsets.zero,
               title: const Text(
                 'По будням',
-                style: TextStyle(color: Colors.white, fontSize: 16),
+                style: TextStyle(color: AppTheme.darkColor, fontSize: 16),
               ),
               trailing:
                   _isRecurring &&
                       _recurrenceRule == 'FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR'
-                  ? Icon(Ionicons.checkmark_circle, color: _selectedColor)
+                  ? Icon(Ionicons.checkmark_circle, color: AppTheme.primaryColor)
                   : null,
               onTap: () {
                 setState(() {
@@ -1557,10 +1612,10 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
               contentPadding: EdgeInsets.zero,
               title: const Text(
                 'Еженедельно',
-                style: TextStyle(color: Colors.white, fontSize: 16),
+                style: TextStyle(color: AppTheme.darkColor, fontSize: 16),
               ),
               trailing: _isRecurring && _recurrenceRule == 'FREQ=WEEKLY'
-                  ? Icon(Ionicons.checkmark_circle, color: _selectedColor)
+                  ? Icon(Ionicons.checkmark_circle, color: AppTheme.primaryColor)
                   : null,
               onTap: () {
                 setState(() {
@@ -1574,10 +1629,10 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
               contentPadding: EdgeInsets.zero,
               title: const Text(
                 'Ежемесячно',
-                style: TextStyle(color: Colors.white, fontSize: 16),
+                style: TextStyle(color: AppTheme.darkColor, fontSize: 16),
               ),
               trailing: _isRecurring && _recurrenceRule == 'FREQ=MONTHLY'
-                  ? Icon(Ionicons.checkmark_circle, color: _selectedColor)
+                  ? Icon(Ionicons.checkmark_circle, color: AppTheme.primaryColor)
                   : null,
               onTap: () {
                 setState(() {
@@ -1695,14 +1750,14 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Теги',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+              const Text(
+                'Теги',
+                style: TextStyle(
+                  color: AppTheme.darkColor,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
+              ),
                 const SizedBox(height: 20),
 
                 // Текущие теги
@@ -1759,19 +1814,19 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                     Expanded(
                       child: TextField(
                         controller: tagController,
-                        style: const TextStyle(color: Colors.white),
+                        style: const TextStyle(color: AppTheme.darkColor),
                         decoration: InputDecoration(
                           hintText: 'Добавить тег...',
-                          hintStyle: const TextStyle(color: Colors.white38),
+                          hintStyle: TextStyle(color: AppTheme.darkColor.withOpacity(0.38)),
                           filled: true,
-                          fillColor: Colors.white.withOpacity(0.05),
+                          fillColor: AppTheme.lightGrayColor,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
                           ),
                           prefixIcon: Icon(
                             Ionicons.pricetag_outline,
-                            color: _selectedColor,
+                            color: AppTheme.primaryColor,
                           ),
                         ),
                         onSubmitted: (value) {
@@ -1790,11 +1845,11 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                     const SizedBox(width: 8),
                     Container(
                       decoration: BoxDecoration(
-                        color: _selectedColor,
+                        color: AppTheme.primaryColor,
                         shape: BoxShape.circle,
                       ),
                       child: IconButton(
-                        icon: const Icon(Ionicons.add, color: Colors.white),
+                        icon: const Icon(Ionicons.add, color: AppTheme.whiteColor),
                         onPressed: () {
                           if (tagController.text.trim().isNotEmpty) {
                             setState(() {
@@ -1826,7 +1881,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                     child: const Text(
                       'Готово',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppTheme.whiteColor,
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
@@ -1835,6 +1890,500 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHabitPreview() {
+    if (_habitAnalysis == null) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Заголовок привычки
+        Row(
+          children: [
+            Text(
+              _habitAnalysis!['group_icon'] ?? '🎯',
+              style: const TextStyle(fontSize: 32),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                _habitAnalysis!['group_name'] ?? 'Привычка',
+                style: const TextStyle(
+                  color: AppTheme.darkColor,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 24),
+
+        Text(
+          'Задачи (${_previewSubtasks.length})',
+          style: const TextStyle(
+            color: AppTheme.darkColor,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
+        // Список задач
+        ...List.generate(_previewSubtasks.length, (index) {
+          final task = _previewSubtasks[index];
+          return _buildSubtaskPreviewCard(task, index);
+        }),
+
+        const SizedBox(height: 16),
+
+        // Кнопка добавить задачу
+        GestureDetector(
+          onTap: _addNewSubtask,
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+            decoration: BoxDecoration(
+              color: AppTheme.lightGrayColor,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: AppTheme.primaryColor.withOpacity(0.3),
+                width: 1.5,
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Ionicons.add_circle_outline,
+                  color: AppTheme.primaryColor,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Добавить задачу',
+                  style: TextStyle(
+                    color: AppTheme.primaryColor,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 32),
+      ],
+    );
+  }
+
+  Widget _buildSubtaskPreviewCard(Map<String, dynamic> task, int index) {
+    final color = _parseColor(task['color'] as String?);
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.lightGrayColor,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              // Иконка с цветом
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  _parseIcon(task['icon'] as String?),
+                  color: color,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Название и время
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      task['title'] ?? 'Без названия',
+                      style: const TextStyle(
+                        color: AppTheme.darkColor,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (task['suggested_time'] != null)
+                      Text(
+                        '🕐 ${task['suggested_time']}',
+                        style: TextStyle(
+                          color: AppTheme.darkColor.withOpacity(0.6),
+                          fontSize: 14,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              // Кнопки действий
+              Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => _editSubtask(index),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.whiteColor,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Ionicons.create_outline,
+                        color: AppTheme.primaryColor,
+                        size: 18,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () => _removeSubtask(index),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.whiteColor,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Ionicons.trash_outline,
+                        color: Colors.red,
+                        size: 18,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          if (task['description'] != null && (task['description'] as String).isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              task['description'],
+              style: TextStyle(
+                color: AppTheme.darkColor.withOpacity(0.7),
+                fontSize: 14,
+              ),
+            ),
+          ],
+          // Приоритет
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: _getPriorityColorFromString(task['priority'] as String?),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              _getPriorityLabelFromString(task['priority'] as String? ?? 'medium'),
+              style: const TextStyle(
+                color: AppTheme.whiteColor,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _parseColor(String? colorString) {
+    if (colorString == null) return AppTheme.primaryColor;
+    try {
+      return Color(int.parse(colorString.replaceFirst('#', '0xFF')));
+    } catch (e) {
+      return AppTheme.primaryColor;
+    }
+  }
+
+  IconData _parseIcon(String? iconString) {
+    if (iconString == null) return Ionicons.checkbox_outline;
+    // Простой парсинг - можно расширить
+    if (iconString.contains('water')) return Ionicons.water_outline;
+    if (iconString.contains('medical')) return Ionicons.medical_outline;
+    if (iconString.contains('leaf')) return Ionicons.leaf_outline;
+    if (iconString.contains('walk')) return Ionicons.walk_outline;
+    if (iconString.contains('create')) return Ionicons.create_outline;
+    if (iconString.contains('body')) return Ionicons.body_outline;
+    if (iconString.contains('fitness')) return Ionicons.fitness_outline;
+    return Ionicons.checkbox_outline;
+  }
+
+  Color _getPriorityColorFromString(String? priority) {
+    switch (priority) {
+      case 'high':
+        return Colors.red;
+      case 'medium':
+        return Colors.orange;
+      case 'low':
+        return Colors.blue;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  String _getPriorityLabelFromString(String priority) {
+    switch (priority) {
+      case 'high':
+        return 'Высокий';
+      case 'medium':
+        return 'Средний';
+      case 'low':
+        return 'Низкий';
+      default:
+        return 'Средний';
+    }
+  }
+
+  void _removeSubtask(int index) {
+    setState(() {
+      _previewSubtasks.removeAt(index);
+    });
+  }
+
+  void _editSubtask(int index) {
+    final task = _previewSubtasks[index];
+    _showEditSubtaskDialog(task, index);
+  }
+
+  void _addNewSubtask() {
+    final newTask = {
+      'title': '',
+      'description': '',
+      'priority': 'medium',
+      'suggested_time': '09:00',
+      'color': '#3B82F6',
+      'icon': 'Ionicons.checkbox_outline',
+      'is_recurring': true,
+    };
+    _showEditSubtaskDialog(newTask, null);
+  }
+
+  void _showEditSubtaskDialog(Map<String, dynamic> task, int? index) {
+    final titleController = TextEditingController(text: task['title'] ?? '');
+    final descriptionController = TextEditingController(text: task['description'] ?? '');
+    String selectedPriority = task['priority'] ?? 'medium';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          height: MediaQuery.of(context).size.height * 0.7,
+          decoration: const BoxDecoration(
+            color: AppTheme.whiteColor,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: Column(
+            children: [
+              // Заголовок
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  children: [
+                    Text(
+                      index == null ? 'Новая задача' : 'Редактировать задачу',
+                      style: const TextStyle(
+                        color: AppTheme.darkColor,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: AppTheme.lightGrayColor,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Ionicons.close,
+                          color: AppTheme.darkColor,
+                          size: 18,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Название
+                      const Text(
+                        'Название',
+                        style: TextStyle(
+                          color: AppTheme.darkColor,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: titleController,
+                        style: const TextStyle(color: AppTheme.darkColor),
+                        decoration: InputDecoration(
+                          hintText: 'Введите название',
+                          hintStyle: TextStyle(color: AppTheme.darkColor.withOpacity(0.38)),
+                          filled: true,
+                          fillColor: AppTheme.lightGrayColor,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Описание
+                      const Text(
+                        'Описание',
+                        style: TextStyle(
+                          color: AppTheme.darkColor,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: descriptionController,
+                        style: const TextStyle(color: AppTheme.darkColor),
+                        maxLines: 3,
+                        decoration: InputDecoration(
+                          hintText: 'Введите описание',
+                          hintStyle: TextStyle(color: AppTheme.darkColor.withOpacity(0.38)),
+                          filled: true,
+                          fillColor: AppTheme.lightGrayColor,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Приоритет
+                      const Text(
+                        'Приоритет',
+                        style: TextStyle(
+                          color: AppTheme.darkColor,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        children: ['low', 'medium', 'high'].map((priority) {
+                          final isSelected = selectedPriority == priority;
+                          return GestureDetector(
+                            onTap: () {
+                              setModalState(() {
+                                selectedPriority = priority;
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: isSelected ? AppTheme.primaryColor : AppTheme.lightGrayColor,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                _getPriorityLabelFromString(priority),
+                                style: TextStyle(
+                                  color: isSelected ? AppTheme.whiteColor : AppTheme.darkColor,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+
+                      const SizedBox(height: 32),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Кнопка сохранить
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      final updatedTask = {
+                        ...task,
+                        'title': titleController.text,
+                        'description': descriptionController.text,
+                        'priority': selectedPriority,
+                      };
+
+                      setState(() {
+                        if (index == null) {
+                          _previewSubtasks.add(updatedTask);
+                        } else {
+                          _previewSubtasks[index] = updatedTask;
+                        }
+                      });
+
+                      Navigator.pop(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: const Text(
+                      'Сохранить',
+                      style: TextStyle(
+                        color: AppTheme.whiteColor,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

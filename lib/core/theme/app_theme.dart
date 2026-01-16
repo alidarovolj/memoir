@@ -8,7 +8,7 @@ class AppTheme {
   static const blueColor = Color(0xFF6366FF); // #6366ff - Синий (резерв)
   static const tealColor = Color(0xFF277070); // #277070 - Бирюзовый (основной)
   static const limeColor = Color(0xFFC9F158); // #c9f158 - Салатовый (резерв)
-  static const lightGrayColor = Color(0xFFF2F3F5); // #f2f3f5 - Светло-серый
+  static const lightGrayColor = Color(0xFFF2F1F7); // rgb(242, 241, 247) - Светло-серый фон
   static const whiteColor = Color(0xFFFFFFFF); // #ffffff - Белый
   static const lightGrayBorder = Color(
     0xFFE0E0E0,
@@ -24,8 +24,8 @@ class AppTheme {
     0xFF1C1B20,
   ); // rgba(28, 27, 32, 1) - Фон приложения (темный)
   static const pageBackgroundColor = Color(
-    0xFFFFFFFF,
-  ); // #ffffff - Белый фон для страниц авторизации
+    0xFFF2F1F7,
+  ); // rgb(242, 241, 247) - Светло-серый фон для страниц
   static const headerBackgroundColor = Color(
     0xFF151418,
   ); // rgba(21, 20, 24, 1) - Фон хедера
@@ -175,9 +175,9 @@ class AppTheme {
     );
   }
 
-  // Градиент фона для light theme (теперь тоже темный)
+  // Градиент фона для light theme
   static const lightBackgroundGradient = LinearGradient(
-    colors: [appBackgroundColor, Color(0xFF25262A)],
+    colors: [pageBackgroundColor, pageBackgroundColor],
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );

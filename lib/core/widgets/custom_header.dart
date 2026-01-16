@@ -70,26 +70,16 @@ class CustomHeader extends StatelessWidget {
                         vertical: 8,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
+                        color: Colors.white.withOpacity(0.7),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.2),
-                          width: 1,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
-                            blurRadius: 10,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
+                        // Без границ для нативного glassmorphism
                       ),
                       child: Text(
                         title,
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: AppTheme.darkColor,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -120,7 +110,7 @@ class CustomHeader extends StatelessWidget {
                   },
                   child: Icon(
                     Ionicons.chevron_back,
-                    color: AppTheme.primaryColor,
+                    color: AppTheme.darkColor,
                     size: 20,
                   ),
                 ),
@@ -149,7 +139,7 @@ class CustomHeader extends StatelessWidget {
                   },
                   child: Icon(
                     Ionicons.close,
-                    color: AppTheme.primaryColor,
+                    color: AppTheme.darkColor,
                     size: 20,
                   ),
                 ),

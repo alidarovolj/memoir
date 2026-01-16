@@ -6,7 +6,6 @@ import 'package:memoir/core/services/notification_service.dart';
 import 'package:memoir/core/network/dio_client.dart';
 import 'package:memoir/core/utils/snackbar_utils.dart';
 import 'package:memoir/core/widgets/custom_header.dart';
-import 'package:memoir/features/analytics/presentation/pages/analytics_page.dart';
 import 'package:memoir/features/challenges/presentation/pages/challenges_page.dart';
 import 'package:memoir/features/achievements/presentation/pages/achievements_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -66,7 +65,7 @@ class _ProfilePageState extends State<ProfilePage> {
     // Показываем диалог выбора источника
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
-      backgroundColor: AppTheme.surfaceColor,
+      backgroundColor: AppTheme.whiteColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -81,7 +80,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: AppTheme.darkColor,
                 ),
               ),
               const SizedBox(height: 20),
@@ -90,18 +89,18 @@ class _ProfilePageState extends State<ProfilePage> {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryColor,
+                    color: AppTheme.primaryColor.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(
                     Ionicons.camera,
-                    color: Colors.white,
+                    color: AppTheme.primaryColor,
                     size: 20,
                   ),
                 ),
                 title: const Text(
                   'Камера',
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(color: AppTheme.darkColor),
                 ),
                 onTap: () => Navigator.pop(context, ImageSource.camera),
               ),
@@ -110,18 +109,18 @@ class _ProfilePageState extends State<ProfilePage> {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryColor,
+                    color: AppTheme.primaryColor.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(
                     Ionicons.images,
-                    color: Colors.white,
+                    color: AppTheme.primaryColor,
                     size: 20,
                   ),
                 ),
                 title: const Text(
                   'Галерея',
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(color: AppTheme.darkColor),
                 ),
                 onTap: () => Navigator.pop(context, ImageSource.gallery),
               ),
@@ -143,22 +142,25 @@ class _ProfilePageState extends State<ProfilePage> {
           final shouldOpenSettings = await showDialog<bool>(
             context: context,
             builder: (context) => AlertDialog(
-              backgroundColor: AppTheme.surfaceColor,
+              backgroundColor: AppTheme.whiteColor,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),
               title: const Text(
                 'Разрешение не предоставлено',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: AppTheme.darkColor),
               ),
               content: Text(
                 'Для использования камеры необходимо разрешение. Открыть настройки?',
-                style: TextStyle(color: Colors.white.withOpacity(0.7)),
+                style: TextStyle(color: AppTheme.darkColor.withOpacity(0.7)),
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Отмена'),
+                  child: Text(
+                    'Отмена',
+                    style: TextStyle(color: AppTheme.darkColor.withOpacity(0.7)),
+                  ),
                 ),
                 TextButton(
                   onPressed: () => Navigator.pop(context, true),
@@ -247,9 +249,12 @@ class _ProfilePageState extends State<ProfilePage> {
         child: Container(
           width: MediaQuery.of(context).size.width * 0.9,
           decoration: BoxDecoration(
-            color: AppTheme.surfaceColor,
+            color: AppTheme.whiteColor,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+            border: Border.all(
+              color: AppTheme.darkColor.withOpacity(0.1),
+              width: 1,
+            ),
           ),
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -258,16 +263,19 @@ class _ProfilePageState extends State<ProfilePage> {
               const Text(
                 'Выйти из аккаунта?',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: AppTheme.darkColor,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
-              const Text(
+              Text(
                 'Вы действительно хотите выйти?',
-                style: TextStyle(color: Colors.white70, fontSize: 16),
+                style: TextStyle(
+                  color: AppTheme.darkColor.withOpacity(0.7),
+                  fontSize: 16,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
@@ -277,8 +285,8 @@ class _ProfilePageState extends State<ProfilePage> {
                 child: ElevatedButton(
                   onPressed: () => Navigator.pop(context, false),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white.withOpacity(0.1),
-                    foregroundColor: Colors.white,
+                    backgroundColor: AppTheme.lightGrayColor,
+                    foregroundColor: AppTheme.darkColor,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -338,7 +346,7 @@ class _ProfilePageState extends State<ProfilePage> {
       // Navigate to login
       Navigator.of(
         context,
-      ).pushNamedAndRemoveUntil('/phone-login', (route) => false);
+      ).pushNamedAndRemoveUntil('/signup', (route) => false);
 
       developer.log('✅ [PROFILE] Logged out successfully');
     } catch (e) {
@@ -415,10 +423,16 @@ class _ProfilePageState extends State<ProfilePage> {
                                                   ),
                                               errorWidget:
                                                   (context, url, error) =>
-                                                      const Icon(
-                                                        Ionicons.person,
-                                                        size: 50,
-                                                        color: Colors.white,
+                                                      Container(
+                                                        decoration: BoxDecoration(
+                                                          color: AppTheme.primaryColor,
+                                                          shape: BoxShape.circle,
+                                                        ),
+                                                        child: const Icon(
+                                                          Ionicons.person,
+                                                          size: 50,
+                                                          color: AppTheme.whiteColor,
+                                                        ),
                                                       ),
                                             ),
                                           )
@@ -475,9 +489,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                     // Отступ снизу для таббара
                     SliverPadding(
-                      padding: EdgeInsets.only(
-                        bottom: MediaQuery.of(context).padding.bottom,
-                      ),
+                      padding: const EdgeInsets.only(bottom: 90),
                     ),
                   ],
                 ),
@@ -508,7 +520,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 ? '$_firstName $_lastName'
                 : _firstName ?? _lastName ?? 'Пользователь',
             style: const TextStyle(
-              color: Colors.white,
+              color: AppTheme.darkColor,
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
@@ -523,7 +535,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return Text(
       title,
       style: TextStyle(
-        color: Colors.white.withOpacity(0.9),
+        color: AppTheme.darkColor.withOpacity(0.9),
         fontSize: 14,
         fontWeight: FontWeight.w600,
         letterSpacing: 1,
@@ -534,15 +546,12 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget _buildSettingsCard() {
     return Container(
       decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
+        color: AppTheme.whiteColor,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(
+          color: AppTheme.darkColor.withOpacity(0.1),
+          width: 1,
+        ),
       ),
       child: Column(
         children: [
@@ -556,7 +565,7 @@ class _ProfilePageState extends State<ProfilePage> {
           //     );
           //   },
           // ),
-          // const Divider(height: 1, color: Colors.white12),
+          //           Divider(height: 1, color: AppTheme.darkColor.withOpacity(0.1)),
           _buildSettingsItem(
             icon: Ionicons.trophy_outline,
             title: 'Челленджи',
@@ -567,7 +576,7 @@ class _ProfilePageState extends State<ProfilePage> {
               );
             },
           ),
-          const Divider(height: 1, color: Colors.white12),
+          Divider(height: 1, color: AppTheme.darkColor.withOpacity(0.1)),
           _buildSettingsItem(
             icon: Ionicons.medal_outline,
             title: 'Достижения',
@@ -580,7 +589,7 @@ class _ProfilePageState extends State<ProfilePage> {
               );
             },
           ),
-          const Divider(height: 1, color: Colors.white12),
+          Divider(height: 1, color: AppTheme.darkColor.withOpacity(0.1)),
           _buildSettingsItem(
             icon: Ionicons.notifications_outline,
             title: 'Уведомления',
@@ -607,15 +616,12 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget _buildAboutCard() {
     return Container(
       decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
+        color: AppTheme.whiteColor,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(
+          color: AppTheme.darkColor.withOpacity(0.1),
+          width: 1,
+        ),
       ),
       child: Column(
         children: [
@@ -625,7 +631,7 @@ class _ProfilePageState extends State<ProfilePage> {
             subtitle: '1.0.0 (Beta)',
             onTap: () {},
           ),
-          const Divider(height: 1, color: Colors.white12),
+          Divider(height: 1, color: AppTheme.darkColor.withOpacity(0.1)),
           _buildSettingsItem(
             icon: Ionicons.shield_checkmark_outline,
             title: 'Политика конфиденциальности',
@@ -633,7 +639,7 @@ class _ProfilePageState extends State<ProfilePage> {
               SnackBarUtils.showInfo(context, 'Политика - в разработке');
             },
           ),
-          const Divider(height: 1, color: Colors.white12),
+          Divider(height: 1, color: AppTheme.darkColor.withOpacity(0.1)),
           _buildSettingsItem(
             icon: Ionicons.document_text_outline,
             title: 'Условия использования',
@@ -664,10 +670,10 @@ class _ProfilePageState extends State<ProfilePage> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor,
+                color: AppTheme.primaryColor.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(icon, color: Colors.white, size: 20),
+              child: Icon(icon, color: AppTheme.primaryColor, size: 20),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -677,7 +683,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   Text(
                     title,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppTheme.darkColor,
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
                     ),
@@ -687,7 +693,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     Text(
                       subtitle,
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.6),
+                        color: AppTheme.darkColor.withOpacity(0.6),
                         fontSize: 14,
                       ),
                     ),
@@ -698,7 +704,7 @@ class _ProfilePageState extends State<ProfilePage> {
             trailing ??
                 Icon(
                   Ionicons.chevron_forward_outline,
-                  color: Colors.white.withOpacity(0.3),
+                  color: AppTheme.darkColor.withOpacity(0.3),
                   size: 20,
                 ),
           ],
@@ -710,20 +716,8 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget _buildLogoutButton() {
     return Container(
       decoration: BoxDecoration(
+        color: Colors.red,
         borderRadius: BorderRadius.circular(20),
-        gradient: LinearGradient(
-          colors: [
-            Colors.red.withOpacity(0.8),
-            Colors.redAccent.withOpacity(0.8),
-          ],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.red.withOpacity(0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Material(
         color: Colors.transparent,
@@ -737,14 +731,14 @@ class _ProfilePageState extends State<ProfilePage> {
               children: [
                 const Icon(
                   Ionicons.log_out_outline,
-                  color: Colors.white,
+                  color: AppTheme.whiteColor,
                   size: 24,
                 ),
                 const SizedBox(width: 12),
                 const Text(
                   'Выйти из аккаунта',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppTheme.whiteColor,
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                   ),

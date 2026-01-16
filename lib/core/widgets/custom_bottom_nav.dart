@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:ionicons/ionicons.dart';
+import 'package:memoir/core/theme/app_theme.dart';
 
 class CustomBottomNav extends StatefulWidget {
   final int selectedIndex;
@@ -124,13 +125,7 @@ class _CustomBottomNavState extends State<CustomBottomNav> {
               height: 68,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(34),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.3),
-                    blurRadius: 20,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+                // Убрано темное свечение
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(34),
@@ -138,12 +133,9 @@ class _CustomBottomNavState extends State<CustomBottomNav> {
                   filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
+                      color: Colors.white.withOpacity(0.7),
                       borderRadius: BorderRadius.circular(34),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.2),
-                        width: 1,
-                      ),
+                      // Без границ для нативного glassmorphism
                     ),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 6,
@@ -211,9 +203,9 @@ class _CustomBottomNavState extends State<CustomBottomNav> {
         padding: const EdgeInsets.symmetric(horizontal: 8),
         decoration: BoxDecoration(
           color: isSelected
-              ? Colors.white.withOpacity(0.2)
+              ? AppTheme.whiteColor
               : isHovered
-                  ? Colors.white.withOpacity(0.15)
+                  ? AppTheme.darkColor.withOpacity(0.05)
                   : Colors.transparent,
           borderRadius: BorderRadius.circular(28),
         ),
@@ -223,10 +215,10 @@ class _CustomBottomNavState extends State<CustomBottomNav> {
             Icon(
               isSelected ? item.selectedIcon : item.icon,
               color: isSelected
-                  ? Colors.white
+                  ? AppTheme.darkColor
                   : isHovered
-                      ? Colors.white.withOpacity(0.8)
-                      : Colors.white.withOpacity(0.6),
+                      ? AppTheme.darkColor.withOpacity(0.8)
+                      : AppTheme.darkColor.withOpacity(0.6),
               size: 24,
             ),
             const SizedBox(height: 3),
@@ -241,10 +233,10 @@ class _CustomBottomNavState extends State<CustomBottomNav> {
                         ? FontWeight.w600
                         : FontWeight.w500,
                 color: isSelected
-                    ? Colors.white
+                    ? AppTheme.darkColor
                     : isHovered
-                        ? Colors.white.withOpacity(0.8)
-                        : Colors.white.withOpacity(0.6),
+                        ? AppTheme.darkColor.withOpacity(0.8)
+                        : AppTheme.darkColor.withOpacity(0.6),
                 letterSpacing: 0,
                 height: 1.0,
               ),

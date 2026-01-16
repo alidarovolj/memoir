@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:memoir/core/theme/app_theme.dart';
 
 /// Кнопка с эффектом Liquid Glass
 /// Использует BackdropFilter с blur эффектом идентичным tabbar
@@ -27,13 +28,7 @@ class GlassButton extends StatelessWidget {
         height: size,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(size / 2),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          // Убрано темное свечение
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(size / 2),
@@ -41,12 +36,9 @@ class GlassButton extends StatelessWidget {
             filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
+                color: Colors.white.withOpacity(0.7),
                 borderRadius: BorderRadius.circular(size / 2),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.2),
-                  width: 1,
-                ),
+                // Без границ для нативного glassmorphism
               ),
               child: Center(child: child),
             ),

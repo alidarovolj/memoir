@@ -124,6 +124,10 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                         ]),
                       ),
                     ),
+                    // Отступ снизу для таббара
+                    SliverPadding(
+                      padding: const EdgeInsets.only(bottom: 90),
+                    ),
                   ],
                 ),
 
@@ -145,10 +149,10 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.w700,
-        color: Colors.white,
+        color: AppTheme.darkColor,
       ),
     );
   }

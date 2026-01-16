@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:memoir/features/auth/presentation/pages/phone_login_page.dart';
+import 'package:memoir/core/theme/app_theme.dart';
+import 'package:memoir/features/auth/presentation/pages/email_auth_page.dart';
 
 class SignUpPage extends StatelessWidget {
   const SignUpPage({super.key});
@@ -7,15 +8,30 @@ class SignUpPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppTheme.pageBackgroundColor,
       body: Column(
         children: [
-          // Header Section with purple background
+          // Header Section with green background
           _buildHeader(context),
-          
-          // Main Content Section
+
+          // Main Content Section - перекрывает зеленый блок
           Expanded(
-            child: _buildContent(context),
+            child: Transform.translate(
+              offset: const Offset(
+                0,
+                -20,
+              ), // Смещаем вверх, чтобы перекрыть зеленый блок
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: AppTheme.whiteColor,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(30),
+                    topRight: Radius.circular(30),
+                  ),
+                ),
+                child: _buildContent(context),
+              ),
+            ),
           ),
         ],
       ),
@@ -25,15 +41,9 @@ class SignUpPage extends StatelessWidget {
   Widget _buildHeader(BuildContext context) {
     // Получаем высоту статус-бара
     final statusBarHeight = MediaQuery.of(context).padding.top;
-    
+
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFFE8D5FF), // Light purple background
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(30),
-          bottomRight: Radius.circular(30),
-        ),
-      ),
+      decoration: const BoxDecoration(gradient: AppTheme.primaryGradient),
       child: Column(
         children: [
           // Status bar spacer and navigation
@@ -54,11 +64,11 @@ class SignUpPage extends StatelessWidget {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppTheme.whiteColor,
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
+                            color: AppTheme.darkColor.withOpacity(0.1),
                             blurRadius: 4,
                             offset: const Offset(0, 2),
                           ),
@@ -66,7 +76,7 @@ class SignUpPage extends StatelessWidget {
                       ),
                       child: const Icon(
                         Icons.arrow_back,
-                        color: Color(0xFF202020),
+                        color: AppTheme.darkColor,
                         size: 24,
                       ),
                     ),
@@ -74,17 +84,13 @@ class SignUpPage extends StatelessWidget {
               ],
             ),
           ),
-          
+
           // Illustration area with hearts
           Stack(
             children: [
               // Hearts decoration
-              Positioned.fill(
-                child: CustomPaint(
-                  painter: _HeartsPainter(),
-                ),
-              ),
-              
+              Positioned.fill(child: CustomPaint(painter: _HeartsPainter())),
+
               // Bird illustration placeholder (можно заменить на реальную иллюстрацию)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 20),
@@ -95,28 +101,25 @@ class SignUpPage extends StatelessWidget {
                       width: 120,
                       height: 120,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppTheme.whiteColor,
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.purple.withOpacity(0.2),
+                            color: AppTheme.accentColor.withOpacity(0.3),
                             blurRadius: 20,
                             spreadRadius: 5,
                           ),
                         ],
                       ),
                       child: const Center(
-                        child: Text(
-                          '🐦',
-                          style: TextStyle(fontSize: 60),
-                        ),
+                        child: Text('🐦', style: TextStyle(fontSize: 60)),
                       ),
                     ),
                     const SizedBox(width: 20),
                   ],
                 ),
               ),
-              
+
               // Speech bubble
               Positioned(
                 right: 40,
@@ -127,11 +130,11 @@ class SignUpPage extends StatelessWidget {
                     vertical: 10,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppTheme.whiteColor,
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: AppTheme.darkColor.withOpacity(0.1),
                         blurRadius: 10,
                         spreadRadius: 2,
                       ),
@@ -142,24 +145,12 @@ class SignUpPage extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF202020),
+                      color: AppTheme.darkColor,
                     ),
                   ),
                 ),
               ),
             ],
-          ),
-          
-          // Curved white line separator
-          Container(
-            height: 20,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(30),
-                bottomRight: Radius.circular(30),
-              ),
-            ),
           ),
         ],
       ),
@@ -174,31 +165,31 @@ class SignUpPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 32),
-            
+
             // Title
             const Text(
-              'Sign up for Me+',
+              'Sign up for Memoir',
               style: TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF202020),
+                color: AppTheme.darkColor,
               ),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Description
             Text(
               'Create an account to save your progress and access it on different devices!',
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey[600],
+                color: AppTheme.darkColor.withOpacity(0.6),
                 height: 1.5,
               ),
             ),
-            
+
             const SizedBox(height: 40),
-            
+
             // Continue with Facebook
             _buildSocialButton(
               onPressed: () {
@@ -216,94 +207,89 @@ class SignUpPage extends StatelessWidget {
               text: 'Continue with Facebook',
               textColor: Colors.white,
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Continue with Google
             _buildSocialButton(
               onPressed: () {
                 // TODO: Implement Google auth
               },
-              backgroundColor: Colors.white,
-              borderColor: Colors.black,
+              backgroundColor: AppTheme.whiteColor,
+              borderColor: AppTheme.darkColor,
               icon: Image.asset(
                 'assets/icons/auth/google.png',
                 height: 24,
                 width: 24,
               ),
               text: 'Continue with Google',
-              textColor: Colors.black,
+              textColor: AppTheme.darkColor,
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Continue with Apple
             _buildSocialButton(
               onPressed: () {
                 // TODO: Implement Apple auth
               },
-              backgroundColor: Colors.black,
+              backgroundColor: AppTheme.darkColor,
               icon: Image.asset(
                 'assets/icons/auth/apple.png',
                 height: 24,
                 width: 24,
                 color: Colors.white,
                 errorBuilder: (context, error, stackTrace) {
-                  return const Icon(
-                    Icons.apple,
-                    color: Colors.white,
-                    size: 24,
-                  );
+                  return const Icon(Icons.apple, color: Colors.white, size: 24);
                 },
               ),
               text: 'Continue with Apple',
               textColor: Colors.white,
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Continue with Email
             _buildSocialButton(
               onPressed: () {
-                // TODO: Navigate to email signup
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const EmailAuthPage(),
+                  ),
+                );
               },
-              backgroundColor: const Color(0xFFD4A5FF), // Light purple/lilac
+              backgroundColor: AppTheme.primaryColor,
               icon: const Icon(
                 Icons.email_outlined,
-                color: Colors.white,
+                color: AppTheme.whiteColor,
                 size: 24,
               ),
               text: 'Continue with Email',
-              textColor: Colors.black,
+              textColor: AppTheme.whiteColor,
             ),
-            
+
             const SizedBox(height: 32),
-            
+
             // Login link
             Center(
               child: RichText(
                 text: TextSpan(
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.grey[600],
+                    color: AppTheme.darkColor.withOpacity(0.6),
                   ),
                   children: [
                     const TextSpan(text: 'Already have an account? '),
                     WidgetSpan(
                       child: GestureDetector(
                         onTap: () {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const PhoneLoginPage(),
-                            ),
-                          );
+                          // TODO: Implement login flow
                         },
                         child: const Text(
                           'Log in!',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Color(0xFF9B59B6), // Purple
+                            color: AppTheme.secondaryColor, // Purple
                             fontWeight: FontWeight.w600,
                             decoration: TextDecoration.underline,
                           ),
@@ -314,7 +300,7 @@ class SignUpPage extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 32),
           ],
         ),
@@ -332,14 +318,16 @@ class SignUpPage extends StatelessWidget {
   }) {
     return SizedBox(
       width: double.infinity,
+      height: 56, // Фиксированная высота для всех кнопок
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: backgroundColor,
           foregroundColor: textColor,
+          minimumSize: const Size(double.infinity, 56),
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(28), // Полный border-radius
             side: borderColor != null
                 ? BorderSide(color: borderColor, width: 1)
                 : BorderSide.none,
@@ -347,18 +335,24 @@ class SignUpPage extends StatelessWidget {
           elevation: 0,
         ),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            icon,
-            const SizedBox(width: 12),
-            Text(
-              text,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: textColor,
+            // Иконка слева
+            Padding(padding: const EdgeInsets.only(left: 20), child: icon),
+            // Текст строго по центру
+            Expanded(
+              child: Center(
+                child: Text(
+                  text,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: textColor,
+                  ),
+                ),
               ),
             ),
+            // Невидимый элемент справа для баланса
+            const SizedBox(width: 44), // Ширина иконки (24) + отступ (20)
           ],
         ),
       ),
@@ -371,7 +365,7 @@ class _HeartsPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFFD4A5FF).withOpacity(0.3)
+      ..color = AppTheme.whiteColor.withOpacity(0.2)
       ..style = PaintingStyle.fill;
 
     // Draw multiple hearts

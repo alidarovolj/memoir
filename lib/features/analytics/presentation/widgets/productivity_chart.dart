@@ -12,58 +12,35 @@ class ProductivityChart extends StatelessWidget {
   Widget build(BuildContext context) {
     if (trends.isEmpty) {
       return Container(
+        padding: const EdgeInsets.all(40),
         decoration: BoxDecoration(
+          color: AppTheme.whiteColor,
           borderRadius: BorderRadius.circular(16),
-          gradient: const LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color.fromRGBO(255, 255, 255, 0.2),
-              Color.fromRGBO(233, 233, 233, 0.2),
-              Color.fromRGBO(242, 242, 242, 0),
-            ],
-            stops: [0.0, 0.5, 1.0],
+          border: Border.all(
+            color: AppTheme.darkColor.withOpacity(0.1),
+            width: 1,
           ),
         ),
-        child: Container(
-          margin: const EdgeInsets.all(1),
-          padding: const EdgeInsets.all(40),
-          decoration: BoxDecoration(
-            color: const Color.fromRGBO(44, 44, 44, 1),
-            borderRadius: BorderRadius.circular(15),
-          ),
-          child: Center(
-            child: Text(
-              'Недостаточно данных для графика',
-              style: TextStyle(color: Colors.white.withOpacity(0.6)),
-            ),
+        child: Center(
+          child: Text(
+            'Недостаточно данных для графика',
+            style: TextStyle(color: AppTheme.darkColor.withOpacity(0.6)),
           ),
         ),
       );
     }
 
     return Container(
+      padding: const EdgeInsets.all(16),
+      height: 300,
       decoration: BoxDecoration(
+        color: AppTheme.whiteColor,
         borderRadius: BorderRadius.circular(16),
-        gradient: const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color.fromRGBO(255, 255, 255, 0.2),
-            Color.fromRGBO(233, 233, 233, 0.2),
-            Color.fromRGBO(242, 242, 242, 0),
-          ],
-          stops: [0.0, 0.5, 1.0],
+        border: Border.all(
+          color: AppTheme.darkColor.withOpacity(0.1),
+          width: 1,
         ),
       ),
-      child: Container(
-        margin: const EdgeInsets.all(1),
-        padding: const EdgeInsets.all(16),
-        height: 300,
-        decoration: BoxDecoration(
-          color: const Color.fromRGBO(44, 44, 44, 1),
-          borderRadius: BorderRadius.circular(15),
-        ),
         child: LineChart(
         LineChartData(
           gridData: FlGridData(
@@ -72,7 +49,7 @@ class ProductivityChart extends StatelessWidget {
             horizontalInterval: 1,
             getDrawingHorizontalLine: (value) {
               return FlLine(
-                color: Colors.white.withOpacity(0.1),
+                color: AppTheme.darkColor.withOpacity(0.1),
                 strokeWidth: 1,
               );
             },
@@ -87,7 +64,7 @@ class ProductivityChart extends StatelessWidget {
                     value.toInt().toString(),
                     style: TextStyle(
                       fontSize: 10,
-                      color: Colors.white.withOpacity(0.6),
+                      color: AppTheme.darkColor.withOpacity(0.6),
                     ),
                   );
                 },
@@ -106,7 +83,7 @@ class ProductivityChart extends StatelessWidget {
                         period[1],
                         style: TextStyle(
                           fontSize: 10,
-                          color: Colors.white.withOpacity(0.6),
+                          color: AppTheme.darkColor.withOpacity(0.6),
                         ),
                       );
                     }
@@ -169,8 +146,8 @@ class ProductivityChart extends StatelessWidget {
           ],
           lineTouchData: LineTouchData(
             touchTooltipData: LineTouchTooltipData(
-              tooltipBgColor: AppTheme.cardColor,
-              tooltipBorder: BorderSide(color: Colors.white.withOpacity(0.2)),
+              tooltipBgColor: AppTheme.whiteColor,
+              tooltipBorder: BorderSide(color: AppTheme.darkColor.withOpacity(0.2)),
               getTooltipItems: (touchedSpots) {
                 return touchedSpots.map((spot) {
                   final period = trends[spot.x.toInt()].period;
@@ -178,7 +155,7 @@ class ProductivityChart extends StatelessWidget {
                   return LineTooltipItem(
                     '${isTask ? 'Задач' : 'Воспоминаний'}: ${spot.y.toInt()}\n$period',
                     const TextStyle(
-                      color: Colors.white,
+                      color: AppTheme.darkColor,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -187,7 +164,6 @@ class ProductivityChart extends StatelessWidget {
               },
             ),
           ),
-        ),
         ),
       ),
     );

@@ -306,11 +306,11 @@ class _TasksPageState extends State<TasksPage> {
                   height: 44,
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? const Color(0xFF6366F1)
+                        ? AppTheme.primaryColor
                         : Colors.transparent,
                     shape: BoxShape.circle,
                     border: isToday && !isSelected
-                        ? Border.all(color: const Color(0xFF6366F1), width: 2)
+                        ? Border.all(color: AppTheme.primaryColor, width: 2)
                         : null,
                   ),
                   child: Center(
@@ -320,7 +320,7 @@ class _TasksPageState extends State<TasksPage> {
                         color: isSelected
                             ? Colors.white
                             : isToday
-                            ? const Color(0xFF6366F1)
+                            ? AppTheme.primaryColor
                             : Colors.white.withOpacity(0.7),
                         fontSize: 16,
                         fontWeight: FontWeight.w600,

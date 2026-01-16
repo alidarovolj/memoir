@@ -91,11 +91,18 @@ class _FriendsPageState extends State<FriendsPage> {
             // Friends list
             Expanded(
               child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppTheme.primaryColor,
+                        ),
+                      ),
+                    )
                   : _friends.isEmpty
                   ? _buildEmptyState()
                   : RefreshIndicator(
                       onRefresh: _loadFriends,
+                      color: AppTheme.primaryColor,
                       child: ListView.builder(
                         padding: const EdgeInsets.all(16),
                         itemCount: _friends.length,
@@ -120,13 +127,13 @@ class _FriendsPageState extends State<FriendsPage> {
           Icon(
             Ionicons.people_outline,
             size: 80,
-            color: Colors.white.withOpacity(0.3),
+            color: AppTheme.darkColor.withOpacity(0.3),
           ),
           const SizedBox(height: 16),
           Text(
             'У вас пока нет друзей',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.7),
+              color: AppTheme.darkColor.withOpacity(0.7),
               fontSize: 18,
               fontWeight: FontWeight.w500,
             ),
@@ -135,7 +142,7 @@ class _FriendsPageState extends State<FriendsPage> {
           Text(
             'Найдите друзей через поиск',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.5),
+              color: AppTheme.darkColor.withOpacity(0.5),
               fontSize: 14,
             ),
           ),
@@ -147,11 +154,17 @@ class _FriendsPageState extends State<FriendsPage> {
                 MaterialPageRoute(builder: (context) => const UserSearchPage()),
               ).then((_) => _loadFriends());
             },
-            icon: const Icon(Ionicons.search),
-            label: const Text('Найти друзей'),
+            icon: const Icon(Ionicons.search, color: AppTheme.whiteColor),
+            label: const Text(
+              'Найти друзей',
+              style: TextStyle(color: AppTheme.whiteColor),
+            ),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.primaryColor,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           ),
         ],
@@ -163,13 +176,11 @@ class _FriendsPageState extends State<FriendsPage> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppTheme.cardColor, AppTheme.cardColor.withOpacity(0.8)],
-        ),
+        color: AppTheme.whiteColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           width: 1,
-          color: AppTheme.primaryColor.withOpacity(0.3),
+          color: AppTheme.darkColor.withOpacity(0.1),
         ),
       ),
       child: Material(
@@ -187,15 +198,13 @@ class _FriendsPageState extends State<FriendsPage> {
                   height: 56,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [AppTheme.primaryColor, AppTheme.accentColor],
-                    ),
+                    gradient: AppTheme.primaryGradient,
                   ),
                   child: Center(
                     child: Text(
                       friend.username[0].toUpperCase(),
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: AppTheme.whiteColor,
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                       ),
@@ -212,7 +221,7 @@ class _FriendsPageState extends State<FriendsPage> {
                       Text(
                         friend.username,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: AppTheme.darkColor,
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
@@ -223,13 +232,13 @@ class _FriendsPageState extends State<FriendsPage> {
                           Icon(
                             Ionicons.book_outline,
                             size: 14,
-                            color: Colors.white.withOpacity(0.6),
+                            color: AppTheme.darkColor.withOpacity(0.6),
                           ),
                           const SizedBox(width: 4),
                           Text(
                             '${friend.memoriesCount} воспоминаний',
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.6),
+                              color: AppTheme.darkColor.withOpacity(0.6),
                               fontSize: 12,
                             ),
                           ),
@@ -237,13 +246,13 @@ class _FriendsPageState extends State<FriendsPage> {
                           Icon(
                             Ionicons.flame_outline,
                             size: 14,
-                            color: Colors.white.withOpacity(0.6),
+                            color: AppTheme.darkColor.withOpacity(0.6),
                           ),
                           const SizedBox(width: 4),
                           Text(
                             '${friend.streakDays} дней',
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.6),
+                              color: AppTheme.darkColor.withOpacity(0.6),
                               fontSize: 12,
                             ),
                           ),
@@ -257,7 +266,7 @@ class _FriendsPageState extends State<FriendsPage> {
                 IconButton(
                   icon: Icon(
                     Ionicons.ellipsis_vertical,
-                    color: Colors.white.withOpacity(0.6),
+                    color: AppTheme.darkColor.withOpacity(0.6),
                   ),
                   onPressed: () => _showFriendOptions(friend),
                 ),
@@ -272,7 +281,7 @@ class _FriendsPageState extends State<FriendsPage> {
   void _showFriendOptions(FriendProfile friend) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppTheme.cardColor,
+      backgroundColor: AppTheme.whiteColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -289,15 +298,13 @@ class _FriendsPageState extends State<FriendsPage> {
                   height: 48,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [AppTheme.primaryColor, AppTheme.accentColor],
-                    ),
+                    gradient: AppTheme.primaryGradient,
                   ),
                   child: Center(
                     child: Text(
                       friend.username[0].toUpperCase(),
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: AppTheme.whiteColor,
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
@@ -308,7 +315,7 @@ class _FriendsPageState extends State<FriendsPage> {
                 Text(
                   friend.username,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: AppTheme.darkColor,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
@@ -316,7 +323,7 @@ class _FriendsPageState extends State<FriendsPage> {
               ],
             ),
             const SizedBox(height: 20),
-            const Divider(color: Colors.white24),
+            Divider(color: AppTheme.darkColor.withOpacity(0.1)),
             const SizedBox(height: 12),
 
             // Remove friend button
@@ -344,19 +351,25 @@ class _FriendsPageState extends State<FriendsPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.cardColor,
+        backgroundColor: AppTheme.whiteColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
         title: const Text(
           'Удалить друга?',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: AppTheme.darkColor),
         ),
         content: Text(
           'Вы уверены, что хотите удалить ${friend.username} из друзей?',
-          style: const TextStyle(color: Colors.white70),
+          style: TextStyle(color: AppTheme.darkColor.withOpacity(0.7)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Отмена'),
+            child: Text(
+              'Отмена',
+              style: TextStyle(color: AppTheme.darkColor.withOpacity(0.7)),
+            ),
           ),
           TextButton(
             onPressed: () async {

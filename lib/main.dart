@@ -16,8 +16,8 @@ import 'package:memoir/core/network/dio_client.dart';
 import 'package:memoir/features/memories/data/datasources/memory_remote_datasource.dart';
 import 'package:memoir/core/services/auth_service.dart';
 import 'package:memoir/core/services/notification_service.dart';
-import 'package:memoir/features/auth/presentation/pages/phone_login_page.dart';
 import 'package:memoir/features/auth/presentation/pages/signup_page.dart';
+import 'package:memoir/features/auth/presentation/pages/email_auth_page.dart';
 import 'package:memoir/features/auth/presentation/pages/profile_setup_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:memoir/features/stories/data/datasources/story_remote_datasource.dart';
@@ -120,8 +120,8 @@ class MemoirApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => const SplashScreen(),
-        '/phone-login': (context) => const PhoneLoginPage(),
         '/signup': (context) => const SignUpPage(),
+        '/email-auth': (context) => const EmailAuthPage(),
         '/profile-setup': (context) => const ProfileSetupPage(),
         '/home': (context) => const HomePage(),
       },
@@ -183,6 +183,10 @@ class _SplashScreenState extends State<SplashScreen>
           .instance; // Используем глобальный instance с auth interceptor
       final authService = AuthService(dio, prefs);
       final isAuth = await authService.isAuthenticated();
+      
+      print('🔐 [SPLASH] Checking authentication:');
+      print('  - isAuthenticated: $isAuth');
+      print('  - auth_token exists: ${prefs.getString('auth_token') != null}');
 
       if (isAuth) {
         // Send FCM token to backend for already authenticated user
@@ -277,7 +281,7 @@ class _SplashScreenState extends State<SplashScreen>
                   Text(
                     'Personal Memory AI',
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Colors.white60,
+                      color: AppTheme.darkColor.withOpacity(0.6),
                       fontSize: 16,
                       letterSpacing: 2,
                     ),
@@ -290,7 +294,7 @@ class _SplashScreenState extends State<SplashScreen>
                     child: CircularProgressIndicator(
                       strokeWidth: 3,
                       valueColor: AlwaysStoppedAnimation<Color>(
-                        Colors.white.withOpacity(0.3),
+                        AppTheme.primaryColor,
                       ),
                     ),
                   ),
@@ -672,6 +676,10 @@ class _HomePageState extends State<HomePage>
           'Не удалось создать задачу: ${ErrorMessages.getErrorMessage(e)}',
         );
       }
+    } else {
+      // Если result == null, это может быть закрытие после создания привычки
+      // Перезагружаем задачи на всякий случай
+      await _loadTasks();
     }
   }
 
@@ -1058,7 +1066,7 @@ class _HomePageState extends State<HomePage>
 
   Widget _buildHomePage() {
     return Container(
-      color: AppTheme.pageBackgroundColor, // Фон страницы rgba(28, 27, 32, 1)
+      color: AppTheme.pageBackgroundColor, // Светлый фон
       child: Stack(
         children: [
           // Body content - весь контент на весь экран
@@ -1102,7 +1110,7 @@ class _HomePageState extends State<HomePage>
                       ),
                       child: const Icon(
                         Ionicons.notifications_outline,
-                        color: Colors.white,
+                        color: AppTheme.darkColor,
                         size: 18,
                       ),
                     ),
@@ -1165,14 +1173,14 @@ class _HomePageState extends State<HomePage>
                 opacity: _showHeaderTitle ? 0.0 : 1.0,
                 duration: const Duration(milliseconds: 300),
                 child: Container(
-                  color: AppTheme.headerBackgroundColor,
+                  color: AppTheme.whiteColor,
                   padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
                   child: const Text(
                     'Главная',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: AppTheme.darkColor,
                     ),
                   ),
                 ),
@@ -1277,7 +1285,7 @@ class _HomePageState extends State<HomePage>
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
-                        color: Colors.white,
+                        color: AppTheme.darkColor,
                       ),
                     ),
                     Row(
@@ -1370,13 +1378,13 @@ class _HomePageState extends State<HomePage>
                       Icon(
                         Ionicons.checkbox_outline,
                         size: 64,
-                        color: Colors.white.withOpacity(0.3),
+                        color: AppTheme.darkColor.withOpacity(0.3),
                       ),
                       const SizedBox(height: 16),
                       Text(
                         'Нет задач на этот день',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.5),
+                          color: AppTheme.darkColor.withOpacity(0.5),
                           fontSize: 16,
                         ),
                       ),
@@ -1404,10 +1412,10 @@ class _HomePageState extends State<HomePage>
                       padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
                       child: Container(
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.05),
+                          color: AppTheme.whiteColor,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.1),
+                            color: AppTheme.darkColor.withOpacity(0.1),
                             width: 1,
                           ),
                         ),
@@ -1444,7 +1452,7 @@ class _HomePageState extends State<HomePage>
                                           Text(
                                             group.name,
                                             style: const TextStyle(
-                                              color: Colors.white,
+                                              color: AppTheme.darkColor,
                                               fontSize: 17,
                                               fontWeight: FontWeight.w600,
                                             ),
@@ -1453,7 +1461,7 @@ class _HomePageState extends State<HomePage>
                                           Text(
                                             '$completedCount из ${group.tasks.length} выполнено',
                                             style: TextStyle(
-                                              color: Colors.white.withOpacity(
+                                              color: AppTheme.darkColor.withOpacity(
                                                 0.5,
                                               ),
                                               fontSize: 13,
@@ -1468,14 +1476,14 @@ class _HomePageState extends State<HomePage>
                                       width: 40,
                                       height: 40,
                                       decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.1),
+                                        color: AppTheme.darkColor.withOpacity(0.1),
                                         shape: BoxShape.circle,
                                       ),
                                       child: Center(
                                         child: Text(
                                           '${((completedCount / group.tasks.length) * 100).toInt()}%',
                                           style: const TextStyle(
-                                            color: Colors.white,
+                                            color: AppTheme.darkColor,
                                             fontSize: 11,
                                             fontWeight: FontWeight.w600,
                                           ),
@@ -1493,7 +1501,7 @@ class _HomePageState extends State<HomePage>
                                       ),
                                       child: Icon(
                                         Ionicons.chevron_down,
-                                        color: Colors.white.withOpacity(0.5),
+                                        color: AppTheme.darkColor.withOpacity(0.5),
                                         size: 20,
                                       ),
                                     ),
@@ -1573,8 +1581,8 @@ class _HomePageState extends State<HomePage>
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [
-                                  Colors.white.withOpacity(0),
-                                  Colors.white.withOpacity(0.2),
+                                  AppTheme.darkColor.withOpacity(0),
+                                  AppTheme.darkColor.withOpacity(0.2),
                                 ],
                               ),
                             ),
@@ -1585,7 +1593,7 @@ class _HomePageState extends State<HomePage>
                           child: Text(
                             'Долгосрочные цели',
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.5),
+                              color: AppTheme.darkColor.withOpacity(0.5),
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
                             ),
@@ -1597,8 +1605,8 @@ class _HomePageState extends State<HomePage>
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [
-                                  Colors.white.withOpacity(0.2),
-                                  Colors.white.withOpacity(0),
+                                  AppTheme.darkColor.withOpacity(0.2),
+                                  AppTheme.darkColor.withOpacity(0),
                                 ],
                               ),
                             ),
@@ -1656,14 +1664,14 @@ class _HomePageState extends State<HomePage>
           if (_memories.isNotEmpty)
             SliverToBoxAdapter(
               child: Container(
-                color: AppTheme.pageBackgroundColor,
+                color: AppTheme.whiteColor,
                 padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
                 child: const Text(
                   'Вспоминаем вместе',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
-                    color: Colors.white,
+                    color: AppTheme.darkColor,
                   ),
                 ),
               ),
@@ -1681,7 +1689,7 @@ class _HomePageState extends State<HomePage>
                       return Container(
                         margin: const EdgeInsets.symmetric(horizontal: 16),
                         height: 1,
-                        color: Colors.white.withOpacity(0.08),
+                        color: AppTheme.darkColor.withOpacity(0.08),
                       );
                     }
 
@@ -1761,15 +1769,15 @@ class _HomePageState extends State<HomePage>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.surfaceColor,
+        backgroundColor: AppTheme.whiteColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text(
           'Удалить воспоминание?',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: AppTheme.darkColor),
         ),
-        content: const Text(
+        content: Text(
           'Это действие нельзя отменить',
-          style: TextStyle(color: Colors.white70),
+          style: TextStyle(color: AppTheme.darkColor.withOpacity(0.7)),
         ),
         actions: [
           TextButton(

@@ -106,11 +106,11 @@ class _AIAnalysisProgressState extends State<AIAnalysisProgress> {
                   ? AppTheme.primaryColor
                   : isActive
                   ? AppTheme.primaryColor.withOpacity(0.2)
-                  : Colors.white.withOpacity(0.05),
+                  : AppTheme.lightGrayColor,
               shape: BoxShape.circle,
             ),
             child: isCompleted
-                ? const Icon(Ionicons.checkmark, color: Colors.white, size: 16)
+                ? const Icon(Ionicons.checkmark, color: AppTheme.whiteColor, size: 16)
                 : isActive
                 ? Padding(
                     padding: const EdgeInsets.all(6),
@@ -123,7 +123,7 @@ class _AIAnalysisProgressState extends State<AIAnalysisProgress> {
                   )
                 : Icon(
                     step.icon,
-                    color: Colors.white.withOpacity(0.3),
+                    color: AppTheme.darkColor.withOpacity(0.3),
                     size: 14,
                   ),
           ),
@@ -136,8 +136,8 @@ class _AIAnalysisProgressState extends State<AIAnalysisProgress> {
               step.title,
               style: TextStyle(
                 color: isActive || isCompleted
-                    ? Colors.white
-                    : Colors.white.withOpacity(0.5),
+                    ? AppTheme.darkColor
+                    : AppTheme.darkColor.withOpacity(0.5),
                 fontSize: 14,
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
               ),

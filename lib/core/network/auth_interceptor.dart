@@ -42,7 +42,8 @@ class AuthInterceptor extends Interceptor {
       // Не делаем автоматический logout для auth endpoints
       if (!uri.contains('/auth/login') &&
           !uri.contains('/auth/register') &&
-          !uri.contains('/sms-auth/')) {
+          !uri.contains('/sms-auth/') &&
+          !uri.contains('/email-auth/')) {
         print(
           '🔐 Authentication error (${err.response?.statusCode}): ${err.response?.data?['detail'] ?? 'Unknown'}, logging out...',
         );
@@ -50,10 +51,10 @@ class AuthInterceptor extends Interceptor {
         // Очищаем токен
         await authService.logout();
 
-        // Перенаправляем на страницу логина
+        // Перенаправляем на страницу регистрации
         if (navigatorKey.currentState != null) {
           navigatorKey.currentState!.pushNamedAndRemoveUntil(
-            '/phone-login',
+            '/signup',
             (route) => false,
           );
         }

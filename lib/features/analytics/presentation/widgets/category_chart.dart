@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:memoir/features/analytics/data/models/analytics_model.dart';
+import 'package:memoir/core/theme/app_theme.dart';
 
 class CategoryChart extends StatelessWidget {
   final List<CategoryStats> categoryStats;
@@ -22,31 +23,19 @@ class CategoryChart extends StatelessWidget {
   Widget build(BuildContext context) {
     if (categoryStats.isEmpty) {
       return Container(
+        padding: const EdgeInsets.all(40),
         decoration: BoxDecoration(
+          color: AppTheme.whiteColor,
           borderRadius: BorderRadius.circular(16),
-          gradient: const LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color.fromRGBO(255, 255, 255, 0.2),
-              Color.fromRGBO(233, 233, 233, 0.2),
-              Color.fromRGBO(242, 242, 242, 0),
-            ],
-            stops: [0.0, 0.5, 1.0],
+          border: Border.all(
+            color: AppTheme.darkColor.withOpacity(0.1),
+            width: 1,
           ),
         ),
-        child: Container(
-          margin: const EdgeInsets.all(1),
-          padding: const EdgeInsets.all(40),
-          decoration: BoxDecoration(
-            color: const Color.fromRGBO(44, 44, 44, 1),
-            borderRadius: BorderRadius.circular(15),
-          ),
-          child: const Center(
-            child: Text(
-              'Нет данных по категориям',
-              style: TextStyle(color: Colors.white),
-            ),
+        child: Center(
+          child: Text(
+            'Нет данных по категориям',
+            style: TextStyle(color: AppTheme.darkColor.withOpacity(0.6)),
           ),
         ),
       );
@@ -64,26 +53,15 @@ class CategoryChart extends StatelessWidget {
     final topStats = sortedStats.take(5).toList();
 
     return Container(
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
+        color: AppTheme.whiteColor,
         borderRadius: BorderRadius.circular(16),
-        gradient: const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color.fromRGBO(255, 255, 255, 0.2),
-            Color.fromRGBO(233, 233, 233, 0.2),
-            Color.fromRGBO(242, 242, 242, 0),
-          ],
-          stops: [0.0, 0.5, 1.0],
+        border: Border.all(
+          color: AppTheme.darkColor.withOpacity(0.1),
+          width: 1,
         ),
       ),
-      child: Container(
-        margin: const EdgeInsets.all(1),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color.fromRGBO(44, 44, 44, 1),
-          borderRadius: BorderRadius.circular(15),
-        ),
         child: Column(
         children: topStats.asMap().entries.map((entry) {
           final index = entry.key;
@@ -105,7 +83,7 @@ class CategoryChart extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: Colors.black87,
+                          color: AppTheme.darkColor,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -127,7 +105,7 @@ class CategoryChart extends StatelessWidget {
                     Container(
                       height: 8,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
+                        color: AppTheme.lightGrayColor,
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
@@ -152,7 +130,7 @@ class CategoryChart extends StatelessWidget {
                       '${stat.memoriesCount} воспоминаний · ${stat.tasksCount} задач',
                       style: TextStyle(
                         fontSize: 11,
-                        color: Colors.white.withOpacity(0.6),
+                        color: AppTheme.darkColor.withOpacity(0.6),
                       ),
                     ),
                     Text(
@@ -169,7 +147,6 @@ class CategoryChart extends StatelessWidget {
             ),
           );
         }).toList(),
-        ),
       ),
     );
   }
