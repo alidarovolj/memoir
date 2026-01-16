@@ -21,12 +21,21 @@ FriendProfile _$FriendProfileFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$FriendProfile {
-  int get id => throw _privateConstructorUsedError;
+  String get id => throw _privateConstructorUsedError;
   String get username => throw _privateConstructorUsedError;
+  @JsonKey(name: 'first_name')
+  String? get firstName => throw _privateConstructorUsedError;
+  @JsonKey(name: 'last_name')
+  String? get lastName => throw _privateConstructorUsedError;
+  @JsonKey(name: 'avatar_url')
   String? get avatarUrl => throw _privateConstructorUsedError;
+  @JsonKey(name: 'created_at')
   DateTime get createdAt => throw _privateConstructorUsedError;
+  @JsonKey(name: 'memories_count')
   int get memoriesCount => throw _privateConstructorUsedError;
+  @JsonKey(name: 'friends_count')
   int get friendsCount => throw _privateConstructorUsedError;
+  @JsonKey(name: 'streak_days')
   int get streakDays => throw _privateConstructorUsedError;
 
   /// Serializes this FriendProfile to a JSON map.
@@ -47,13 +56,15 @@ abstract class $FriendProfileCopyWith<$Res> {
   ) = _$FriendProfileCopyWithImpl<$Res, FriendProfile>;
   @useResult
   $Res call({
-    int id,
+    String id,
     String username,
-    String? avatarUrl,
-    DateTime createdAt,
-    int memoriesCount,
-    int friendsCount,
-    int streakDays,
+    @JsonKey(name: 'first_name') String? firstName,
+    @JsonKey(name: 'last_name') String? lastName,
+    @JsonKey(name: 'avatar_url') String? avatarUrl,
+    @JsonKey(name: 'created_at') DateTime createdAt,
+    @JsonKey(name: 'memories_count') int memoriesCount,
+    @JsonKey(name: 'friends_count') int friendsCount,
+    @JsonKey(name: 'streak_days') int streakDays,
   });
 }
 
@@ -74,6 +85,8 @@ class _$FriendProfileCopyWithImpl<$Res, $Val extends FriendProfile>
   $Res call({
     Object? id = null,
     Object? username = null,
+    Object? firstName = freezed,
+    Object? lastName = freezed,
     Object? avatarUrl = freezed,
     Object? createdAt = null,
     Object? memoriesCount = null,
@@ -85,11 +98,19 @@ class _$FriendProfileCopyWithImpl<$Res, $Val extends FriendProfile>
             id: null == id
                 ? _value.id
                 : id // ignore: cast_nullable_to_non_nullable
-                      as int,
+                      as String,
             username: null == username
                 ? _value.username
                 : username // ignore: cast_nullable_to_non_nullable
                       as String,
+            firstName: freezed == firstName
+                ? _value.firstName
+                : firstName // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            lastName: freezed == lastName
+                ? _value.lastName
+                : lastName // ignore: cast_nullable_to_non_nullable
+                      as String?,
             avatarUrl: freezed == avatarUrl
                 ? _value.avatarUrl
                 : avatarUrl // ignore: cast_nullable_to_non_nullable
@@ -126,13 +147,15 @@ abstract class _$$FriendProfileImplCopyWith<$Res>
   @override
   @useResult
   $Res call({
-    int id,
+    String id,
     String username,
-    String? avatarUrl,
-    DateTime createdAt,
-    int memoriesCount,
-    int friendsCount,
-    int streakDays,
+    @JsonKey(name: 'first_name') String? firstName,
+    @JsonKey(name: 'last_name') String? lastName,
+    @JsonKey(name: 'avatar_url') String? avatarUrl,
+    @JsonKey(name: 'created_at') DateTime createdAt,
+    @JsonKey(name: 'memories_count') int memoriesCount,
+    @JsonKey(name: 'friends_count') int friendsCount,
+    @JsonKey(name: 'streak_days') int streakDays,
   });
 }
 
@@ -152,6 +175,8 @@ class __$$FriendProfileImplCopyWithImpl<$Res>
   $Res call({
     Object? id = null,
     Object? username = null,
+    Object? firstName = freezed,
+    Object? lastName = freezed,
     Object? avatarUrl = freezed,
     Object? createdAt = null,
     Object? memoriesCount = null,
@@ -163,11 +188,19 @@ class __$$FriendProfileImplCopyWithImpl<$Res>
         id: null == id
             ? _value.id
             : id // ignore: cast_nullable_to_non_nullable
-                  as int,
+                  as String,
         username: null == username
             ? _value.username
             : username // ignore: cast_nullable_to_non_nullable
                   as String,
+        firstName: freezed == firstName
+            ? _value.firstName
+            : firstName // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        lastName: freezed == lastName
+            ? _value.lastName
+            : lastName // ignore: cast_nullable_to_non_nullable
+                  as String?,
         avatarUrl: freezed == avatarUrl
             ? _value.avatarUrl
             : avatarUrl // ignore: cast_nullable_to_non_nullable
@@ -195,41 +228,51 @@ class __$$FriendProfileImplCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$FriendProfileImpl implements _FriendProfile {
+class _$FriendProfileImpl extends _FriendProfile {
   const _$FriendProfileImpl({
     required this.id,
     required this.username,
-    this.avatarUrl,
-    required this.createdAt,
-    this.memoriesCount = 0,
-    this.friendsCount = 0,
-    this.streakDays = 0,
-  });
+    @JsonKey(name: 'first_name') this.firstName,
+    @JsonKey(name: 'last_name') this.lastName,
+    @JsonKey(name: 'avatar_url') this.avatarUrl,
+    @JsonKey(name: 'created_at') required this.createdAt,
+    @JsonKey(name: 'memories_count') this.memoriesCount = 0,
+    @JsonKey(name: 'friends_count') this.friendsCount = 0,
+    @JsonKey(name: 'streak_days') this.streakDays = 0,
+  }) : super._();
 
   factory _$FriendProfileImpl.fromJson(Map<String, dynamic> json) =>
       _$$FriendProfileImplFromJson(json);
 
   @override
-  final int id;
+  final String id;
   @override
   final String username;
   @override
+  @JsonKey(name: 'first_name')
+  final String? firstName;
+  @override
+  @JsonKey(name: 'last_name')
+  final String? lastName;
+  @override
+  @JsonKey(name: 'avatar_url')
   final String? avatarUrl;
   @override
+  @JsonKey(name: 'created_at')
   final DateTime createdAt;
   @override
-  @JsonKey()
+  @JsonKey(name: 'memories_count')
   final int memoriesCount;
   @override
-  @JsonKey()
+  @JsonKey(name: 'friends_count')
   final int friendsCount;
   @override
-  @JsonKey()
+  @JsonKey(name: 'streak_days')
   final int streakDays;
 
   @override
   String toString() {
-    return 'FriendProfile(id: $id, username: $username, avatarUrl: $avatarUrl, createdAt: $createdAt, memoriesCount: $memoriesCount, friendsCount: $friendsCount, streakDays: $streakDays)';
+    return 'FriendProfile(id: $id, username: $username, firstName: $firstName, lastName: $lastName, avatarUrl: $avatarUrl, createdAt: $createdAt, memoriesCount: $memoriesCount, friendsCount: $friendsCount, streakDays: $streakDays)';
   }
 
   @override
@@ -240,6 +283,10 @@ class _$FriendProfileImpl implements _FriendProfile {
             (identical(other.id, id) || other.id == id) &&
             (identical(other.username, username) ||
                 other.username == username) &&
+            (identical(other.firstName, firstName) ||
+                other.firstName == firstName) &&
+            (identical(other.lastName, lastName) ||
+                other.lastName == lastName) &&
             (identical(other.avatarUrl, avatarUrl) ||
                 other.avatarUrl == avatarUrl) &&
             (identical(other.createdAt, createdAt) ||
@@ -258,6 +305,8 @@ class _$FriendProfileImpl implements _FriendProfile {
     runtimeType,
     id,
     username,
+    firstName,
+    lastName,
     avatarUrl,
     createdAt,
     memoriesCount,
@@ -279,33 +328,47 @@ class _$FriendProfileImpl implements _FriendProfile {
   }
 }
 
-abstract class _FriendProfile implements FriendProfile {
+abstract class _FriendProfile extends FriendProfile {
   const factory _FriendProfile({
-    required final int id,
+    required final String id,
     required final String username,
-    final String? avatarUrl,
-    required final DateTime createdAt,
-    final int memoriesCount,
-    final int friendsCount,
-    final int streakDays,
+    @JsonKey(name: 'first_name') final String? firstName,
+    @JsonKey(name: 'last_name') final String? lastName,
+    @JsonKey(name: 'avatar_url') final String? avatarUrl,
+    @JsonKey(name: 'created_at') required final DateTime createdAt,
+    @JsonKey(name: 'memories_count') final int memoriesCount,
+    @JsonKey(name: 'friends_count') final int friendsCount,
+    @JsonKey(name: 'streak_days') final int streakDays,
   }) = _$FriendProfileImpl;
+  const _FriendProfile._() : super._();
 
   factory _FriendProfile.fromJson(Map<String, dynamic> json) =
       _$FriendProfileImpl.fromJson;
 
   @override
-  int get id;
+  String get id;
   @override
   String get username;
   @override
+  @JsonKey(name: 'first_name')
+  String? get firstName;
+  @override
+  @JsonKey(name: 'last_name')
+  String? get lastName;
+  @override
+  @JsonKey(name: 'avatar_url')
   String? get avatarUrl;
   @override
+  @JsonKey(name: 'created_at')
   DateTime get createdAt;
   @override
+  @JsonKey(name: 'memories_count')
   int get memoriesCount;
   @override
+  @JsonKey(name: 'friends_count')
   int get friendsCount;
   @override
+  @JsonKey(name: 'streak_days')
   int get streakDays;
 
   /// Create a copy of FriendProfile
@@ -322,11 +385,15 @@ FriendshipModel _$FriendshipModelFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$FriendshipModel {
-  int get id => throw _privateConstructorUsedError;
-  int get requesterId => throw _privateConstructorUsedError;
-  int get addresseeId => throw _privateConstructorUsedError;
+  String get id => throw _privateConstructorUsedError;
+  @JsonKey(name: 'requester_id')
+  String get requesterId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'addressee_id')
+  String get addresseeId => throw _privateConstructorUsedError;
   FriendshipStatus get status => throw _privateConstructorUsedError;
+  @JsonKey(name: 'created_at')
   DateTime get createdAt => throw _privateConstructorUsedError;
+  @JsonKey(name: 'updated_at')
   DateTime get updatedAt => throw _privateConstructorUsedError;
   FriendProfile? get friend => throw _privateConstructorUsedError;
 
@@ -348,12 +415,12 @@ abstract class $FriendshipModelCopyWith<$Res> {
   ) = _$FriendshipModelCopyWithImpl<$Res, FriendshipModel>;
   @useResult
   $Res call({
-    int id,
-    int requesterId,
-    int addresseeId,
+    String id,
+    @JsonKey(name: 'requester_id') String requesterId,
+    @JsonKey(name: 'addressee_id') String addresseeId,
     FriendshipStatus status,
-    DateTime createdAt,
-    DateTime updatedAt,
+    @JsonKey(name: 'created_at') DateTime createdAt,
+    @JsonKey(name: 'updated_at') DateTime updatedAt,
     FriendProfile? friend,
   });
 
@@ -388,15 +455,15 @@ class _$FriendshipModelCopyWithImpl<$Res, $Val extends FriendshipModel>
             id: null == id
                 ? _value.id
                 : id // ignore: cast_nullable_to_non_nullable
-                      as int,
+                      as String,
             requesterId: null == requesterId
                 ? _value.requesterId
                 : requesterId // ignore: cast_nullable_to_non_nullable
-                      as int,
+                      as String,
             addresseeId: null == addresseeId
                 ? _value.addresseeId
                 : addresseeId // ignore: cast_nullable_to_non_nullable
-                      as int,
+                      as String,
             status: null == status
                 ? _value.status
                 : status // ignore: cast_nullable_to_non_nullable
@@ -443,12 +510,12 @@ abstract class _$$FriendshipModelImplCopyWith<$Res>
   @override
   @useResult
   $Res call({
-    int id,
-    int requesterId,
-    int addresseeId,
+    String id,
+    @JsonKey(name: 'requester_id') String requesterId,
+    @JsonKey(name: 'addressee_id') String addresseeId,
     FriendshipStatus status,
-    DateTime createdAt,
-    DateTime updatedAt,
+    @JsonKey(name: 'created_at') DateTime createdAt,
+    @JsonKey(name: 'updated_at') DateTime updatedAt,
     FriendProfile? friend,
   });
 
@@ -483,15 +550,15 @@ class __$$FriendshipModelImplCopyWithImpl<$Res>
         id: null == id
             ? _value.id
             : id // ignore: cast_nullable_to_non_nullable
-                  as int,
+                  as String,
         requesterId: null == requesterId
             ? _value.requesterId
             : requesterId // ignore: cast_nullable_to_non_nullable
-                  as int,
+                  as String,
         addresseeId: null == addresseeId
             ? _value.addresseeId
             : addresseeId // ignore: cast_nullable_to_non_nullable
-                  as int,
+                  as String,
         status: null == status
             ? _value.status
             : status // ignore: cast_nullable_to_non_nullable
@@ -518,11 +585,11 @@ class __$$FriendshipModelImplCopyWithImpl<$Res>
 class _$FriendshipModelImpl implements _FriendshipModel {
   const _$FriendshipModelImpl({
     required this.id,
-    required this.requesterId,
-    required this.addresseeId,
+    @JsonKey(name: 'requester_id') required this.requesterId,
+    @JsonKey(name: 'addressee_id') required this.addresseeId,
     required this.status,
-    required this.createdAt,
-    required this.updatedAt,
+    @JsonKey(name: 'created_at') required this.createdAt,
+    @JsonKey(name: 'updated_at') required this.updatedAt,
     this.friend,
   });
 
@@ -530,16 +597,20 @@ class _$FriendshipModelImpl implements _FriendshipModel {
       _$$FriendshipModelImplFromJson(json);
 
   @override
-  final int id;
+  final String id;
   @override
-  final int requesterId;
+  @JsonKey(name: 'requester_id')
+  final String requesterId;
   @override
-  final int addresseeId;
+  @JsonKey(name: 'addressee_id')
+  final String addresseeId;
   @override
   final FriendshipStatus status;
   @override
+  @JsonKey(name: 'created_at')
   final DateTime createdAt;
   @override
+  @JsonKey(name: 'updated_at')
   final DateTime updatedAt;
   @override
   final FriendProfile? friend;
@@ -599,12 +670,12 @@ class _$FriendshipModelImpl implements _FriendshipModel {
 
 abstract class _FriendshipModel implements FriendshipModel {
   const factory _FriendshipModel({
-    required final int id,
-    required final int requesterId,
-    required final int addresseeId,
+    required final String id,
+    @JsonKey(name: 'requester_id') required final String requesterId,
+    @JsonKey(name: 'addressee_id') required final String addresseeId,
     required final FriendshipStatus status,
-    required final DateTime createdAt,
-    required final DateTime updatedAt,
+    @JsonKey(name: 'created_at') required final DateTime createdAt,
+    @JsonKey(name: 'updated_at') required final DateTime updatedAt,
     final FriendProfile? friend,
   }) = _$FriendshipModelImpl;
 
@@ -612,16 +683,20 @@ abstract class _FriendshipModel implements FriendshipModel {
       _$FriendshipModelImpl.fromJson;
 
   @override
-  int get id;
+  String get id;
   @override
-  int get requesterId;
+  @JsonKey(name: 'requester_id')
+  String get requesterId;
   @override
-  int get addresseeId;
+  @JsonKey(name: 'addressee_id')
+  String get addresseeId;
   @override
   FriendshipStatus get status;
   @override
+  @JsonKey(name: 'created_at')
   DateTime get createdAt;
   @override
+  @JsonKey(name: 'updated_at')
   DateTime get updatedAt;
   @override
   FriendProfile? get friend;
@@ -640,8 +715,9 @@ FriendRequest _$FriendRequestFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$FriendRequest {
-  int get id => throw _privateConstructorUsedError;
+  String get id => throw _privateConstructorUsedError;
   FriendshipStatus get status => throw _privateConstructorUsedError;
+  @JsonKey(name: 'created_at')
   DateTime get createdAt => throw _privateConstructorUsedError;
   FriendProfile get requester => throw _privateConstructorUsedError;
 
@@ -663,9 +739,9 @@ abstract class $FriendRequestCopyWith<$Res> {
   ) = _$FriendRequestCopyWithImpl<$Res, FriendRequest>;
   @useResult
   $Res call({
-    int id,
+    String id,
     FriendshipStatus status,
-    DateTime createdAt,
+    @JsonKey(name: 'created_at') DateTime createdAt,
     FriendProfile requester,
   });
 
@@ -697,7 +773,7 @@ class _$FriendRequestCopyWithImpl<$Res, $Val extends FriendRequest>
             id: null == id
                 ? _value.id
                 : id // ignore: cast_nullable_to_non_nullable
-                      as int,
+                      as String,
             status: null == status
                 ? _value.status
                 : status // ignore: cast_nullable_to_non_nullable
@@ -736,9 +812,9 @@ abstract class _$$FriendRequestImplCopyWith<$Res>
   @override
   @useResult
   $Res call({
-    int id,
+    String id,
     FriendshipStatus status,
-    DateTime createdAt,
+    @JsonKey(name: 'created_at') DateTime createdAt,
     FriendProfile requester,
   });
 
@@ -770,7 +846,7 @@ class __$$FriendRequestImplCopyWithImpl<$Res>
         id: null == id
             ? _value.id
             : id // ignore: cast_nullable_to_non_nullable
-                  as int,
+                  as String,
         status: null == status
             ? _value.status
             : status // ignore: cast_nullable_to_non_nullable
@@ -794,7 +870,7 @@ class _$FriendRequestImpl implements _FriendRequest {
   const _$FriendRequestImpl({
     required this.id,
     required this.status,
-    required this.createdAt,
+    @JsonKey(name: 'created_at') required this.createdAt,
     required this.requester,
   });
 
@@ -802,10 +878,11 @@ class _$FriendRequestImpl implements _FriendRequest {
       _$$FriendRequestImplFromJson(json);
 
   @override
-  final int id;
+  final String id;
   @override
   final FriendshipStatus status;
   @override
+  @JsonKey(name: 'created_at')
   final DateTime createdAt;
   @override
   final FriendProfile requester;
@@ -849,9 +926,9 @@ class _$FriendRequestImpl implements _FriendRequest {
 
 abstract class _FriendRequest implements FriendRequest {
   const factory _FriendRequest({
-    required final int id,
+    required final String id,
     required final FriendshipStatus status,
-    required final DateTime createdAt,
+    @JsonKey(name: 'created_at') required final DateTime createdAt,
     required final FriendProfile requester,
   }) = _$FriendRequestImpl;
 
@@ -859,10 +936,11 @@ abstract class _FriendRequest implements FriendRequest {
       _$FriendRequestImpl.fromJson;
 
   @override
-  int get id;
+  String get id;
   @override
   FriendshipStatus get status;
   @override
+  @JsonKey(name: 'created_at')
   DateTime get createdAt;
   @override
   FriendProfile get requester;

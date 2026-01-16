@@ -36,7 +36,7 @@ class FriendsRemoteDataSource {
   }
 
   /// Send friend request
-  Future<Map<String, dynamic>> sendFriendRequest(int addresseeId) async {
+  Future<Map<String, dynamic>> sendFriendRequest(String addresseeId) async {
     try {
       final response = await _dio.post(
         '/api/v1/friends/requests',
@@ -50,7 +50,7 @@ class FriendsRemoteDataSource {
 
   /// Respond to friend request (accept/reject)
   Future<Map<String, dynamic>> respondToFriendRequest({
-    required int requestId,
+    required String requestId,
     required String action, // 'accept' or 'reject'
   }) async {
     try {
@@ -65,7 +65,7 @@ class FriendsRemoteDataSource {
   }
 
   /// Remove friend
-  Future<Map<String, dynamic>> removeFriend(int friendId) async {
+  Future<Map<String, dynamic>> removeFriend(String friendId) async {
     try {
       final response = await _dio.delete(
         '/api/v1/friends/remove',
@@ -95,6 +95,23 @@ class FriendsRemoteDataSource {
           .toList();
     } catch (e) {
       throw Exception('Failed to search users: $e');
+    }
+  }
+
+  /// Get suggested users (recommendations)
+  Future<List<FriendProfile>> getSuggestedUsers({int limit = 10}) async {
+    try {
+      final response = await _dio.get(
+        '/api/v1/friends/suggestions',
+        queryParameters: {'limit': limit},
+      );
+      final data = response.data as Map<String, dynamic>;
+      final usersList = data['suggestions'] as List;
+      return usersList
+          .map((json) => FriendProfile.fromJson(json as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      throw Exception('Failed to load suggested users: $e');
     }
   }
 }

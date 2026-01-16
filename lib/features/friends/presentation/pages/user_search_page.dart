@@ -60,15 +60,30 @@ class _UserSearchPageState extends State<UserSearchPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Запрос отправлен пользователю ${user.username}'),
+            content: Text('Запрос отправлен пользователю ${user.fullName}'),
+            backgroundColor: AppTheme.primaryColor,
           ),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Ошибка: $e')));
+        final errorMessage = e.toString();
+        String message = 'Ошибка при отправке запроса';
+        
+        if (errorMessage.contains('already sent')) {
+          message = 'Запрос уже отправлен этому пользователю';
+        } else if (errorMessage.contains('already friends')) {
+          message = 'Вы уже друзья';
+        } else if (errorMessage.contains('cannot send to yourself')) {
+          message = 'Нельзя отправить запрос самому себе';
+        }
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: Colors.orange,
+          ),
+        );
       }
     }
   }
@@ -86,56 +101,47 @@ class _UserSearchPageState extends State<UserSearchPage> {
             // Search bar
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppTheme.lightGrayColor,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  children: [
-                    const SizedBox(width: 16),
-                    Icon(
-                      Ionicons.search_outline,
-                      color: AppTheme.darkColor.withOpacity(0.4),
+              child: TextFormField(
+                controller: _searchController,
+                style: const TextStyle(color: AppTheme.darkColor),
+                decoration: InputDecoration(
+                  labelText: 'Поиск друзей',
+                  hintText: 'Введите имя или фамилию',
+                  hintStyle: TextStyle(
+                    color: AppTheme.darkColor.withOpacity(0.3),
+                  ),
+                  prefixIcon: Icon(
+                    Ionicons.search_outline,
+                    color: AppTheme.darkColor.withOpacity(0.4),
+                  ),
+                  suffixIcon: IconButton(
+                    icon: const Icon(Ionicons.search),
+                    color: AppTheme.primaryColor,
+                    onPressed: _searchUsers,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(
+                      color: AppTheme.darkColor.withOpacity(0.2),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: AppTheme.whiteColor,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: AppTheme.primaryColor,
-                            width: 1,
-                          ),
-                        ),
-                        child: TextField(
-                          controller: _searchController,
-                          style: const TextStyle(color: AppTheme.darkColor),
-                          decoration: InputDecoration(
-                            hintText: 'Введите username',
-                            hintStyle: TextStyle(
-                              color: AppTheme.darkColor.withOpacity(0.3),
-                            ),
-                            border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 12,
-                            ),
-                          ),
-                          onSubmitted: (_) => _searchUsers(),
-                        ),
-                      ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(
+                      color: AppTheme.darkColor.withOpacity(0.2),
                     ),
-                    const SizedBox(width: 12),
-                    IconButton(
-                      icon: const Icon(Ionicons.search),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(
                       color: AppTheme.primaryColor,
-                      onPressed: _searchUsers,
+                      width: 2,
                     ),
-                    const SizedBox(width: 8),
-                  ],
+                  ),
+                  filled: true,
+                  fillColor: AppTheme.lightGrayColor,
                 ),
+                onFieldSubmitted: (_) => _searchUsers(),
               ),
             ),
 
@@ -154,7 +160,11 @@ class _UserSearchPageState extends State<UserSearchPage> {
                   : _searchResults.isEmpty
                   ? _buildEmptyResults()
                   : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.only(
+                        left: 16,
+                        right: 16,
+                        bottom: 90,
+                      ),
                       itemCount: _searchResults.length,
                       itemBuilder: (context, index) {
                         final user = _searchResults[index];
@@ -189,7 +199,7 @@ class _UserSearchPageState extends State<UserSearchPage> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Введите username для поиска',
+            'Введите имя или фамилию для поиска',
             style: TextStyle(
               color: AppTheme.darkColor.withOpacity(0.5),
               fontSize: 14,
@@ -257,7 +267,7 @@ class _UserSearchPageState extends State<UserSearchPage> {
               ),
               child: Center(
                 child: Text(
-                  user.username[0].toUpperCase(),
+                  user.fullName[0].toUpperCase(),
                   style: const TextStyle(
                     color: AppTheme.whiteColor,
                     fontSize: 24,
@@ -274,13 +284,23 @@ class _UserSearchPageState extends State<UserSearchPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    user.username,
+                    user.fullName,
                     style: const TextStyle(
                       color: AppTheme.darkColor,
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+                  if (user.username.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      '@${user.username}',
+                      style: TextStyle(
+                        color: AppTheme.darkColor.withOpacity(0.5),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 4),
                   Row(
                     children: [

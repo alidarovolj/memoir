@@ -18,7 +18,9 @@ class FriendsPage extends StatefulWidget {
 class _FriendsPageState extends State<FriendsPage> {
   final _dataSource = FriendsRemoteDataSource(DioClient());
   List<FriendProfile> _friends = [];
+  List<FriendProfile> _suggestedUsers = [];
   bool _isLoading = true;
+  bool _isLoadingSuggestions = false;
 
   @override
   void initState() {
@@ -35,6 +37,10 @@ class _FriendsPageState extends State<FriendsPage> {
           _friends = friends;
           _isLoading = false;
         });
+        // Если друзей нет, загружаем рекомендации
+        if (_friends.isEmpty) {
+          _loadSuggestions();
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -42,6 +48,69 @@ class _FriendsPageState extends State<FriendsPage> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Ошибка загрузки друзей: $e')));
+      }
+    }
+  }
+
+  Future<void> _loadSuggestions() async {
+    setState(() => _isLoadingSuggestions = true);
+    try {
+      final suggestions = await _dataSource.getSuggestedUsers(limit: 10);
+      if (mounted) {
+        setState(() {
+          _suggestedUsers = suggestions;
+          _isLoadingSuggestions = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingSuggestions = false);
+      }
+    }
+  }
+
+  Future<void> _sendFriendRequest(FriendProfile user) async {
+    try {
+      await _dataSource.sendFriendRequest(user.id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Запрос отправлен пользователю ${user.fullName}'),
+            backgroundColor: AppTheme.primaryColor,
+          ),
+        );
+        // Удаляем пользователя из списка рекомендаций
+        setState(() {
+          _suggestedUsers.removeWhere((u) => u.id == user.id);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        final errorMessage = e.toString();
+        String message = 'Ошибка при отправке запроса';
+        Color backgroundColor = Colors.red;
+        
+        if (errorMessage.contains('already sent')) {
+          message = 'Запрос уже отправлен этому пользователю';
+          backgroundColor = Colors.orange;
+          // Удаляем из рекомендаций, т.к. запрос уже есть
+          setState(() {
+            _suggestedUsers.removeWhere((u) => u.id == user.id);
+          });
+        } else if (errorMessage.contains('already friends')) {
+          message = 'Вы уже друзья';
+          backgroundColor = Colors.orange;
+        } else if (errorMessage.contains('cannot send to yourself')) {
+          message = 'Нельзя отправить запрос самому себе';
+          backgroundColor = Colors.orange;
+        }
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: backgroundColor,
+          ),
+        );
       }
     }
   }
@@ -120,54 +189,195 @@ class _FriendsPageState extends State<FriendsPage> {
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Ionicons.people_outline,
-            size: 80,
-            color: AppTheme.darkColor.withOpacity(0.3),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'У вас пока нет друзей',
-            style: TextStyle(
-              color: AppTheme.darkColor.withOpacity(0.7),
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
+    if (_isLoadingSuggestions) {
+      return Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+        ),
+      );
+    }
+
+    if (_suggestedUsers.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Ionicons.people_outline,
+              size: 80,
+              color: AppTheme.darkColor.withOpacity(0.3),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Найдите друзей через поиск',
-            style: TextStyle(
-              color: AppTheme.darkColor.withOpacity(0.5),
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const UserSearchPage()),
-              ).then((_) => _loadFriends());
-            },
-            icon: const Icon(Ionicons.search, color: AppTheme.whiteColor),
-            label: const Text(
-              'Найти друзей',
-              style: TextStyle(color: AppTheme.whiteColor),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryColor,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+            const SizedBox(height: 16),
+            Text(
+              'У вас пока нет друзей',
+              style: TextStyle(
+                color: AppTheme.darkColor.withOpacity(0.7),
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
               ),
             ),
+            const SizedBox(height: 8),
+            Text(
+              'Найдите друзей через поиск',
+              style: TextStyle(
+                color: AppTheme.darkColor.withOpacity(0.5),
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const UserSearchPage(),
+                  ),
+                ).then((_) => _loadFriends());
+              },
+              icon: const Icon(Ionicons.search, color: AppTheme.whiteColor),
+              label: const Text(
+                'Найти друзей',
+                style: TextStyle(color: AppTheme.whiteColor),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Показываем рекомендации
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Text(
+          'Рекомендуемые пользователи',
+          style: TextStyle(
+            color: AppTheme.darkColor,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
           ),
-        ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Добавьте их в друзья',
+          style: TextStyle(
+            color: AppTheme.darkColor.withOpacity(0.6),
+            fontSize: 14,
+          ),
+        ),
+        const SizedBox(height: 16),
+        ..._suggestedUsers.map((user) => _buildSuggestionCard(user)),
+        const SizedBox(height: 90), // Отступ для таббара
+      ],
+    );
+  }
+
+  Widget _buildSuggestionCard(FriendProfile user) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: AppTheme.whiteColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppTheme.darkColor.withOpacity(0.1),
+          width: 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            // Avatar
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: AppTheme.primaryGradient,
+              ),
+              child: Center(
+                child: user.avatarUrl != null
+                    ? ClipOval(
+                        child: Image.network(
+                          user.avatarUrl!,
+                          width: 56,
+                          height: 56,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Text(
+                              user.fullName[0].toUpperCase(),
+                              style: const TextStyle(
+                                color: AppTheme.whiteColor,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            );
+                          },
+                        ),
+                      )
+                    : Text(
+                        user.fullName[0].toUpperCase(),
+                        style: const TextStyle(
+                          color: AppTheme.whiteColor,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            // User info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    user.fullName,
+                    style: TextStyle(
+                      color: AppTheme.darkColor,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  if (user.username != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      '@${user.username}',
+                      style: TextStyle(
+                        color: AppTheme.darkColor.withOpacity(0.5),
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            // Add button
+            ElevatedButton(
+              onPressed: () => _sendFriendRequest(user),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: AppTheme.whiteColor,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text('Добавить'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -202,7 +412,7 @@ class _FriendsPageState extends State<FriendsPage> {
                   ),
                   child: Center(
                     child: Text(
-                      friend.username[0].toUpperCase(),
+                      friend.fullName[0].toUpperCase(),
                       style: const TextStyle(
                         color: AppTheme.whiteColor,
                         fontSize: 24,
@@ -219,13 +429,23 @@ class _FriendsPageState extends State<FriendsPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        friend.username,
+                        friend.fullName,
                         style: const TextStyle(
                           color: AppTheme.darkColor,
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
+                      if (friend.username.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          '@${friend.username}',
+                          style: TextStyle(
+                            color: AppTheme.darkColor.withOpacity(0.5),
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 4),
                       Row(
                         children: [
@@ -302,7 +522,7 @@ class _FriendsPageState extends State<FriendsPage> {
                   ),
                   child: Center(
                     child: Text(
-                      friend.username[0].toUpperCase(),
+                      friend.fullName[0].toUpperCase(),
                       style: const TextStyle(
                         color: AppTheme.whiteColor,
                         fontSize: 20,
@@ -313,7 +533,7 @@ class _FriendsPageState extends State<FriendsPage> {
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  friend.username,
+                  friend.fullName,
                   style: const TextStyle(
                     color: AppTheme.darkColor,
                     fontSize: 18,
@@ -360,7 +580,7 @@ class _FriendsPageState extends State<FriendsPage> {
           style: TextStyle(color: AppTheme.darkColor),
         ),
         content: Text(
-          'Вы уверены, что хотите удалить ${friend.username} из друзей?',
+          'Вы уверены, что хотите удалить ${friend.fullName} из друзей?',
           style: TextStyle(color: AppTheme.darkColor.withOpacity(0.7)),
         ),
         actions: [

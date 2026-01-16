@@ -44,7 +44,7 @@ class _FriendRequestsPageState extends State<FriendRequestsPage> {
     }
   }
 
-  Future<void> _respondToRequest(int requestId, String action) async {
+  Future<void> _respondToRequest(String requestId, String action) async {
     try {
       await _dataSource.respondToFriendRequest(
         requestId: requestId,

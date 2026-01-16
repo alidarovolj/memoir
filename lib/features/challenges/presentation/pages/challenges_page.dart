@@ -95,7 +95,9 @@ class _ChallengesPageState extends State<ChallengesPage> {
           // Content
           _isLoading
               ? const Center(
-                  child: CircularProgressIndicator(color: Colors.white),
+                  child: CircularProgressIndicator(
+                    color: AppTheme.primaryColor,
+                  ),
                 )
               : _error != null
               ? Center(
@@ -104,11 +106,17 @@ class _ChallengesPageState extends State<ChallengesPage> {
                     children: [
                       Text(
                         _error!,
-                        style: const TextStyle(color: Colors.white70),
+                        style: TextStyle(
+                          color: AppTheme.darkColor.withOpacity(0.7),
+                        ),
                       ),
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: _loadData,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryColor,
+                          foregroundColor: AppTheme.whiteColor,
+                        ),
                         child: const Text('Повторить'),
                       ),
                     ],
@@ -164,12 +172,18 @@ class _ChallengesPageState extends State<ChallengesPage> {
                   64, // SafeArea + CustomHeader
             ),
           ),
-          const SliverFillRemaining(
+          SliverFillRemaining(
             hasScrollBody: false,
-            child: Center(
-              child: Text(
-                'Нет активных челленджей',
-                style: TextStyle(color: Colors.white70),
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 90),
+              child: Center(
+                child: Text(
+                  'Нет активных челленджей',
+                  style: TextStyle(
+                    color: AppTheme.darkColor.withOpacity(0.5),
+                    fontSize: 16,
+                  ),
+                ),
               ),
             ),
           ),
@@ -215,6 +229,7 @@ class _ChallengesPageState extends State<ChallengesPage> {
             }, childCount: allItems.length),
           ),
         ),
+        const SliverPadding(padding: EdgeInsets.only(bottom: 90)),
       ],
     );
   }
@@ -257,144 +272,133 @@ class _ChallengeCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
+        color: AppTheme.whiteColor,
         borderRadius: BorderRadius.circular(16),
-        gradient: const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color.fromRGBO(255, 255, 255, 0.2),
-            Color.fromRGBO(233, 233, 233, 0.2),
-            Color.fromRGBO(242, 242, 242, 0),
-          ],
-          stops: [0.0, 0.5, 1.0],
+        border: Border.all(
+          color: AppTheme.darkColor.withOpacity(0.1),
+          width: 1,
         ),
       ),
-      child: Container(
-        margin: const EdgeInsets.all(1),
-        decoration: BoxDecoration(
-          color: const Color.fromRGBO(44, 44, 44, 1),
-          borderRadius: BorderRadius.circular(15),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(challenge.emoji, style: const TextStyle(fontSize: 32)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        challenge.title,
+                        style: TextStyle(
+                          color: AppTheme.darkColor,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: statusColor.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          challenge.daysRemaining != null
+                              ? '${challenge.daysRemaining} дней осталось'
+                              : challenge.hasEnded
+                              ? 'Завершён'
+                              : 'Скоро начнётся',
+                          style: TextStyle(
+                            color: statusColor,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              challenge.description,
+              style: TextStyle(
+                color: AppTheme.darkColor.withOpacity(0.7),
+                fontSize: 14,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.lightGrayColor,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
                 children: [
-                  // Text(challenge.emoji, style: const TextStyle(fontSize: 32)),
-                  // const SizedBox(width: 12),
+                  Icon(
+                    Icons.flag,
+                    color: AppTheme.darkColor.withOpacity(0.7),
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          challenge.title,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: statusColor.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            challenge.daysRemaining != null
-                                ? '${challenge.daysRemaining} дней осталось'
-                                : challenge.hasEnded
-                                ? 'Завершён'
-                                : 'Скоро начнётся',
-                            style: TextStyle(
-                              color: statusColor,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
+                    child: Text(
+                      challenge.goalDescription,
+                      style: TextStyle(color: AppTheme.darkColor, fontSize: 14),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              Text(
-                challenge.description,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 14,
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.flag, color: Colors.white70, size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        challenge.goalDescription,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                        ),
-                      ),
+            ),
+            const SizedBox(height: 16),
+            // Показываем кнопки и количество участников только если челлендж не завершен
+            // Скрываем если дней осталось 0 или челлендж завершен
+            if (!challenge.hasEnded &&
+                challenge.daysRemaining != null &&
+                challenge.daysRemaining! > 0)
+              Row(
+                children: [
+                  Text(
+                    '${challenge.participantsCount} участников',
+                    style: TextStyle(
+                      color: AppTheme.darkColor.withOpacity(0.5),
+                      fontSize: 14,
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              // Показываем кнопки и количество участников только если челлендж не завершен
-              // Скрываем если дней осталось 0 или челлендж завершен
-              if (!challenge.hasEnded &&
-                  challenge.daysRemaining != null &&
-                  challenge.daysRemaining! > 0)
-                Row(
-                  children: [
-                    Text(
-                      '${challenge.participantsCount} участников',
-                      style: const TextStyle(
-                        color: Colors.white54,
-                        fontSize: 14,
+                  ),
+                  const Spacer(),
+                  if (isParticipating)
+                    ElevatedButton.icon(
+                      onPressed: onShowLeaderboard,
+                      icon: const Icon(Icons.leaderboard, size: 18),
+                      label: const Text('Рейтинг'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.lightGrayColor,
+                        foregroundColor: AppTheme.darkColor,
                       ),
+                    )
+                  else
+                    ElevatedButton(
+                      onPressed: onJoin,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: statusColor,
+                        foregroundColor: AppTheme.whiteColor,
+                      ),
+                      child: const Text('Участвовать'),
                     ),
-                    const Spacer(),
-                    if (isParticipating)
-                      ElevatedButton.icon(
-                        onPressed: onShowLeaderboard,
-                        icon: const Icon(Icons.leaderboard, size: 18),
-                        label: const Text('Рейтинг'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white.withOpacity(0.1),
-                          foregroundColor: Colors.white,
-                        ),
-                      )
-                    else
-                      ElevatedButton(
-                        onPressed: onJoin,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: statusColor,
-                          foregroundColor: Colors.white,
-                        ),
-                        child: const Text('Участвовать'),
-                      ),
-                  ],
-                ),
-            ],
-          ),
+                ],
+              ),
+          ],
         ),
       ),
     );
@@ -416,178 +420,167 @@ class _ParticipationCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
+        color: AppTheme.whiteColor,
         borderRadius: BorderRadius.circular(16),
-        gradient: const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color.fromRGBO(255, 255, 255, 0.2),
-            Color.fromRGBO(233, 233, 233, 0.2),
-            Color.fromRGBO(242, 242, 242, 0),
-          ],
-          stops: [0.0, 0.5, 1.0],
+        border: Border.all(
+          color: AppTheme.darkColor.withOpacity(0.1),
+          width: 1,
         ),
       ),
-      child: Container(
-        margin: const EdgeInsets.all(1),
-        decoration: BoxDecoration(
-          color: const Color.fromRGBO(44, 44, 44, 1),
-          borderRadius: BorderRadius.circular(15),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(challenge.emoji, style: const TextStyle(fontSize: 32)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    participation.challengeTitle,
+                    style: TextStyle(
+                      color: AppTheme.darkColor,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                if (participation.completed)
+                  const Icon(Icons.check_circle, color: Colors.green, size: 24),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // Описание челленджа
+            Text(
+              challenge.description,
+              style: TextStyle(
+                color: AppTheme.darkColor.withOpacity(0.7),
+                fontSize: 14,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Цель челленджа
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.lightGrayColor,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
                 children: [
+                  Icon(
+                    Icons.flag,
+                    color: AppTheme.darkColor.withOpacity(0.7),
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      participation.challengeTitle,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      challenge.goalDescription,
+                      style: TextStyle(color: AppTheme.darkColor, fontSize: 14),
                     ),
                   ),
-                  if (participation.completed)
-                    const Icon(
-                      Icons.check_circle,
-                      color: Colors.green,
-                      size: 24,
-                    ),
                 ],
               ),
-              const SizedBox(height: 16),
-              // Описание челленджа
-              Text(
-                challenge.description,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 14,
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: 16),
-              // Цель челленджа
+            ),
+            const SizedBox(height: 16),
+            // Оставшиеся дни
+            if (challenge.daysRemaining != null)
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(12),
+                  color: Color.fromRGBO(
+                    challenge.statusColor[0],
+                    challenge.statusColor[1],
+                    challenge.statusColor[2],
+                    1,
+                  ).withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.flag, color: Colors.white70, size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        challenge.goalDescription,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              // Оставшиеся дни
-              if (challenge.daysRemaining != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
+                child: Text(
+                  '${challenge.daysRemaining} дней осталось',
+                  style: TextStyle(
                     color: Color.fromRGBO(
                       challenge.statusColor[0],
                       challenge.statusColor[1],
                       challenge.statusColor[2],
                       1,
-                    ).withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    '${challenge.daysRemaining} дней осталось',
-                    style: TextStyle(
-                      color: Color.fromRGBO(
-                        challenge.statusColor[0],
-                        challenge.statusColor[1],
-                        challenge.statusColor[2],
-                        1,
-                      ),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
                     ),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '${participation.progress} / ${participation.target}',
-                    style: const TextStyle(color: Colors.white70, fontSize: 16),
-                  ),
-                  Text(
-                    '${participation.percentage.toStringAsFixed(0)}%',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
               ),
-              const SizedBox(height: 8),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: LinearProgressIndicator(
-                  value: participation.percentage / 100,
-                  backgroundColor: Colors.white10,
-                  valueColor: AlwaysStoppedAnimation(
-                    participation.completed ? Colors.green : Colors.blue,
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '${participation.progress} / ${participation.target}',
+                  style: TextStyle(
+                    color: AppTheme.darkColor.withOpacity(0.7),
+                    fontSize: 16,
                   ),
-                  minHeight: 8,
                 ),
-              ),
-              if (participation.rank != null) ...[
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.amber.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.emoji_events,
-                        color: Colors.amber,
-                        size: 18,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Ваше место: #${participation.rank}',
-                        style: const TextStyle(
-                          color: Colors.amber,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
+                Text(
+                  '${participation.percentage.toStringAsFixed(0)}%',
+                  style: TextStyle(
+                    color: AppTheme.darkColor,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: LinearProgressIndicator(
+                value: participation.percentage / 100,
+                backgroundColor: AppTheme.lightGrayColor,
+                valueColor: AlwaysStoppedAnimation(
+                  participation.completed
+                      ? Colors.green
+                      : AppTheme.primaryColor,
+                ),
+                minHeight: 8,
+              ),
+            ),
+            if (participation.rank != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.emoji_events,
+                      color: Colors.amber,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Ваше место: #${participation.rank}',
+                      style: const TextStyle(
+                        color: Colors.amber,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
-          ),
+          ],
         ),
       ),
     );
@@ -607,7 +600,7 @@ class _LeaderboardDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: const Color(0xFF1C1C1E),
+      backgroundColor: AppTheme.whiteColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Container(
         constraints: const BoxConstraints(maxHeight: 600),
@@ -623,8 +616,8 @@ class _LeaderboardDialog extends StatelessWidget {
                   Expanded(
                     child: Text(
                       'Рейтинг',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: AppTheme.darkColor,
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
@@ -632,12 +625,15 @@ class _LeaderboardDialog extends StatelessWidget {
                   ),
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close, color: Colors.white70),
+                    icon: Icon(
+                      Icons.close,
+                      color: AppTheme.darkColor.withOpacity(0.7),
+                    ),
                   ),
                 ],
               ),
             ),
-            const Divider(color: Colors.white10, height: 1),
+            Divider(color: AppTheme.darkColor.withOpacity(0.1), height: 1),
             Expanded(
               child: ListView.builder(
                 padding: const EdgeInsets.all(16),
@@ -653,11 +649,13 @@ class _LeaderboardDialog extends StatelessWidget {
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: isCurrentUser
-                          ? Colors.blue.withOpacity(0.2)
-                          : Colors.white.withOpacity(0.05),
+                          ? AppTheme.primaryColor.withOpacity(0.1)
+                          : AppTheme.lightGrayColor,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: isCurrentUser ? Colors.blue : Colors.transparent,
+                        color: isCurrentUser
+                            ? AppTheme.primaryColor
+                            : Colors.transparent,
                         width: 2,
                       ),
                     ),
@@ -673,7 +671,7 @@ class _LeaderboardDialog extends StatelessWidget {
                                       : entry.rank == 2
                                       ? Colors.grey
                                       : Colors.brown)
-                                : Colors.white10,
+                                : AppTheme.darkColor.withOpacity(0.1),
                             shape: BoxShape.circle,
                           ),
                           child: Center(
@@ -682,7 +680,9 @@ class _LeaderboardDialog extends StatelessWidget {
                                   ? ['🥇', '🥈', '🥉'][entry.rank - 1]
                                   : '#${entry.rank}',
                               style: TextStyle(
-                                color: Colors.white,
+                                color: entry.rank <= 3
+                                    ? AppTheme.whiteColor
+                                    : AppTheme.darkColor,
                                 fontSize: entry.rank <= 3 ? 16 : 14,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -697,17 +697,17 @@ class _LeaderboardDialog extends StatelessWidget {
                               Text(
                                 entry.username ??
                                     'Пользователь #${entry.userId.substring(0, 8)}',
-                                style: const TextStyle(
-                                  color: Colors.white,
+                                style: TextStyle(
+                                  color: AppTheme.darkColor,
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
                               if (isCurrentUser)
-                                const Text(
+                                Text(
                                   'Вы',
                                   style: TextStyle(
-                                    color: Colors.blue,
+                                    color: AppTheme.primaryColor,
                                     fontSize: 12,
                                   ),
                                 ),
@@ -719,16 +719,16 @@ class _LeaderboardDialog extends StatelessWidget {
                           children: [
                             Text(
                               '${entry.progress}',
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: AppTheme.darkColor,
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                             Text(
                               '${entry.percentage.toStringAsFixed(0)}%',
-                              style: const TextStyle(
-                                color: Colors.white54,
+                              style: TextStyle(
+                                color: AppTheme.darkColor.withOpacity(0.5),
                                 fontSize: 12,
                               ),
                             ),

@@ -16,15 +16,30 @@ enum FriendshipStatus {
 
 @freezed
 class FriendProfile with _$FriendProfile {
+  const FriendProfile._();
+  
   const factory FriendProfile({
-    required int id,
+    required String id,
     required String username,
-    String? avatarUrl,
-    required DateTime createdAt,
-    @Default(0) int memoriesCount,
-    @Default(0) int friendsCount,
-    @Default(0) int streakDays,
+    @JsonKey(name: 'first_name') String? firstName,
+    @JsonKey(name: 'last_name') String? lastName,
+    @JsonKey(name: 'avatar_url') String? avatarUrl,
+    @JsonKey(name: 'created_at') required DateTime createdAt,
+    @JsonKey(name: 'memories_count') @Default(0) int memoriesCount,
+    @JsonKey(name: 'friends_count') @Default(0) int friendsCount,
+    @JsonKey(name: 'streak_days') @Default(0) int streakDays,
   }) = _FriendProfile;
+
+  String get fullName {
+    if (firstName != null && lastName != null) {
+      return '$firstName $lastName';
+    } else if (firstName != null) {
+      return firstName!;
+    } else if (lastName != null) {
+      return lastName!;
+    }
+    return username;
+  }
 
   factory FriendProfile.fromJson(Map<String, dynamic> json) =>
       _$FriendProfileFromJson(json);
@@ -33,12 +48,12 @@ class FriendProfile with _$FriendProfile {
 @freezed
 class FriendshipModel with _$FriendshipModel {
   const factory FriendshipModel({
-    required int id,
-    required int requesterId,
-    required int addresseeId,
+    required String id,
+    @JsonKey(name: 'requester_id') required String requesterId,
+    @JsonKey(name: 'addressee_id') required String addresseeId,
     required FriendshipStatus status,
-    required DateTime createdAt,
-    required DateTime updatedAt,
+    @JsonKey(name: 'created_at') required DateTime createdAt,
+    @JsonKey(name: 'updated_at') required DateTime updatedAt,
     FriendProfile? friend,
   }) = _FriendshipModel;
 
@@ -49,9 +64,9 @@ class FriendshipModel with _$FriendshipModel {
 @freezed
 class FriendRequest with _$FriendRequest {
   const factory FriendRequest({
-    required int id,
+    required String id,
     required FriendshipStatus status,
-    required DateTime createdAt,
+    @JsonKey(name: 'created_at') required DateTime createdAt,
     required FriendProfile requester,
   }) = _FriendRequest;
 
