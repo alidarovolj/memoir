@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:memoir/core/network/dio_client.dart';
 import 'package:memoir/features/time_capsule/data/models/time_capsule_model.dart';
 import 'package:memoir/features/memories/data/models/memory_model.dart';
 
@@ -58,6 +57,10 @@ class TimeCapsuleRemoteDataSourceImpl implements TimeCapsuleRemoteDataSource {
       );
 
       if (response.statusCode == 200) {
+        // API может вернуть null, если память не найдена
+        if (response.data == null) {
+          return null;
+        }
         return MemoryModel.fromJson(response.data);
       }
       return null;

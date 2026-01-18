@@ -21,6 +21,9 @@ class CreateTaskPage extends StatefulWidget {
 class _CreateTaskPageState extends State<CreateTaskPage> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _titleFocusNode = FocusNode();
+  final _scrollController = ScrollController();
+  final _inputKey = GlobalKey();
   late TaskRemoteDataSource _taskDataSource;
 
   // UI State
@@ -99,12 +102,39 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
             : _titleController.text;
       });
     });
+
+    // Слушаем изменения фокуса для автоматической прокрутки
+    _titleFocusNode.addListener(_onFocusChange);
+  }
+
+  void _onFocusChange() {
+    if (_titleFocusNode.hasFocus) {
+      // Небольшая задержка для того, чтобы клавиатура успела появиться
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (!_isAnalyzed) {
+          // Прокручиваем к инпуту, чтобы он был виден над клавиатурой
+          final context = _inputKey.currentContext;
+          if (context != null) {
+            Scrollable.ensureVisible(
+              context,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOut,
+              alignment:
+                  0.0, // Прокручиваем так, чтобы инпут был вверху видимой области
+            );
+          }
+        }
+      });
+    }
   }
 
   @override
   void dispose() {
+    _titleFocusNode.removeListener(_onFocusChange);
     _titleController.dispose();
     _descriptionController.dispose();
+    _titleFocusNode.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -456,137 +486,156 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.7,
-      decoration: BoxDecoration(
-        color: AppTheme.whiteColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: Column(
-        children: [
-          // Дрэг-индикатор
-          Container(
-            margin: const EdgeInsets.only(top: 12),
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: AppTheme.darkColor.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(2),
+    return GestureDetector(
+      onTap: () {
+        // Расфокус при тапе вне инпута
+        _titleFocusNode.unfocus();
+        FocusScope.of(context).unfocus();
+      },
+      child: Container(
+        height: MediaQuery.of(context).size.height * 0.9,
+        decoration: BoxDecoration(
+          color: AppTheme.whiteColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            // Дрэг-индикатор
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppTheme.darkColor.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
-          ),
 
-          // Header
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-            child: Row(
-              children: [
-                GestureDetector(
-                  onTap: () => Navigator.of(context).pop(),
-                  child: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: AppTheme.lightGrayColor,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Ionicons.close,
-                      color: AppTheme.darkColor,
-                      size: 20,
-                    ),
-                  ),
-                ),
-                const Spacer(),
-                if (_showPreview)
-                  Text(
-                    'Предпросмотр',
-                    style: TextStyle(
-                      color: AppTheme.darkColor,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                const Spacer(),
-                if (_showPreview)
+            // Header
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+              child: Row(
+                children: [
                   GestureDetector(
-                    onTap: _isLoading ? () {} : _saveHabitWithPreview,
+                    onTap: () => Navigator.of(context).pop(),
                     child: Container(
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: _isLoading
-                            ? AppTheme.lightGrayColor
-                            : AppTheme.primaryColor,
+                        color: AppTheme.lightGrayColor,
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(
-                        Ionicons.checkmark,
-                        color: _isLoading ? AppTheme.darkColor.withOpacity(0.38) : AppTheme.whiteColor,
-                        size: 20,
-                      ),
-                    ),
-                  )
-                else if (_isAnalyzed)
-                  GestureDetector(
-                    onTap: _isLoading ? () {} : _createTask,
-                    child: Container(
-                      width: 36,
-                      height: 36,
-                    decoration: BoxDecoration(
-                      color: _isLoading
-                          ? AppTheme.lightGrayColor
-                          : AppTheme.primaryColor,
-                      shape: BoxShape.circle,
-                    ),
-                      child: Icon(
-                        Ionicons.checkmark,
-                        color: _isLoading ? AppTheme.darkColor.withOpacity(0.38) : AppTheme.whiteColor,
+                      child: const Icon(
+                        Ionicons.close,
+                        color: AppTheme.darkColor,
                         size: 20,
                       ),
                     ),
                   ),
-              ],
-            ),
-          ),
-
-          // Контент
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (_showPreview) ...[
-                    // ЭТАП ПРЕВЬЮ: Показываем задачи привычки для редактирования
-                    _buildHabitPreview(),
-                  ] else if (!_isAnalyzed) ...[
-                    // ЭТАП 1: Только название и AI анализ
-                    _buildInitialStage(),
-                  ] else ...[
-                    // ЭТАП 2: Полная форма после AI анализа
-                    _buildPreviewCard(),
-
-                    const SizedBox(height: 32),
-
-                    // Appearance Section
-                    _buildSectionHeader('Внешний вид'),
-                    const SizedBox(height: 12),
-                    _buildAppearanceSection(),
-
-                    const SizedBox(height: 32),
-
-                    // General Section
-                    _buildSectionHeader('Общее'),
-                    const SizedBox(height: 12),
-                    _buildGeneralSection(),
-
-                    const SizedBox(height: 32),
-                  ],
+                  const Spacer(),
+                  if (_showPreview)
+                    Text(
+                      'Предпросмотр',
+                      style: TextStyle(
+                        color: AppTheme.darkColor,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  const Spacer(),
+                  if (_showPreview)
+                    GestureDetector(
+                      onTap: _isLoading ? () {} : _saveHabitWithPreview,
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: _isLoading
+                              ? AppTheme.lightGrayColor
+                              : AppTheme.primaryColor,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Ionicons.checkmark,
+                          color: _isLoading
+                              ? AppTheme.darkColor.withOpacity(0.38)
+                              : AppTheme.whiteColor,
+                          size: 20,
+                        ),
+                      ),
+                    )
+                  else if (_isAnalyzed)
+                    GestureDetector(
+                      onTap: _isLoading ? () {} : _createTask,
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: _isLoading
+                              ? AppTheme.lightGrayColor
+                              : AppTheme.primaryColor,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Ionicons.checkmark,
+                          color: _isLoading
+                              ? AppTheme.darkColor.withOpacity(0.38)
+                              : AppTheme.whiteColor,
+                          size: 20,
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
-          ),
-        ],
+
+            // Контент с автоматической прокруткой
+            Expanded(
+              child: SingleChildScrollView(
+                controller: _scrollController,
+                padding: EdgeInsets.only(
+                  left: 20,
+                  top: 20,
+                  right: 20,
+                  bottom: MediaQuery.of(context).viewInsets.bottom > 0
+                      ? MediaQuery.of(context).viewInsets.bottom + 100
+                      : 20,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (_showPreview) ...[
+                      // ЭТАП ПРЕВЬЮ: Показываем задачи привычки для редактирования
+                      _buildHabitPreview(),
+                    ] else if (!_isAnalyzed) ...[
+                      // ЭТАП 1: Только название и AI анализ
+                      _buildInitialStage(),
+                    ] else ...[
+                      // ЭТАП 2: Полная форма после AI анализа
+                      _buildPreviewCard(),
+
+                      const SizedBox(height: 32),
+
+                      // Appearance Section
+                      _buildSectionHeader('Внешний вид'),
+                      const SizedBox(height: 12),
+                      _buildAppearanceSection(),
+
+                      const SizedBox(height: 32),
+
+                      // General Section
+                      _buildSectionHeader('Общее'),
+                      const SizedBox(height: 12),
+                      _buildGeneralSection(),
+
+                      const SizedBox(height: 32),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -734,6 +783,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                     children: [
                       Expanded(
                         child: Container(
+                          key: _inputKey,
                           decoration: BoxDecoration(
                             color: AppTheme.lightGrayColor,
                             borderRadius: BorderRadius.circular(16),
@@ -742,7 +792,8 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                           child: Center(
                             child: TextField(
                               controller: _titleController,
-                              autofocus: true,
+                              focusNode: _titleFocusNode,
+                              autofocus: false,
                               style: const TextStyle(
                                 color: AppTheme.darkColor,
                                 fontSize: 18,
@@ -910,7 +961,10 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                 decoration: InputDecoration(
                   border: InputBorder.none,
                   hintText: 'Введите название',
-                  hintStyle: TextStyle(color: AppTheme.darkColor.withOpacity(0.38), fontSize: 15),
+                  hintStyle: TextStyle(
+                    color: AppTheme.darkColor.withOpacity(0.38),
+                    fontSize: 15,
+                  ),
                 ),
               ),
             ),
@@ -942,7 +996,11 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
             icon: Ionicons.happy_outline,
             iconColor: Colors.orange,
             title: 'Иконка',
-            trailing: Icon(_selectedIcon, color: AppTheme.darkColor.withOpacity(0.7), size: 20),
+            trailing: Icon(
+              _selectedIcon,
+              color: AppTheme.darkColor.withOpacity(0.7),
+              size: 20,
+            ),
             onTap: _showIconPicker,
           ),
 
@@ -1361,7 +1419,9 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                 maxLines: 4,
                 decoration: InputDecoration(
                   hintText: 'Добавьте описание...',
-                  hintStyle: TextStyle(color: AppTheme.darkColor.withOpacity(0.38)),
+                  hintStyle: TextStyle(
+                    color: AppTheme.darkColor.withOpacity(0.38),
+                  ),
                   filled: true,
                   fillColor: AppTheme.lightGrayColor,
                   border: OutlineInputBorder(
@@ -1441,10 +1501,16 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                 ),
                 title: Text(
                   _getPriorityLabel(priority),
-                  style: const TextStyle(color: AppTheme.darkColor, fontSize: 16),
+                  style: const TextStyle(
+                    color: AppTheme.darkColor,
+                    fontSize: 16,
+                  ),
                 ),
                 trailing: _priority == priority
-                    ? Icon(Ionicons.checkmark_circle, color: AppTheme.primaryColor)
+                    ? Icon(
+                        Ionicons.checkmark_circle,
+                        color: AppTheme.primaryColor,
+                      )
                     : null,
                 onTap: () {
                   setState(() {
@@ -1488,10 +1554,16 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                 contentPadding: EdgeInsets.zero,
                 title: Text(
                   _getTimeScopeLabel(scope),
-                  style: const TextStyle(color: AppTheme.darkColor, fontSize: 16),
+                  style: const TextStyle(
+                    color: AppTheme.darkColor,
+                    fontSize: 16,
+                  ),
                 ),
                 trailing: _timeScope == scope
-                    ? Icon(Ionicons.checkmark_circle, color: AppTheme.primaryColor)
+                    ? Icon(
+                        Ionicons.checkmark_circle,
+                        color: AppTheme.primaryColor,
+                      )
                     : null,
                 onTap: () {
                   setState(() {
@@ -1563,7 +1635,10 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                 style: TextStyle(color: AppTheme.darkColor, fontSize: 16),
               ),
               trailing: !_isRecurring
-                  ? Icon(Ionicons.checkmark_circle, color: AppTheme.primaryColor)
+                  ? Icon(
+                      Ionicons.checkmark_circle,
+                      color: AppTheme.primaryColor,
+                    )
                   : null,
               onTap: () {
                 setState(() {
@@ -1579,7 +1654,10 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                 style: TextStyle(color: AppTheme.darkColor, fontSize: 16),
               ),
               trailing: _isRecurring && _recurrenceRule == 'FREQ=DAILY'
-                  ? Icon(Ionicons.checkmark_circle, color: AppTheme.primaryColor)
+                  ? Icon(
+                      Ionicons.checkmark_circle,
+                      color: AppTheme.primaryColor,
+                    )
                   : null,
               onTap: () {
                 setState(() {
@@ -1598,7 +1676,10 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
               trailing:
                   _isRecurring &&
                       _recurrenceRule == 'FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR'
-                  ? Icon(Ionicons.checkmark_circle, color: AppTheme.primaryColor)
+                  ? Icon(
+                      Ionicons.checkmark_circle,
+                      color: AppTheme.primaryColor,
+                    )
                   : null,
               onTap: () {
                 setState(() {
@@ -1615,7 +1696,10 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                 style: TextStyle(color: AppTheme.darkColor, fontSize: 16),
               ),
               trailing: _isRecurring && _recurrenceRule == 'FREQ=WEEKLY'
-                  ? Icon(Ionicons.checkmark_circle, color: AppTheme.primaryColor)
+                  ? Icon(
+                      Ionicons.checkmark_circle,
+                      color: AppTheme.primaryColor,
+                    )
                   : null,
               onTap: () {
                 setState(() {
@@ -1632,7 +1716,10 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                 style: TextStyle(color: AppTheme.darkColor, fontSize: 16),
               ),
               trailing: _isRecurring && _recurrenceRule == 'FREQ=MONTHLY'
-                  ? Icon(Ionicons.checkmark_circle, color: AppTheme.primaryColor)
+                  ? Icon(
+                      Ionicons.checkmark_circle,
+                      color: AppTheme.primaryColor,
+                    )
                   : null,
               onTap: () {
                 setState(() {
@@ -1750,14 +1837,14 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-              const Text(
-                'Теги',
-                style: TextStyle(
-                  color: AppTheme.darkColor,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+                const Text(
+                  'Теги',
+                  style: TextStyle(
+                    color: AppTheme.darkColor,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
                 const SizedBox(height: 20),
 
                 // Текущие теги
@@ -1817,7 +1904,9 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                         style: const TextStyle(color: AppTheme.darkColor),
                         decoration: InputDecoration(
                           hintText: 'Добавить тег...',
-                          hintStyle: TextStyle(color: AppTheme.darkColor.withOpacity(0.38)),
+                          hintStyle: TextStyle(
+                            color: AppTheme.darkColor.withOpacity(0.38),
+                          ),
                           filled: true,
                           fillColor: AppTheme.lightGrayColor,
                           border: OutlineInputBorder(
@@ -1849,7 +1938,10 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                         shape: BoxShape.circle,
                       ),
                       child: IconButton(
-                        icon: const Icon(Ionicons.add, color: AppTheme.whiteColor),
+                        icon: const Icon(
+                          Ionicons.add,
+                          color: AppTheme.whiteColor,
+                        ),
                         onPressed: () {
                           if (tagController.text.trim().isNotEmpty) {
                             setState(() {
@@ -1986,7 +2078,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
 
   Widget _buildSubtaskPreviewCard(Map<String, dynamic> task, int index) {
     final color = _parseColor(task['color'] as String?);
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -2076,7 +2168,8 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
               ),
             ],
           ),
-          if (task['description'] != null && (task['description'] as String).isNotEmpty) ...[
+          if (task['description'] != null &&
+              (task['description'] as String).isNotEmpty) ...[
             const SizedBox(height: 12),
             Text(
               task['description'],
@@ -2095,7 +2188,9 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(
-              _getPriorityLabelFromString(task['priority'] as String? ?? 'medium'),
+              _getPriorityLabelFromString(
+                task['priority'] as String? ?? 'medium',
+              ),
               style: const TextStyle(
                 color: AppTheme.whiteColor,
                 fontSize: 12,
@@ -2182,7 +2277,9 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
 
   void _showEditSubtaskDialog(Map<String, dynamic> task, int? index) {
     final titleController = TextEditingController(text: task['title'] ?? '');
-    final descriptionController = TextEditingController(text: task['description'] ?? '');
+    final descriptionController = TextEditingController(
+      text: task['description'] ?? '',
+    );
     String selectedPriority = task['priority'] ?? 'medium';
 
     showModalBottomSheet(
@@ -2256,7 +2353,9 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                         style: const TextStyle(color: AppTheme.darkColor),
                         decoration: InputDecoration(
                           hintText: 'Введите название',
-                          hintStyle: TextStyle(color: AppTheme.darkColor.withOpacity(0.38)),
+                          hintStyle: TextStyle(
+                            color: AppTheme.darkColor.withOpacity(0.38),
+                          ),
                           filled: true,
                           fillColor: AppTheme.lightGrayColor,
                           border: OutlineInputBorder(
@@ -2284,7 +2383,9 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                         maxLines: 3,
                         decoration: InputDecoration(
                           hintText: 'Введите описание',
-                          hintStyle: TextStyle(color: AppTheme.darkColor.withOpacity(0.38)),
+                          hintStyle: TextStyle(
+                            color: AppTheme.darkColor.withOpacity(0.38),
+                          ),
                           filled: true,
                           fillColor: AppTheme.lightGrayColor,
                           border: OutlineInputBorder(
@@ -2317,15 +2418,22 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                               });
                             },
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 10,
+                              ),
                               decoration: BoxDecoration(
-                                color: isSelected ? AppTheme.primaryColor : AppTheme.lightGrayColor,
+                                color: isSelected
+                                    ? AppTheme.primaryColor
+                                    : AppTheme.lightGrayColor,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
                                 _getPriorityLabelFromString(priority),
                                 style: TextStyle(
-                                  color: isSelected ? AppTheme.whiteColor : AppTheme.darkColor,
+                                  color: isSelected
+                                      ? AppTheme.whiteColor
+                                      : AppTheme.darkColor,
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                 ),

@@ -183,7 +183,7 @@ class _SplashScreenState extends State<SplashScreen>
           .instance; // Используем глобальный instance с auth interceptor
       final authService = AuthService(dio, prefs);
       final isAuth = await authService.isAuthenticated();
-      
+
       print('🔐 [SPLASH] Checking authentication:');
       print('  - isAuthenticated: $isAuth');
       print('  - auth_token exists: ${prefs.getString('auth_token') != null}');
@@ -1461,9 +1461,8 @@ class _HomePageState extends State<HomePage>
                                           Text(
                                             '$completedCount из ${group.tasks.length} выполнено',
                                             style: TextStyle(
-                                              color: AppTheme.darkColor.withOpacity(
-                                                0.5,
-                                              ),
+                                              color: AppTheme.darkColor
+                                                  .withOpacity(0.5),
                                               fontSize: 13,
                                             ),
                                           ),
@@ -1476,7 +1475,9 @@ class _HomePageState extends State<HomePage>
                                       width: 40,
                                       height: 40,
                                       decoration: BoxDecoration(
-                                        color: AppTheme.darkColor.withOpacity(0.1),
+                                        color: AppTheme.darkColor.withOpacity(
+                                          0.1,
+                                        ),
                                         shape: BoxShape.circle,
                                       ),
                                       child: Center(
@@ -1501,7 +1502,9 @@ class _HomePageState extends State<HomePage>
                                       ),
                                       child: Icon(
                                         Ionicons.chevron_down,
-                                        color: AppTheme.darkColor.withOpacity(0.5),
+                                        color: AppTheme.darkColor.withOpacity(
+                                          0.5,
+                                        ),
                                         size: 20,
                                       ),
                                     ),

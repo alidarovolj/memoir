@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:memoir/core/theme/app_theme.dart';
 import 'package:memoir/core/network/dio_client.dart';
 import 'package:memoir/core/utils/snackbar_utils.dart';
+import 'package:memoir/features/auth/data/services/google_auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
 import 'dart:async';
@@ -16,6 +17,7 @@ class EmailAuthPage extends StatefulWidget {
 class _EmailAuthPageState extends State<EmailAuthPage> {
   final _emailController = TextEditingController();
   final _codeController = TextEditingController();
+  final _googleAuthService = GoogleAuthService();
   bool _isLoading = false;
   bool _codeSent = false;
   int _resendCountdown = 0;
@@ -169,6 +171,45 @@ class _EmailAuthPageState extends State<EmailAuthPage> {
       if (mounted) {
         setState(() => _isLoading = false);
         SnackBarUtils.showError(context, 'Verification failed');
+      }
+    }
+  }
+
+  Future<void> _signInWithGoogle() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final result = await _googleAuthService.signInWithGoogle();
+
+      if (mounted) {
+        setState(() => _isLoading = false);
+
+        final user = result['user'];
+        
+        // Проверяем, заполнены ли обязательные поля профиля
+        final hasFirstName =
+            user['first_name'] != null && user['first_name'].toString().isNotEmpty;
+        final hasLastName =
+            user['last_name'] != null && user['last_name'].toString().isNotEmpty;
+
+        if (!hasFirstName || !hasLastName) {
+          // Данные не заполнены - отправляем на настройку профиля
+          Navigator.of(context).pushNamedAndRemoveUntil(
+            '/profile-setup',
+            (route) => false,
+          );
+        } else {
+          // Все данные есть - сразу на главную
+          Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        SnackBarUtils.showError(
+          context,
+          e.toString().replaceAll('Exception: ', ''),
+        );
       }
     }
   }
@@ -478,6 +519,79 @@ class _EmailAuthPageState extends State<EmailAuthPage> {
                       ),
               ),
             ),
+
+            if (!_codeSent) ...[
+              const SizedBox(height: 24),
+
+              // Divider with "OR"
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      height: 1,
+                      color: AppTheme.darkColor.withOpacity(0.2),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text(
+                      'OR',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppTheme.darkColor.withOpacity(0.6),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Container(
+                      height: 1,
+                      color: AppTheme.darkColor.withOpacity(0.2),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 24),
+
+              // Google Sign In button
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: OutlinedButton(
+                  onPressed: _isLoading ? null : _signInWithGoogle,
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(
+                      color: AppTheme.darkColor.withOpacity(0.2),
+                      width: 1.5,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(28),
+                    ),
+                    backgroundColor: AppTheme.whiteColor,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Image.asset(
+                        'assets/icons/auth/google.png',
+                        width: 24,
+                        height: 24,
+                      ),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'Continue with Google',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.darkColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
 
             const SizedBox(height: 32),
           ],

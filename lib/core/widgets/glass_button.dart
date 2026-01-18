@@ -36,9 +36,28 @@ class GlassButton extends StatelessWidget {
             filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.7),
+                color: Colors.white.withOpacity(0.85),
                 borderRadius: BorderRadius.circular(size / 2),
-                // Без границ для нативного glassmorphism
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.darkColor.withOpacity(0.1),
+                    blurRadius: 20,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 4),
+                  ),
+                  BoxShadow(
+                    color: AppTheme.darkColor.withOpacity(0.05),
+                    blurRadius: 10,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+                border: Border(
+                  bottom: BorderSide(
+                    color: AppTheme.darkColor.withOpacity(0.08),
+                    width: 0.5,
+                  ),
+                ),
               ),
               child: Center(child: child),
             ),

@@ -23,6 +23,10 @@ dependencies:
   firebase_analytics: ^11.3.4
   firebase_remote_config: ^5.4.2
   
+  # Auth
+  google_sign_in: ^6.2.2
+  sign_in_with_apple: ^6.1.4
+  
   # Image
   image_picker: ^1.0.7
   image_cropper: ^5.0.1

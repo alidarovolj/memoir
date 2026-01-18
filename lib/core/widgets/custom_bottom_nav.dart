@@ -86,10 +86,13 @@ class _CustomBottomNavState extends State<CustomBottomNav> {
 
       setState(() {
         _dragPosition = localPosition;
-        if (newIndex != widget.selectedIndex && newIndex != _hoveredIndex) {
+        if (newIndex != widget.selectedIndex) {
           _hoveredIndex = newIndex;
           // Переключаемся на новый таб при перетаскивании
           widget.onDestinationSelected(newIndex);
+        } else {
+          // Если вернулись на выбранный таб, убираем hover
+          _hoveredIndex = null;
         }
       });
     }
@@ -125,7 +128,20 @@ class _CustomBottomNavState extends State<CustomBottomNav> {
               height: 68,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(34),
-                // Убрано темное свечение
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.darkColor.withOpacity(0.1),
+                    blurRadius: 20,
+                    spreadRadius: 0,
+                    offset: const Offset(0, -4),
+                  ),
+                  BoxShadow(
+                    color: AppTheme.darkColor.withOpacity(0.05),
+                    blurRadius: 10,
+                    spreadRadius: 0,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(34),
@@ -133,9 +149,14 @@ class _CustomBottomNavState extends State<CustomBottomNav> {
                   filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.7),
+                      color: Colors.white.withOpacity(0.85),
                       borderRadius: BorderRadius.circular(34),
-                      // Без границ для нативного glassmorphism
+                      border: Border(
+                        top: BorderSide(
+                          color: AppTheme.darkColor.withOpacity(0.08),
+                          width: 0.5,
+                        ),
+                      ),
                     ),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 6,
@@ -192,10 +213,23 @@ class _CustomBottomNavState extends State<CustomBottomNav> {
 
   Widget _buildNavItem(_NavItemData item) {
     final isSelected = widget.selectedIndex == item.index;
-    final isHovered = _hoveredIndex == item.index && _dragPosition != null;
+    // Hover только если это не выбранный таб и есть активный drag
+    final isHovered = !isSelected && 
+                      _hoveredIndex == item.index && 
+                      _dragPosition != null;
 
     return GestureDetector(
-      onTap: () => widget.onDestinationSelected(item.index),
+      onTap: () {
+        // Очищаем hover состояние при тапе
+        setState(() {
+          _hoveredIndex = null;
+          _dragPosition = null;
+        });
+        // Вызываем только если таб еще не выбран
+        if (widget.selectedIndex != item.index) {
+          widget.onDestinationSelected(item.index);
+        }
+      },
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),

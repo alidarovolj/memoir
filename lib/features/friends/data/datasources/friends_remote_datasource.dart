@@ -110,6 +110,12 @@ class FriendsRemoteDataSource {
       return usersList
           .map((json) => FriendProfile.fromJson(json as Map<String, dynamic>))
           .toList();
+    } on DioException catch (e) {
+      // Если эндпоинт не найден (404), возвращаем пустой список
+      if (e.response?.statusCode == 404) {
+        return [];
+      }
+      throw Exception('Failed to load suggested users: $e');
     } catch (e) {
       throw Exception('Failed to load suggested users: $e');
     }

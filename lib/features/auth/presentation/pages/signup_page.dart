@@ -1,9 +1,119 @@
 import 'package:flutter/material.dart';
 import 'package:memoir/core/theme/app_theme.dart';
+import 'package:memoir/core/utils/snackbar_utils.dart';
 import 'package:memoir/features/auth/presentation/pages/email_auth_page.dart';
+import 'package:memoir/features/auth/data/services/google_auth_service.dart';
+import 'package:memoir/features/auth/data/services/apple_auth_service.dart';
 
-class SignUpPage extends StatelessWidget {
+class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
+
+  @override
+  State<SignUpPage> createState() => _SignUpPageState();
+}
+
+class _SignUpPageState extends State<SignUpPage> {
+  final _googleAuthService = GoogleAuthService();
+  final _appleAuthService = AppleAuthService();
+  bool _isLoading = false;
+  bool _isAppleAvailable = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAppleSignInAvailability();
+  }
+
+  Future<void> _checkAppleSignInAvailability() async {
+    final available = await AppleAuthService.isAvailable();
+    if (mounted) {
+      setState(() => _isAppleAvailable = available);
+    }
+  }
+
+  Future<void> _signInWithGoogle() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final result = await _googleAuthService.signInWithGoogle();
+
+      if (mounted) {
+        setState(() => _isLoading = false);
+
+        final user = result['user'];
+
+        // Проверяем, заполнены ли обязательные поля профиля
+        final hasFirstName =
+            user['first_name'] != null &&
+            user['first_name'].toString().isNotEmpty;
+        final hasLastName =
+            user['last_name'] != null &&
+            user['last_name'].toString().isNotEmpty;
+
+        if (!hasFirstName || !hasLastName) {
+          // Данные не заполнены - отправляем на настройку профиля
+          Navigator.of(
+            context,
+          ).pushNamedAndRemoveUntil('/profile-setup', (route) => false);
+        } else {
+          // Все данные есть - сразу на главную
+          Navigator.of(
+            context,
+          ).pushNamedAndRemoveUntil('/home', (route) => false);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        SnackBarUtils.showError(
+          context,
+          e.toString().replaceAll('Exception: ', ''),
+        );
+      }
+    }
+  }
+
+  Future<void> _signInWithApple() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final result = await _appleAuthService.signInWithApple();
+
+      if (mounted) {
+        setState(() => _isLoading = false);
+
+        final user = result['user'];
+
+        // Проверяем, заполнены ли обязательные поля профиля
+        final hasFirstName =
+            user['first_name'] != null &&
+            user['first_name'].toString().isNotEmpty;
+        final hasLastName =
+            user['last_name'] != null &&
+            user['last_name'].toString().isNotEmpty;
+
+        if (!hasFirstName || !hasLastName) {
+          // Данные не заполнены - отправляем на настройку профиля
+          Navigator.of(
+            context,
+          ).pushNamedAndRemoveUntil('/profile-setup', (route) => false);
+        } else {
+          // Все данные есть - сразу на главную
+          Navigator.of(
+            context,
+          ).pushNamedAndRemoveUntil('/home', (route) => false);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        SnackBarUtils.showError(
+          context,
+          e.toString().replaceAll('Exception: ', ''),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -212,16 +322,25 @@ class SignUpPage extends StatelessWidget {
 
             // Continue with Google
             _buildSocialButton(
-              onPressed: () {
-                // TODO: Implement Google auth
-              },
+              onPressed: _isLoading ? () {} : _signInWithGoogle,
               backgroundColor: AppTheme.whiteColor,
               borderColor: AppTheme.darkColor,
-              icon: Image.asset(
-                'assets/icons/auth/google.png',
-                height: 24,
-                width: 24,
-              ),
+              icon: _isLoading
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppTheme.darkColor,
+                        ),
+                      ),
+                    )
+                  : Image.asset(
+                      'assets/icons/auth/google.png',
+                      height: 24,
+                      width: 24,
+                    ),
               text: 'Continue with Google',
               textColor: AppTheme.darkColor,
             ),
@@ -229,25 +348,39 @@ class SignUpPage extends StatelessWidget {
             const SizedBox(height: 16),
 
             // Continue with Apple
-            _buildSocialButton(
-              onPressed: () {
-                // TODO: Implement Apple auth
-              },
-              backgroundColor: AppTheme.darkColor,
-              icon: Image.asset(
-                'assets/icons/auth/apple.png',
-                height: 24,
-                width: 24,
-                color: Colors.white,
-                errorBuilder: (context, error, stackTrace) {
-                  return const Icon(Icons.apple, color: Colors.white, size: 24);
-                },
+            if (_isAppleAvailable)
+              _buildSocialButton(
+                onPressed: _isLoading ? () {} : _signInWithApple,
+                backgroundColor: AppTheme.darkColor,
+                icon: _isLoading
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
+                        ),
+                      )
+                    : Image.asset(
+                        'assets/icons/auth/apple.png',
+                        height: 24,
+                        width: 24,
+                        color: Colors.white,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Icon(
+                            Icons.apple,
+                            color: Colors.white,
+                            size: 24,
+                          );
+                        },
+                      ),
+                text: 'Continue with Apple',
+                textColor: Colors.white,
               ),
-              text: 'Continue with Apple',
-              textColor: Colors.white,
-            ),
 
-            const SizedBox(height: 16),
+            if (_isAppleAvailable) const SizedBox(height: 16),
 
             // Continue with Email
             _buildSocialButton(

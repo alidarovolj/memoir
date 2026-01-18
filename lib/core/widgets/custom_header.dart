@@ -43,9 +43,9 @@ class CustomHeader extends StatelessWidget {
     return Container(
       height: 64,
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      color: Colors.transparent, // Прозрачный фон
+      color: Colors.transparent,
       child: Stack(
-        children: [
+            children: [
           // Центрированный заголовок с отступами для кнопок
           if (title.isNotEmpty)
             Center(
@@ -70,9 +70,28 @@ class CustomHeader extends StatelessWidget {
                         vertical: 8,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.7),
+                        color: Colors.white.withOpacity(0.85),
                         borderRadius: BorderRadius.circular(20),
-                        // Без границ для нативного glassmorphism
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.darkColor.withOpacity(0.1),
+                            blurRadius: 20,
+                            spreadRadius: 0,
+                            offset: const Offset(0, 4),
+                          ),
+                          BoxShadow(
+                            color: AppTheme.darkColor.withOpacity(0.05),
+                            blurRadius: 10,
+                            spreadRadius: 0,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                        border: Border(
+                          bottom: BorderSide(
+                            color: AppTheme.darkColor.withOpacity(0.08),
+                            width: 0.5,
+                          ),
+                        ),
                       ),
                       child: Text(
                         title,
@@ -153,7 +172,7 @@ class CustomHeader extends StatelessWidget {
               bottom: 0,
               child: Center(child: trailing!),
             ),
-        ],
+            ],
       ),
     );
   }

@@ -45,18 +45,26 @@ class DailyPromptRemoteDataSourceImpl implements DailyPromptRemoteDataSource {
 
   @override
   Future<DailyPromptModel> getPromptOfTheDay({PromptCategory? category}) async {
-    final queryParams = <String, dynamic>{};
+    try {
+      final queryParams = <String, dynamic>{};
 
-    if (category != null) {
-      queryParams['category'] = category.name.toUpperCase();
+      if (category != null) {
+        queryParams['category'] = category.name.toUpperCase();
+      }
+
+      final response = await dio.get(
+        '/api/v1/daily-prompts/today',
+        queryParameters: queryParams,
+      );
+
+      return DailyPromptModel.fromJson(response.data);
+    } on DioException catch (e) {
+      // Если промпт не найден (404), выбрасываем понятное исключение
+      if (e.response?.statusCode == 404) {
+        throw Exception('No active prompts available');
+      }
+      rethrow;
     }
-
-    final response = await dio.get(
-      '/api/v1/daily-prompts/today',
-      queryParameters: queryParams,
-    );
-
-    return DailyPromptModel.fromJson(response.data);
   }
 
   @override

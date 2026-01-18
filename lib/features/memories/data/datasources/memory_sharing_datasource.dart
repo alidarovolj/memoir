@@ -10,7 +10,7 @@ class MemorySharingDataSource {
   /// Share memory with specific users
   Future<Map<String, dynamic>> shareMemory({
     required String memoryId,
-    required List<int> userIds,
+    required List<String> userIds,
     bool canComment = true,
     bool canReact = true,
   }) async {
@@ -33,7 +33,7 @@ class MemorySharingDataSource {
   /// Unshare memory from specific users
   Future<Map<String, dynamic>> unshareMemory({
     required String memoryId,
-    required List<int> userIds,
+    required List<String> userIds,
   }) async {
     try {
       final response = await _dio.post(

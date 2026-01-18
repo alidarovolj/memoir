@@ -20,7 +20,7 @@ class _ShareMemoryModalState extends State<ShareMemoryModal> {
   final _sharingDataSource = MemorySharingDataSource(DioClient());
 
   List<FriendProfile> _friends = [];
-  Set<int> _selectedFriends = {};
+  Set<String> _selectedFriends = {};
   bool _isLoading = true;
   bool _canComment = true;
   bool _canReact = true;

@@ -58,5 +58,16 @@
 	<string>Memoir нужен доступ для сохранения фотографий в галерею</string>
 	<key>PHPhotoLibraryPreventAutomaticLimitedAccessAlert</key>
 	<true/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.660553470030-as8ms2ovb1cb3tk2ii50s1a4iaq1ea0d</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>
