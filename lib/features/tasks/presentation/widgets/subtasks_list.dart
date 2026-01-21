@@ -42,11 +42,21 @@ class _SubtasksListState extends State<SubtasksList> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppTheme.cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.primaryColor.withOpacity(0.2)),
+        color: AppTheme.whiteColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppTheme.darkColor.withOpacity(0.1),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.darkColor.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -54,41 +64,48 @@ class _SubtasksListState extends State<SubtasksList> {
           // Header with progress
           Row(
             children: [
-              Icon(
-                Ionicons.list_outline,
-                color: AppTheme.primaryColor,
-                size: 20,
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Ionicons.list_outline,
+                  color: AppTheme.primaryColor,
+                  size: 20,
+                ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 12),
               const Text(
                 'Подзадачи',
                 style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.darkColor,
                 ),
               ),
               const Spacer(),
               if (_totalCount > 0)
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
+                    horizontal: 12,
+                    vertical: 6,
                   ),
                   decoration: BoxDecoration(
                     color: _completedCount == _totalCount
-                        ? Colors.green.withOpacity(0.2)
-                        : Colors.blue.withOpacity(0.2),
+                        ? Colors.green.withOpacity(0.15)
+                        : AppTheme.primaryColor.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     '$_completedCount/$_totalCount',
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: _completedCount == _totalCount
                           ? Colors.green
-                          : Colors.blue,
+                          : AppTheme.primaryColor,
                     ),
                   ),
                 ),
@@ -97,13 +114,13 @@ class _SubtasksListState extends State<SubtasksList> {
 
           // Progress bar
           if (_totalCount > 0) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
                 value: _progress,
-                minHeight: 6,
-                backgroundColor: Colors.white.withOpacity(0.2),
+                minHeight: 8,
+                backgroundColor: AppTheme.darkColor.withOpacity(0.1),
                 valueColor: AlwaysStoppedAnimation<Color>(
                   _completedCount == _totalCount
                       ? Colors.green
@@ -113,7 +130,7 @@ class _SubtasksListState extends State<SubtasksList> {
             ),
           ],
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
           // Subtasks list
           if (_totalCount > 0)
@@ -128,29 +145,33 @@ class _SubtasksListState extends State<SubtasksList> {
 
   Widget _buildSubtaskItem(SubtaskModel subtask) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
           // Checkbox
           GestureDetector(
             onTap: () => widget.onToggle(subtask.id),
             child: Container(
-              width: 24,
-              height: 24,
+              width: 28,
+              height: 28,
               decoration: BoxDecoration(
                 color: subtask.is_completed
                     ? AppTheme.primaryColor
                     : Colors.transparent,
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(8),
                 border: Border.all(
                   color: subtask.is_completed
                       ? AppTheme.primaryColor
-                      : Colors.white.withOpacity(0.4),
+                      : AppTheme.darkColor.withOpacity(0.3),
                   width: 2,
                 ),
               ),
               child: subtask.is_completed
-                  ? const Icon(Icons.check, size: 16, color: Colors.white)
+                  ? const Icon(
+                      Icons.check,
+                      size: 18,
+                      color: Colors.white,
+                    )
                   : null,
             ),
           ),
@@ -162,14 +183,14 @@ class _SubtasksListState extends State<SubtasksList> {
             child: Text(
               subtask.title,
               style: TextStyle(
-                fontSize: 15,
+                fontSize: 16,
                 color: subtask.is_completed
-                    ? Colors.white.withOpacity(0.5)
-                    : Colors.white,
+                    ? AppTheme.darkColor.withOpacity(0.5)
+                    : AppTheme.darkColor,
                 decoration: subtask.is_completed
                     ? TextDecoration.lineThrough
                     : TextDecoration.none,
-                decorationColor: Colors.white.withOpacity(0.4),
+                decorationColor: AppTheme.darkColor.withOpacity(0.4),
               ),
             ),
           ),
@@ -178,7 +199,7 @@ class _SubtasksListState extends State<SubtasksList> {
           IconButton(
             icon: Icon(
               Ionicons.trash_outline,
-              size: 18,
+              size: 20,
               color: Colors.red.withOpacity(0.7),
             ),
             onPressed: () => widget.onDelete(subtask.id),
@@ -194,9 +215,12 @@ class _SubtasksListState extends State<SubtasksList> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppTheme.primaryColor),
+        color: AppTheme.lightGrayColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppTheme.primaryColor.withOpacity(0.3),
+          width: 1.5,
+        ),
       ),
       child: Row(
         children: [
@@ -204,10 +228,15 @@ class _SubtasksListState extends State<SubtasksList> {
             child: TextField(
               controller: _newSubtaskController,
               autofocus: true,
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(
+                color: AppTheme.darkColor,
+                fontSize: 15,
+              ),
               decoration: InputDecoration(
                 hintText: 'Название подзадачи...',
-                hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                hintStyle: TextStyle(
+                  color: AppTheme.darkColor.withOpacity(0.4),
+                ),
                 border: InputBorder.none,
                 isDense: true,
                 contentPadding: EdgeInsets.zero,
@@ -219,18 +248,18 @@ class _SubtasksListState extends State<SubtasksList> {
             icon: const Icon(
               Ionicons.checkmark_circle,
               color: AppTheme.primaryColor,
-              size: 24,
+              size: 28,
             ),
             onPressed: () => _handleAddSubtask(_newSubtaskController.text),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 4),
           IconButton(
             icon: Icon(
               Ionicons.close_circle,
-              color: Colors.white.withOpacity(0.4),
-              size: 24,
+              color: AppTheme.darkColor.withOpacity(0.4),
+              size: 28,
             ),
             onPressed: () {
               setState(() {
@@ -255,16 +284,20 @@ class _SubtasksListState extends State<SubtasksList> {
       },
       icon: Icon(
         Ionicons.add_circle_outline,
-        size: 20,
+        size: 22,
         color: AppTheme.primaryColor,
       ),
-      label: const Text(
+      label: Text(
         'Добавить подзадачу',
-        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        style: TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+          color: AppTheme.primaryColor,
+        ),
       ),
       style: TextButton.styleFrom(
         foregroundColor: AppTheme.primaryColor,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       ),
     );
   }

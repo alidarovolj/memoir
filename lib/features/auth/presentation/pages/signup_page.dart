@@ -15,7 +15,8 @@ class SignUpPage extends StatefulWidget {
 class _SignUpPageState extends State<SignUpPage> {
   final _googleAuthService = GoogleAuthService();
   final _appleAuthService = AppleAuthService();
-  bool _isLoading = false;
+  bool _isGoogleLoading = false;
+  bool _isAppleLoading = false;
   bool _isAppleAvailable = false;
 
   @override
@@ -32,13 +33,13 @@ class _SignUpPageState extends State<SignUpPage> {
   }
 
   Future<void> _signInWithGoogle() async {
-    setState(() => _isLoading = true);
+    setState(() => _isGoogleLoading = true);
 
     try {
       final result = await _googleAuthService.signInWithGoogle();
 
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() => _isGoogleLoading = false);
 
         final user = result['user'];
 
@@ -64,7 +65,7 @@ class _SignUpPageState extends State<SignUpPage> {
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() => _isGoogleLoading = false);
         SnackBarUtils.showError(
           context,
           e.toString().replaceAll('Exception: ', ''),
@@ -74,13 +75,13 @@ class _SignUpPageState extends State<SignUpPage> {
   }
 
   Future<void> _signInWithApple() async {
-    setState(() => _isLoading = true);
+    setState(() => _isAppleLoading = true);
 
     try {
       final result = await _appleAuthService.signInWithApple();
 
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() => _isAppleLoading = false);
 
         final user = result['user'];
 
@@ -106,7 +107,7 @@ class _SignUpPageState extends State<SignUpPage> {
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() => _isAppleLoading = false);
         SnackBarUtils.showError(
           context,
           e.toString().replaceAll('Exception: ', ''),
@@ -118,7 +119,7 @@ class _SignUpPageState extends State<SignUpPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.pageBackgroundColor,
+      backgroundColor: AppTheme.whiteColor,
       body: Column(
         children: [
           // Header Section with green background
@@ -300,32 +301,14 @@ class _SignUpPageState extends State<SignUpPage> {
 
             const SizedBox(height: 40),
 
-            // Continue with Facebook
-            _buildSocialButton(
-              onPressed: () {
-                // TODO: Implement Facebook auth
-              },
-              backgroundColor: const Color(0xFF1877F2), // Facebook blue
-              icon: const Text(
-                'f',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              text: 'Continue with Facebook',
-              textColor: Colors.white,
-            ),
-
-            const SizedBox(height: 16),
-
             // Continue with Google
             _buildSocialButton(
-              onPressed: _isLoading ? () {} : _signInWithGoogle,
+              onPressed: (_isGoogleLoading || _isAppleLoading)
+                  ? () {}
+                  : _signInWithGoogle,
               backgroundColor: AppTheme.whiteColor,
               borderColor: AppTheme.darkColor,
-              icon: _isLoading
+              icon: _isGoogleLoading
                   ? const SizedBox(
                       width: 24,
                       height: 24,
@@ -350,9 +333,11 @@ class _SignUpPageState extends State<SignUpPage> {
             // Continue with Apple
             if (_isAppleAvailable)
               _buildSocialButton(
-                onPressed: _isLoading ? () {} : _signInWithApple,
+                onPressed: (_isGoogleLoading || _isAppleLoading)
+                    ? () {}
+                    : _signInWithApple,
                 backgroundColor: AppTheme.darkColor,
-                icon: _isLoading
+                icon: _isAppleLoading
                     ? const SizedBox(
                         width: 24,
                         height: 24,
@@ -401,35 +386,20 @@ class _SignUpPageState extends State<SignUpPage> {
               textColor: AppTheme.whiteColor,
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
 
-            // Login link
+            // Terms and Privacy Policy
             Center(
-              child: RichText(
-                text: TextSpan(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Text(
+                  'By continuing, you agree to our Terms of Service and Privacy Policy',
+                  textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 14,
-                    color: AppTheme.darkColor.withOpacity(0.6),
+                    fontSize: 12,
+                    color: AppTheme.darkColor.withOpacity(0.5),
+                    height: 1.4,
                   ),
-                  children: [
-                    const TextSpan(text: 'Already have an account? '),
-                    WidgetSpan(
-                      child: GestureDetector(
-                        onTap: () {
-                          // TODO: Implement login flow
-                        },
-                        child: const Text(
-                          'Log in!',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: AppTheme.secondaryColor, // Purple
-                            fontWeight: FontWeight.w600,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
               ),
             ),

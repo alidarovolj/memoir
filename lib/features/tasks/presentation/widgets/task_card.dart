@@ -1,89 +1,288 @@
 import 'package:flutter/material.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:memoir/features/tasks/data/models/task_model.dart';
+import 'package:memoir/features/tasks/data/models/subtask_model.dart';
 
-class TaskCard extends StatelessWidget {
+class TaskCard extends StatefulWidget {
   final TaskModel task;
   final VoidCallback onTap;
   final VoidCallback onToggleStatus;
+  final Function(String subtaskId)? onToggleSubtask;
 
   const TaskCard({
     super.key,
     required this.task,
     required this.onTap,
     required this.onToggleStatus,
+    this.onToggleSubtask,
   });
 
   @override
+  State<TaskCard> createState() => _TaskCardState();
+}
+
+class _TaskCardState extends State<TaskCard> {
+  bool _isExpanded = true; // Раскрыто по умолчанию
+
+  @override
   Widget build(BuildContext context) {
-    final isCompleted = task.status == TaskStatus.completed;
-    final color = _getTaskColor(task);
+    final isCompleted = widget.task.status == TaskStatus.completed;
+    final color = _getTaskColor(widget.task);
+    final hasSubtasks = widget.task.subtasks.isNotEmpty;
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 6),
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            // Icon
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(_getTaskIcon(task), color: Colors.white, size: 18),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Main task card
+        GestureDetector(
+          onTap: widget.onTap,
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 6),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(12),
             ),
+            child: Row(
+              children: [
+                // Expand/Collapse button for tasks with subtasks
+                if (hasSubtasks)
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _isExpanded = !_isExpanded;
+                      });
+                    },
+                    child: Container(
+                      width: 24,
+                      height: 24,
+                      margin: const EdgeInsets.only(right: 6),
+                      child: Icon(
+                        _isExpanded
+                            ? Ionicons.chevron_down
+                            : Ionicons.chevron_forward,
+                        color: Colors.white,
+                        size: 18,
+                      ),
+                    ),
+                  ),
 
-            const SizedBox(width: 10),
-
-            // Task info
-            Expanded(
-              child: Text(
-                task.title,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  decoration: isCompleted
-                      ? TextDecoration.lineThrough
-                      : null,
+                // Icon
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    _getTaskIcon(widget.task),
+                    color: Colors.white,
+                    size: 18,
+                  ),
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
+
+                const SizedBox(width: 10),
+
+                // Task info
+                Expanded(
+                  child: Text(
+                    widget.task.title,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      decoration: isCompleted
+                          ? TextDecoration.lineThrough
+                          : null,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+
+                const SizedBox(width: 10),
+
+                // Completion indicator
+                GestureDetector(
+                  onTap: widget.onToggleStatus,
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: isCompleted
+                          ? Colors.white
+                          : Colors.white.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                      border: !isCompleted
+                          ? Border.all(color: Colors.white, width: 2)
+                          : null,
+                    ),
+                    child: isCompleted
+                        ? Icon(Ionicons.checkmark, color: color, size: 24)
+                        : null,
+                  ),
+                ),
+              ],
             ),
+          ),
+        ),
 
-            const SizedBox(width: 10),
+        // Subtasks tree
+        if (hasSubtasks && _isExpanded)
+          Container(
+            margin: const EdgeInsets.only(left: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 6),
+                ...() {
+                  final sortedSubtasks = List<SubtaskModel>.from(widget.task.subtasks);
+                  sortedSubtasks.sort((a, b) => a.order.compareTo(b.order));
+                  return sortedSubtasks.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final subtask = entry.value;
+                    final isLast = index == sortedSubtasks.length - 1;
+                    return _buildSubtaskItem(
+                      subtask,
+                      color,
+                      isLast: isLast,
+                      isFirst: index == 0,
+                    );
+                  });
+                }(),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
 
-            // Completion indicator
-            GestureDetector(
-              onTap: onToggleStatus,
+  Widget _buildSubtaskItem(SubtaskModel subtask, Color parentColor, {bool isLast = false, bool isFirst = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Контейнер для вертикальной и горизонтальной линий
+          SizedBox(
+            width: 20,
+            height: 44,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                // Вертикальная линия (если не первая подзадача, начинается сверху)
+                if (!isFirst)
+                  Positioned(
+                    left: 0,
+                    top: 0,
+                    bottom: 24,
+                    child: Container(
+                      width: 3,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.9),
+                        borderRadius: BorderRadius.circular(1.5),
+                      ),
+                    ),
+                  ),
+                // Вертикальная линия (продолжается вниз, если не последняя)
+                if (!isLast)
+                  Positioned(
+                    left: 0,
+                    top: 24,
+                    bottom: 0,
+                    child: Container(
+                      width: 3,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.9),
+                        borderRadius: BorderRadius.circular(1.5),
+                      ),
+                    ),
+                  ),
+                // Горизонтальная линия
+                Positioned(
+                  left: 0,
+                  top: 20,
+                  child: Container(
+                    width: 16,
+                    height: 3,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(1.5),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(width: 4),
+
+          // Подзадача
+          Expanded(
+            child: GestureDetector(
+              onTap: widget.onToggleSubtask != null
+                  ? () => widget.onToggleSubtask!(subtask.id)
+                  : null,
               child: Container(
-                width: 28,
-                height: 28,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
-                  color: isCompleted
-                      ? Colors.white
-                      : Colors.white.withOpacity(0.2),
-                  shape: BoxShape.circle,
-                  border: !isCompleted
-                      ? Border.all(color: Colors.white, width: 2)
-                      : null,
+                  color: parentColor,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.3),
+                    width: 1.5,
+                  ),
                 ),
-                child: isCompleted
-                    ? Icon(Ionicons.checkmark, color: color, size: 18)
-                    : null,
+                child: Row(
+                  children: [
+                    // Checkbox
+                    Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        color: subtask.is_completed
+                            ? Colors.white
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.8),
+                          width: 2,
+                        ),
+                      ),
+                      child: subtask.is_completed
+                          ? const Icon(
+                              Icons.check,
+                              size: 16,
+                              color: Colors.black87,
+                            )
+                          : null,
+                    ),
+
+                    const SizedBox(width: 12),
+
+                    // Subtask title
+                    Expanded(
+                      child: Text(
+                        subtask.title,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          decoration: subtask.is_completed
+                              ? TextDecoration.lineThrough
+                              : null,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -202,3 +401,4 @@ class TaskCard extends StatelessWidget {
     }
   }
 }
+

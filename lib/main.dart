@@ -631,12 +631,94 @@ class _HomePageState extends State<HomePage>
     }
   }
 
+  Future<void> _toggleSubtask(String taskId, String subtaskId) async {
+    try {
+      // Находим задачу
+      TaskModel? task;
+      int? taskIndex;
+      
+      taskIndex = _tasks.indexWhere((t) => t.id == taskId);
+      if (taskIndex != -1) {
+        task = _tasks[taskIndex];
+      } else {
+        taskIndex = _longTermTasks.indexWhere((t) => t.id == taskId);
+        if (taskIndex != -1) {
+          task = _longTermTasks[taskIndex];
+        } else {
+          // Ищем в группах
+          for (final group in _taskGroups.values) {
+            final idx = group.tasks.indexWhere((t) => t.id == taskId);
+            if (idx != -1) {
+              task = group.tasks[idx];
+              break;
+            }
+          }
+          // Ищем в негруппированных
+          if (task == null) {
+            taskIndex = _ungroupedTasks.indexWhere((t) => t.id == taskId);
+            if (taskIndex != -1) {
+              task = _ungroupedTasks[taskIndex];
+            }
+          }
+        }
+      }
+
+      if (task == null) return;
+
+      // Находим подзадачу
+      final subtaskIndex = task.subtasks.indexWhere((s) => s.id == subtaskId);
+      if (subtaskIndex == -1) return;
+
+      final subtask = task.subtasks[subtaskIndex];
+      final newState = !subtask.is_completed;
+
+      // Оптимистичное обновление
+      final updatedSubtask = subtask.copyWith(is_completed: newState);
+      final updatedSubtasks = [...task.subtasks];
+      updatedSubtasks[subtaskIndex] = updatedSubtask;
+      final updatedTask = task.copyWith(subtasks: updatedSubtasks);
+
+      // Обновляем задачу в соответствующем списке
+      if (taskIndex != null && taskIndex != -1) {
+        if (_tasks.indexWhere((t) => t.id == taskId) != -1) {
+          _tasks[taskIndex] = updatedTask;
+        } else if (_longTermTasks.indexWhere((t) => t.id == taskId) != -1) {
+          _longTermTasks[taskIndex] = updatedTask;
+        } else if (_ungroupedTasks.indexWhere((t) => t.id == taskId) != -1) {
+          _ungroupedTasks[taskIndex] = updatedTask;
+        }
+      }
+
+      // Обновляем в группах
+      for (final group in _taskGroups.values) {
+        final groupTaskIndex = group.tasks.indexWhere((t) => t.id == taskId);
+        if (groupTaskIndex != -1) {
+          group.tasks[groupTaskIndex] = updatedTask;
+          break;
+        }
+      }
+
+      setState(() {});
+
+      // API call
+      await _taskDataSource.updateSubtask(taskId, subtaskId, {
+        'is_completed': newState,
+      });
+    } catch (e) {
+      log('❌ [TASKS] Error toggling subtask: $e');
+      // Перезагружаем задачи при ошибке
+      await _loadTasks();
+    }
+  }
+
   Future<void> _openTaskDetails(TaskModel task) async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            TaskDetailsPage(task: task, onTaskUpdated: _loadTasks),
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => TaskDetailsPage(
+        task: task,
+        onTaskUpdated: _loadTasks,
       ),
     );
   }
@@ -1537,6 +1619,8 @@ class _HomePageState extends State<HomePage>
                                                   _openTaskDetails(task),
                                               onToggleStatus: () =>
                                                   _toggleTaskStatus(task),
+                                              onToggleSubtask: (subtaskId) =>
+                                                  _toggleSubtask(task.id, subtaskId),
                                             ),
                                           );
                                         }).toList(),
@@ -1563,6 +1647,8 @@ class _HomePageState extends State<HomePage>
                         task: task,
                         onTap: () => _openTaskDetails(task),
                         onToggleStatus: () => _toggleTaskStatus(task),
+                        onToggleSubtask: (subtaskId) =>
+                            _toggleSubtask(task.id, subtaskId),
                       );
                     }, childCount: _ungroupedTasks.length),
                   ),
@@ -1632,6 +1718,8 @@ class _HomePageState extends State<HomePage>
                         task: task,
                         onTap: () => _openTaskDetails(task),
                         onToggleStatus: () => _toggleTaskStatus(task),
+                        onToggleSubtask: (subtaskId) =>
+                            _toggleSubtask(task.id, subtaskId),
                       );
                     }, childCount: _longTermTasks.length),
                   ),

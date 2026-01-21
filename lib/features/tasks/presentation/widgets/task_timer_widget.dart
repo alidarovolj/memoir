@@ -87,7 +87,7 @@ class _TaskTimerWidgetState extends State<TaskTimerWidget> {
         }
       } else {
         // Start tracking
-        final log = await _dataSource.startTimeTracking(widget.taskId);
+        await _dataSource.startTimeTracking(widget.taskId);
         _startTimer();
 
         if (mounted) {
@@ -117,40 +117,50 @@ class _TaskTimerWidgetState extends State<TaskTimerWidget> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: _isActive
             ? LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  AppTheme.primaryColor.withOpacity(0.15),
-                  AppTheme.accentColor.withOpacity(0.15),
+                  AppTheme.primaryColor.withOpacity(0.1),
+                  AppTheme.accentColor.withOpacity(0.1),
                 ],
               )
             : null,
-        color: _isActive ? null : AppTheme.cardColor,
+        color: _isActive ? null : AppTheme.whiteColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: _isActive
               ? AppTheme.primaryColor.withOpacity(0.3)
-              : Colors.white.withOpacity(0.1),
+              : AppTheme.darkColor.withOpacity(0.1),
           width: _isActive ? 2 : 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.darkColor.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
           // Timer icon
           Container(
-            width: 48,
-            height: 48,
+            width: 56,
+            height: 56,
             decoration: BoxDecoration(
               gradient: _isActive
                   ? AppTheme.primaryGradient
                   : LinearGradient(
-                      colors: [Colors.grey.shade700, Colors.grey.shade800],
+                      colors: [
+                        AppTheme.darkColor.withOpacity(0.1),
+                        AppTheme.darkColor.withOpacity(0.15),
+                      ],
                     ),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
               boxShadow: _isActive
                   ? [
                       BoxShadow(
@@ -163,8 +173,8 @@ class _TaskTimerWidgetState extends State<TaskTimerWidget> {
             ),
             child: Icon(
               _isActive ? Ionicons.time : Ionicons.time_outline,
-              color: Colors.white,
-              size: 24,
+              color: _isActive ? Colors.white : AppTheme.darkColor,
+              size: 28,
             ),
           ),
           const SizedBox(width: 16),
@@ -177,17 +187,20 @@ class _TaskTimerWidgetState extends State<TaskTimerWidget> {
                 Text(
                   _elapsedSeconds.toTimeFormat(),
                   style: TextStyle(
-                    fontSize: 24,
+                    fontSize: 28,
                     fontWeight: FontWeight.w700,
-                    color: _isActive ? AppTheme.primaryColor : Colors.white,
+                    color: _isActive
+                        ? AppTheme.primaryColor
+                        : AppTheme.darkColor,
                     fontFeatures: const [FontFeature.tabularFigures()],
                   ),
                 ),
+                const SizedBox(height: 4),
                 Text(
                   _isActive ? 'Идет отсчет...' : 'Остановлено',
                   style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.white.withOpacity(0.6),
+                    fontSize: 13,
+                    color: AppTheme.darkColor.withOpacity(0.6),
                   ),
                 ),
               ],
@@ -197,24 +210,41 @@ class _TaskTimerWidgetState extends State<TaskTimerWidget> {
           // Start/Stop button
           _isLoading
               ? const SizedBox(
-                  width: 40,
-                  height: 40,
+                  width: 48,
+                  height: 48,
                   child: Center(
                     child: SizedBox(
                       width: 24,
                       height: 24,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppTheme.primaryColor,
+                        ),
+                      ),
                     ),
                   ),
                 )
-              : IconButton(
-                  onPressed: _handleStartStop,
-                  icon: Icon(
-                    _isActive ? Ionicons.stop_circle : Ionicons.play_circle,
-                    size: 40,
-                    color: _isActive ? Colors.red : AppTheme.primaryColor,
+              : Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: _isActive
+                        ? Colors.red.withOpacity(0.1)
+                        : AppTheme.primaryColor.withOpacity(0.1),
+                    shape: BoxShape.circle,
                   ),
-                  tooltip: _isActive ? 'Остановить' : 'Запустить',
+                  child: IconButton(
+                    onPressed: _handleStartStop,
+                    icon: Icon(
+                      _isActive
+                          ? Ionicons.stop_circle
+                          : Ionicons.play_circle,
+                      size: 40,
+                      color: _isActive ? Colors.red : AppTheme.primaryColor,
+                    ),
+                    tooltip: _isActive ? 'Остановить' : 'Запустить',
+                  ),
                 ),
         ],
       ),

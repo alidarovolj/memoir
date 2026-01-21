@@ -4,11 +4,9 @@ import 'package:memoir/features/tasks/data/models/task_model.dart';
 import 'package:memoir/features/tasks/data/models/subtask_model.dart';
 import 'package:memoir/features/tasks/data/datasources/task_remote_datasource.dart';
 import 'package:memoir/features/tasks/presentation/widgets/subtasks_list.dart';
-import 'package:memoir/features/tasks/presentation/widgets/task_timer_widget.dart';
 import 'package:memoir/core/theme/app_theme.dart';
 import 'package:memoir/core/network/dio_client.dart';
 import 'package:memoir/core/utils/snackbar_utils.dart';
-import 'package:memoir/core/widgets/custom_header.dart';
 import 'dart:developer';
 
 class TaskDetailsPage extends StatefulWidget {
@@ -128,22 +126,72 @@ class _TaskDetailsPageState extends State<TaskDetailsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.pageBackgroundColor,
-      body: Column(
+    final screenHeight = MediaQuery.of(context).size.height;
+    
+    return Container(
+      height: screenHeight * 0.9,
+      decoration: const BoxDecoration(
+        color: AppTheme.pageBackgroundColor,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
         children: [
-          // SafeArea с хедером
+          // Drag handle
           Container(
-            color: AppTheme.headerBackgroundColor,
-            child: SafeArea(
-              bottom: false,
-              child: CustomHeader(
-                title: widget.task.title,
-                type: HeaderType.pop,
-              ),
+            margin: const EdgeInsets.only(top: 12, bottom: 8),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppTheme.darkColor.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(2),
             ),
           ),
-          // Body
+          
+          // Header with close button
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    widget.task.title,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.darkColor,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                GestureDetector(
+                  onTap: () => Navigator.of(context).pop(),
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: AppTheme.darkColor.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Ionicons.close,
+                      color: AppTheme.darkColor,
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          const Divider(
+            height: 1,
+            thickness: 1,
+            color: AppTheme.lightGrayBorder,
+          ),
+          
+          // Body content
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -155,32 +203,32 @@ class _TaskDetailsPageState extends State<TaskDetailsPage> {
                         // Description
                         if (widget.task.description != null &&
                             widget.task.description!.isNotEmpty) ...[
-                          Text(
-                            widget.task.description!,
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.white.withOpacity(0.8),
-                              height: 1.5,
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: AppTheme.whiteColor,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: AppTheme.darkColor.withOpacity(0.1),
+                                width: 1,
+                              ),
+                            ),
+                            child: Text(
+                              widget.task.description!,
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: AppTheme.darkColor.withOpacity(0.8),
+                                height: 1.5,
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 20),
                         ],
 
                         // Task Meta
                         _buildMetaRow(),
 
-                        const SizedBox(height: 24),
-
-                        // Time Tracker
-                        TaskTimerWidget(
-                          taskId: widget.task.id,
-                          onTimerStateChanged: () {
-                            // Refresh task data when timer state changes
-                            widget.onTaskUpdated?.call();
-                          },
-                        ),
-
-                        const SizedBox(height: 32),
+                        const SizedBox(height: 20),
 
                         // Subtasks Section
                         SubtasksList(
@@ -252,21 +300,24 @@ class _TaskDetailsPageState extends State<TaskDetailsPage> {
     required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.4)),
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color.withOpacity(0.3),
+          width: 1,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: color),
-          const SizedBox(width: 6),
+          Icon(icon, size: 18, color: color),
+          const SizedBox(width: 8),
           Text(
             label,
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 14,
               fontWeight: FontWeight.w600,
               color: color,
             ),
