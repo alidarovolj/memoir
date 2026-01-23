@@ -35,6 +35,20 @@ class FriendsRemoteDataSource {
     }
   }
 
+  /// Get pending friend requests (sent by current user)
+  Future<List<FriendRequest>> getSentFriendRequests() async {
+    try {
+      final response = await _dio.get('/api/v1/friends/requests/sent');
+      final data = response.data as Map<String, dynamic>;
+      final requestsList = data['requests'] as List;
+      return requestsList
+          .map((json) => FriendRequest.fromJson(json as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      throw Exception('Failed to load sent friend requests: $e');
+    }
+  }
+
   /// Send friend request
   Future<Map<String, dynamic>> sendFriendRequest(String addresseeId) async {
     try {
@@ -43,6 +57,17 @@ class FriendsRemoteDataSource {
         data: {'addressee_id': addresseeId},
       );
       return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      // Пробрасываем DioException с деталями для правильной обработки
+      if (e.response?.statusCode == 400) {
+        final detail = e.response?.data?['detail'] as String?;
+        if (detail?.contains('already sent') == true) {
+          throw Exception('Friend request already sent');
+        } else if (detail?.contains('Already friends') == true) {
+          throw Exception('Already friends');
+        }
+      }
+      throw Exception('Failed to send friend request: $e');
     } catch (e) {
       throw Exception('Failed to send friend request: $e');
     }
@@ -106,7 +131,7 @@ class FriendsRemoteDataSource {
         queryParameters: {'limit': limit},
       );
       final data = response.data as Map<String, dynamic>;
-      final usersList = data['suggestions'] as List;
+      final usersList = data['users'] as List;
       return usersList
           .map((json) => FriendProfile.fromJson(json as Map<String, dynamic>))
           .toList();
@@ -118,6 +143,32 @@ class FriendsRemoteDataSource {
       throw Exception('Failed to load suggested users: $e');
     } catch (e) {
       throw Exception('Failed to load suggested users: $e');
+    }
+  }
+
+  /// Get all users (potential friends) excluding current user and friends
+  Future<Map<String, dynamic>> getAllUsers({
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    try {
+      final response = await _dio.get(
+        '/api/v1/friends/users',
+        queryParameters: {
+          'page': page,
+          'page_size': pageSize,
+        },
+      );
+      final data = response.data as Map<String, dynamic>;
+      final usersList = data['users'] as List;
+      return {
+        'users': usersList
+            .map((json) => FriendProfile.fromJson(json as Map<String, dynamic>))
+            .toList(),
+        'total': data['total'] as int,
+      };
+    } catch (e) {
+      throw Exception('Failed to load users: $e');
     }
   }
 }

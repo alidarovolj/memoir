@@ -97,6 +97,15 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
       );
 
       log('📋 [TASKS] Fetched ${response.data['items'].length} tasks for date: ${date != null ? queryParams['date'] : 'all'}');
+      
+      // Логируем подзадачи для отладки
+      for (var item in response.data['items']) {
+        final subtasks = item['subtasks'] as List?;
+        if (subtasks != null && subtasks.isNotEmpty) {
+          log('📝 [TASKS] Task "${item['title']}" has ${subtasks.length} subtasks: ${subtasks.map((s) => s['title']).join(", ")}');
+        }
+      }
+      
       return response.data;
     } catch (e, stackTrace) {
       log(

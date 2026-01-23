@@ -3,6 +3,7 @@ import 'package:memoir/features/tasks/data/models/task_model.dart';
 import 'package:memoir/features/tasks/data/datasources/task_remote_datasource.dart';
 import 'package:memoir/features/tasks/presentation/pages/create_task_page.dart';
 import 'package:memoir/features/tasks/presentation/pages/task_details_page.dart';
+import 'package:memoir/features/tasks/presentation/widgets/task_card.dart';
 import 'package:memoir/core/theme/app_theme.dart';
 import 'package:memoir/core/network/dio_client.dart';
 import 'package:memoir/core/utils/snackbar_utils.dart';
@@ -47,6 +48,13 @@ class _TasksPageState extends State<TasksPage> {
 
       final items = response['items'] as List;
       final tasks = items.map((item) => TaskModel.fromJson(item)).toList();
+
+      // Логируем подзадачи для отладки
+      for (final task in tasks) {
+        if (task.subtasks.isNotEmpty) {
+          log('📝 [TASKS] Task "${task.title}" has ${task.subtasks.length} subtasks: ${task.subtasks.map((s) => s.title).join(", ")}');
+        }
+      }
 
       if (mounted) {
         setState(() {
@@ -103,6 +111,42 @@ class _TasksPageState extends State<TasksPage> {
         context,
         'Ошибка: ${ErrorMessages.getErrorMessage(e)}',
       );
+    }
+  }
+
+  Future<void> _toggleSubtask(String taskId, String subtaskId) async {
+    try {
+      // Находим задачу
+      final taskIndex = _tasks.indexWhere((t) => t.id == taskId);
+      if (taskIndex == -1) return;
+
+      final task = _tasks[taskIndex];
+
+      // Находим подзадачу
+      final subtaskIndex = task.subtasks.indexWhere((s) => s.id == subtaskId);
+      if (subtaskIndex == -1) return;
+
+      final subtask = task.subtasks[subtaskIndex];
+      final newState = !subtask.is_completed;
+
+      // Оптимистичное обновление
+      final updatedSubtask = subtask.copyWith(is_completed: newState);
+      final updatedSubtasks = [...task.subtasks];
+      updatedSubtasks[subtaskIndex] = updatedSubtask;
+      final updatedTask = task.copyWith(subtasks: updatedSubtasks);
+
+      // Обновляем задачу в списке
+      _tasks[taskIndex] = updatedTask;
+      setState(() {});
+
+      // API call
+      await _taskDataSource.updateSubtask(taskId, subtaskId, {
+        'is_completed': newState,
+      });
+    } catch (e) {
+      log('❌ [TASKS] Error toggling subtask: $e');
+      // Перезагружаем задачи при ошибке
+      await _loadTasks();
     }
   }
 
@@ -253,7 +297,14 @@ class _TasksPageState extends State<TasksPage> {
                       itemCount: _tasks.length,
                       itemBuilder: (context, index) {
                         final task = _tasks[index];
-                        return _buildTaskCard(task);
+                        return TaskCard(
+                          key: ValueKey(task.id),
+                          task: task,
+                          onTap: () => _openTaskDetails(task),
+                          onToggleStatus: () => _toggleTaskStatus(task),
+                          onToggleSubtask: (subtaskId) =>
+                              _toggleSubtask(task.id, subtaskId),
+                        );
                       },
                     ),
                   ),
@@ -334,162 +385,6 @@ class _TasksPageState extends State<TasksPage> {
         }),
       ),
     );
-  }
-
-  Widget _buildTaskCard(TaskModel task) {
-    final isCompleted = task.status == TaskStatus.completed;
-    final color = _getTaskColor(task);
-
-    return GestureDetector(
-      onTap: () => _openTaskDetails(task),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: color.withOpacity(0.3),
-              blurRadius: 15,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            // Icon
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Icon(_getTaskIcon(task), color: Colors.white, size: 28),
-            ),
-
-            const SizedBox(width: 16),
-
-            // Task info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    task.title,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      decoration: isCompleted
-                          ? TextDecoration.lineThrough
-                          : null,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      if (task.is_recurring) ...[
-                        const Icon(
-                          Ionicons.repeat,
-                          color: Colors.white70,
-                          size: 14,
-                        ),
-                        const SizedBox(width: 4),
-                      ],
-                      Text(
-                        _getTaskSubtitle(task),
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            // Completion indicator
-            GestureDetector(
-              onTap: () => _toggleTaskStatus(task),
-              child: Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: isCompleted
-                      ? Colors.white
-                      : Colors.white.withOpacity(0.2),
-                  shape: BoxShape.circle,
-                  border: !isCompleted
-                      ? Border.all(color: Colors.white, width: 2)
-                      : null,
-                ),
-                child: isCompleted
-                    ? Icon(Ionicons.checkmark, color: color, size: 28)
-                    : null,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Color _getTaskColor(TaskModel task) {
-    // Generate color based on priority or use default
-    switch (task.priority) {
-      case TaskPriority.urgent:
-        return const Color(0xFFEF4444); // Red
-      case TaskPriority.high:
-        return const Color(0xFFF97316); // Orange
-      case TaskPriority.medium:
-        return const Color(0xFFE91E63); // Magenta (default Grit color)
-      case TaskPriority.low:
-        return const Color(0xFF8B5CF6); // Purple
-    }
-  }
-
-  IconData _getTaskIcon(TaskModel task) {
-    // TODO: Store icon in task metadata
-    return Ionicons.checkbox_outline;
-  }
-
-  String _getTaskSubtitle(TaskModel task) {
-    if (task.is_recurring) {
-      return 'Каждый день';
-    }
-    if (task.scheduled_time != null) {
-      return task.scheduled_time!;
-    }
-
-    // Показываем дату задачи относительно выбранного дня
-    final today = DateTime.now();
-    final isToday =
-        _selectedDate.year == today.year &&
-        _selectedDate.month == today.month &&
-        _selectedDate.day == today.day;
-
-    if (isToday) {
-      return _getTimeScopeLabel(task.time_scope);
-    } else {
-      // Показываем дату в формате "дд.мм"
-      return DateFormat('dd.MM').format(_selectedDate);
-    }
-  }
-
-  String _getTimeScopeLabel(TimeScope scope) {
-    switch (scope) {
-      case TimeScope.daily:
-        return 'Сегодня';
-      case TimeScope.weekly:
-        return 'На этой неделе';
-      case TimeScope.monthly:
-        return 'В этом месяце';
-      case TimeScope.longTerm:
-        return 'Долгосрочная';
-    }
   }
 
   Future<void> _openCreateTask() async {

@@ -4,6 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:memoir/injection_container.dart' as di;
 import 'package:memoir/core/config/app_config.dart';
+import 'package:memoir/core/config/api_config.dart';
 import 'package:memoir/core/theme/app_theme.dart';
 import 'package:memoir/core/widgets/widgets.dart';
 import 'package:memoir/core/utils/snackbar_utils.dart';
@@ -37,6 +38,8 @@ import 'package:confetti/confetti.dart';
 import 'dart:math' as math;
 import 'package:memoir/features/profile/presentation/pages/profile_page.dart';
 import 'package:memoir/features/friends/presentation/pages/friends_page.dart';
+import 'package:memoir/features/friends/data/datasources/friends_remote_datasource.dart';
+import 'package:memoir/features/friends/data/models/friendship_model.dart';
 import 'package:memoir/features/analytics/presentation/pages/analytics_page.dart';
 import 'package:chucker_flutter/chucker_flutter.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -325,12 +328,16 @@ class _HomePageState extends State<HomePage>
   late StoryRemoteDataSource _storyDataSource;
   late TaskRemoteDataSource _taskDataSource;
   late AnalyticsRemoteDataSource _analyticsDataSource;
+  late FriendsRemoteDataSource _friendsDataSource;
   // late PetRemoteDataSource _petDataSource;
   late TimeCapsuleRemoteDataSource _timeCapsuleDataSource;
   List<Map<String, dynamic>> _memories = [];
   List<StoryModel> _stories = [];
+  List<FriendProfile> _potentialFriends = [];
+  Set<String> _sentFriendRequests = {}; // ID пользователей, которым отправлен запрос
   bool _isLoading = false;
   bool _isLoadingStories = false;
+  bool _isLoadingPotentialFriends = false;
   AnalyticsDashboard? _analytics;
   bool _isLoadingAnalytics = true;
   PetModel? _pet;
@@ -377,6 +384,7 @@ class _HomePageState extends State<HomePage>
     _analyticsDataSource = AnalyticsRemoteDataSourceImpl(
       dio: DioClient.instance,
     );
+    _friendsDataSource = FriendsRemoteDataSource(DioClient());
     // _petDataSource = PetRemoteDataSourceImpl(dio: DioClient.instance);
     _timeCapsuleDataSource = TimeCapsuleRemoteDataSourceImpl(
       dio: DioClient.instance,
@@ -388,6 +396,7 @@ class _HomePageState extends State<HomePage>
     _loadPet();
     _loadTasks();
     _loadStreak();
+    _loadPotentialFriends();
     _checkThrowback(); // Check for throwback memory
   }
 
@@ -516,8 +525,13 @@ class _HomePageState extends State<HomePage>
 
       for (final task in dailyTasks) {
         log(
-          '📋 [TASKS] Task: ${task.title}, group_id: ${task.task_group_id}, group_name: ${task.task_group_name}',
+          '📋 [TASKS] Task: ${task.title}, group_id: ${task.task_group_id}, group_name: ${task.task_group_name}, subtasks: ${task.subtasks.length}',
         );
+        if (task.subtasks.isNotEmpty) {
+          log(
+            '📝 [TASKS] Subtasks for "${task.title}": ${task.subtasks.map((s) => s.title).join(", ")}',
+          );
+        }
 
         if (task.task_group_id != null && task.task_group_name != null) {
           if (!groups.containsKey(task.task_group_id)) {
@@ -636,7 +650,7 @@ class _HomePageState extends State<HomePage>
       // Находим задачу
       TaskModel? task;
       int? taskIndex;
-      
+
       taskIndex = _tasks.indexWhere((t) => t.id == taskId);
       if (taskIndex != -1) {
         task = _tasks[taskIndex];
@@ -716,10 +730,8 @@ class _HomePageState extends State<HomePage>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => TaskDetailsPage(
-        task: task,
-        onTaskUpdated: _loadTasks,
-      ),
+      builder: (context) =>
+          TaskDetailsPage(task: task, onTaskUpdated: _loadTasks),
     );
   }
 
@@ -1117,6 +1129,58 @@ class _HomePageState extends State<HomePage>
     }
   }
 
+  Future<void> _loadPotentialFriends() async {
+    setState(() => _isLoadingPotentialFriends = true);
+    try {
+      final result = await _friendsDataSource.getAllUsers(
+        page: 1,
+        pageSize: 10,
+      );
+      if (mounted) {
+        setState(() {
+          _potentialFriends = result['users'] as List<FriendProfile>;
+          _isLoadingPotentialFriends = false;
+        });
+      }
+    } catch (e) {
+      print('❌ [FRIENDS] Error loading potential friends: $e');
+      if (mounted) {
+        setState(() => _isLoadingPotentialFriends = false);
+      }
+    }
+  }
+
+  Future<void> _sendFriendRequest(String userId) async {
+    try {
+      await _friendsDataSource.sendFriendRequest(userId);
+      if (mounted) {
+        // Добавляем пользователя в список отправленных запросов
+        setState(() {
+          _sentFriendRequests.add(userId);
+        });
+        SnackBarUtils.showSuccess(context, 'Запрос в друзья отправлен');
+      }
+    } catch (e) {
+      if (mounted) {
+        final errorMessage = e.toString();
+        // Если запрос уже отправлен - это не ошибка, просто показываем статус
+        if (errorMessage.contains('already sent') || 
+            errorMessage.contains('Friend request already sent')) {
+          setState(() {
+            _sentFriendRequests.add(userId);
+          });
+          // Не показываем ошибку, просто обновляем UI
+        } else {
+          String message = 'Ошибка при отправке запроса';
+          if (errorMessage.contains('already friends')) {
+            message = 'Вы уже друзья';
+          }
+          SnackBarUtils.showError(context, message);
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1221,6 +1285,294 @@ class _HomePageState extends State<HomePage>
                 Colors.purple,
                 Colors.yellow,
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPotentialFriendsSection() {
+    if (_isLoadingPotentialFriends) {
+      return Container(
+        color: AppTheme.whiteColor,
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        child: const Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+          ),
+        ),
+      );
+    }
+
+    if (_potentialFriends.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.fromLTRB(20, 20, 0, 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Рекомендации для вас',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.darkColor,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(right: 20),
+                child: TextButton(
+                  onPressed: () {
+                    setState(() => _selectedIndex = 1);
+                  },
+                  child: const Text(
+                    'Смотреть все',
+                    style: TextStyle(
+                      color: AppTheme.primaryColor,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Горизонтальный скролл с карточками в стиле Instagram
+          SizedBox(
+            height: 210,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: _potentialFriends.length,
+              itemBuilder: (context, index) {
+                final user = _potentialFriends[index];
+                return Container(
+                  width: 160,
+                  margin: EdgeInsets.only(
+                    right: index < _potentialFriends.length - 1 ? 12 : 20,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.darkColor.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: AppTheme.darkColor.withOpacity(0.1),
+                      width: 1,
+                    ),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Stack(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            // Аватар
+                            GestureDetector(
+                              onTap: () {
+                                // Можно добавить навигацию на профиль
+                              },
+                              child: Container(
+                                width: 80,
+                                height: 80,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: AppTheme.primaryGradient,
+                                ),
+                                child: Center(
+                                  child: user.avatarUrl != null
+                                      ? ClipOval(
+                                          child: Image.network(
+                                            user.avatarUrl!.startsWith(
+                                                  '/uploads',
+                                                )
+                                                ? '${ApiConfig.baseUrl}${user.avatarUrl}'
+                                                : user.avatarUrl!,
+                                            width: 80,
+                                            height: 80,
+                                            fit: BoxFit.cover,
+                                            errorBuilder:
+                                                (context, error, stackTrace) {
+                                                  return Text(
+                                                    user.fullName[0]
+                                                        .toUpperCase(),
+                                                    style: const TextStyle(
+                                                      color:
+                                                          AppTheme.whiteColor,
+                                                      fontSize: 28,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  );
+                                                },
+                                          ),
+                                        )
+                                      : Text(
+                                          user.fullName[0].toUpperCase(),
+                                          style: const TextStyle(
+                                            color: AppTheme.whiteColor,
+                                            fontSize: 28,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            // Имя пользователя
+                            Text(
+                              user.fullName,
+                              style: const TextStyle(
+                                color: AppTheme.darkColor,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            if (user.username.isNotEmpty)
+                              Text(
+                                '@${user.username}',
+                                style: TextStyle(
+                                  color: AppTheme.darkColor.withOpacity(0.6),
+                                  fontSize: 11,
+                                ),
+                                textAlign: TextAlign.center,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            // Информация о взаимных друзьях (заглушка)
+                            if (user.friendsCount > 0) ...[
+                              const SizedBox(height: 4),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    width: 14,
+                                    height: 14,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: AppTheme.darkColor.withOpacity(
+                                        0.2,
+                                      ),
+                                    ),
+                                    child: const Icon(
+                                      Ionicons.person,
+                                      size: 8,
+                                      color: AppTheme.darkColor,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Flexible(
+                                    child: Text(
+                                      '${user.friendsCount} ${user.friendsCount == 1
+                                          ? 'друг'
+                                          : user.friendsCount < 5
+                                          ? 'друга'
+                                          : 'друзей'}',
+                                      style: TextStyle(
+                                        color: AppTheme.darkColor.withOpacity(
+                                          0.6,
+                                        ),
+                                        fontSize: 10,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                            const SizedBox(height: 10),
+                            // Кнопка "Подписаться" или "Запрос отправлен"
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: SizedBox(
+                                width: double.infinity,
+                                height: 32,
+                                child: _sentFriendRequests.contains(user.id)
+                                    ? Container(
+                                        decoration: BoxDecoration(
+                                          color: AppTheme.darkColor.withOpacity(0.1),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            'Запрос отправлен',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: AppTheme.darkColor.withOpacity(0.6),
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                    : ElevatedButton(
+                                        onPressed: () => _sendFriendRequest(user.id),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppTheme.primaryColor,
+                                          foregroundColor: AppTheme.whiteColor,
+                                          padding: EdgeInsets.zero,
+                                          minimumSize: const Size(0, 32),
+                                          tapTargetSize:
+                                              MaterialTapTargetSize.shrinkWrap,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          elevation: 0,
+                                        ),
+                                        child: const Text(
+                                          'Подписаться',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Кнопка закрытия (X) в правом верхнем углу
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _potentialFriends.removeAt(index);
+                            });
+                          },
+                          child: Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: AppTheme.darkColor.withOpacity(0.6),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Ionicons.close,
+                              size: 14,
+                              color: AppTheme.whiteColor,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
           ),
         ],
@@ -1620,7 +1972,10 @@ class _HomePageState extends State<HomePage>
                                               onToggleStatus: () =>
                                                   _toggleTaskStatus(task),
                                               onToggleSubtask: (subtaskId) =>
-                                                  _toggleSubtask(task.id, subtaskId),
+                                                  _toggleSubtask(
+                                                    task.id,
+                                                    subtaskId,
+                                                  ),
                                             ),
                                           );
                                         }).toList(),
@@ -1725,9 +2080,11 @@ class _HomePageState extends State<HomePage>
                   ),
                 ),
               // Daily Prompt Card
-              const SliverToBoxAdapter(
-                child: DailyPromptCard(),
-              ), // Tasks List Header
+              const SliverToBoxAdapter(child: DailyPromptCard()),
+
+              // Потенциальные друзья - в стиле Instagram
+              if (_potentialFriends.isNotEmpty || _isLoadingPotentialFriends)
+                SliverToBoxAdapter(child: _buildPotentialFriendsSection()),
             ],
 
             // SliverToBoxAdapter(

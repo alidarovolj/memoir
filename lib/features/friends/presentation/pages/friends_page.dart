@@ -19,13 +19,20 @@ class _FriendsPageState extends State<FriendsPage> {
   final _dataSource = FriendsRemoteDataSource(DioClient());
   List<FriendProfile> _friends = [];
   List<FriendProfile> _suggestedUsers = [];
+  List<FriendProfile> _sentRequests = []; // Пользователи, которым отправлен запрос
   bool _isLoading = true;
   bool _isLoadingSuggestions = false;
 
   @override
   void initState() {
     super.initState();
-    _loadFriends();
+    _initializeData();
+  }
+
+  Future<void> _initializeData() async {
+    await _loadFriends();
+    await _loadSentRequests(); // Загружаем отправленные запросы перед предложениями
+    await _loadSuggestions(); // Всегда загружаем список потенциальных друзей
   }
 
   Future<void> _loadFriends() async {
@@ -37,10 +44,6 @@ class _FriendsPageState extends State<FriendsPage> {
           _friends = friends;
           _isLoading = false;
         });
-        // Если друзей нет, загружаем рекомендации
-        if (_friends.isEmpty) {
-          _loadSuggestions();
-        }
       }
     } catch (e) {
       if (mounted) {
@@ -52,13 +55,51 @@ class _FriendsPageState extends State<FriendsPage> {
     }
   }
 
+  Future<void> _loadSentRequests() async {
+    try {
+      print('📤 [FRIENDS] Loading sent friend requests...');
+      final sentRequests = await _dataSource.getSentFriendRequests();
+      print('📤 [FRIENDS] Loaded ${sentRequests.length} sent requests');
+      if (mounted) {
+        setState(() {
+          // Извлекаем профили пользователей из запросов
+          _sentRequests = sentRequests
+              .map((request) => request.requester)
+              .toList();
+        });
+        print('📤 [FRIENDS] Updated _sentRequests: ${_sentRequests.length}');
+      }
+    } catch (e) {
+      print('❌ [FRIENDS] Error loading sent requests: $e');
+      if (mounted) {
+        setState(() {
+          _sentRequests = [];
+        });
+        // Показываем ошибку пользователю
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ошибка загрузки отправленных запросов: $e'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _loadSuggestions() async {
     setState(() => _isLoadingSuggestions = true);
     try {
-      final suggestions = await _dataSource.getSuggestedUsers(limit: 10);
+      final result = await _dataSource.getAllUsers(page: 1, pageSize: 20);
       if (mounted) {
+        // Исключаем пользователей, которым уже отправлен запрос
+        final sentRequestIds = _sentRequests.map((u) => u.id).toSet();
+        final allUsers = result['users'] as List<FriendProfile>;
+        final filteredUsers = allUsers
+            .where((user) => !sentRequestIds.contains(user.id))
+            .toList();
+        
         setState(() {
-          _suggestedUsers = suggestions;
+          _suggestedUsers = filteredUsers;
           _isLoadingSuggestions = false;
         });
       }
@@ -79,10 +120,15 @@ class _FriendsPageState extends State<FriendsPage> {
             backgroundColor: AppTheme.primaryColor,
           ),
         );
-        // Удаляем пользователя из списка рекомендаций
+        // Удаляем пользователя из списка рекомендаций и добавляем в отправленные
         setState(() {
           _suggestedUsers.removeWhere((u) => u.id == user.id);
+          if (!_sentRequests.any((u) => u.id == user.id)) {
+            _sentRequests.add(user);
+          }
         });
+        // Перезагружаем отправленные запросы для актуальности
+        _loadSentRequests();
       }
     } catch (e) {
       if (mounted) {
@@ -157,7 +203,7 @@ class _FriendsPageState extends State<FriendsPage> {
               ),
             ),
 
-            // Friends list
+            // Content with tabs or sections
             Expanded(
               child: _isLoading
                   ? Center(
@@ -167,20 +213,7 @@ class _FriendsPageState extends State<FriendsPage> {
                         ),
                       ),
                     )
-                  : _friends.isEmpty
-                  ? _buildEmptyState()
-                  : RefreshIndicator(
-                      onRefresh: _loadFriends,
-                      color: AppTheme.primaryColor,
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _friends.length,
-                        itemBuilder: (context, index) {
-                          final friend = _friends[index];
-                          return _buildFriendCard(friend);
-                        },
-                      ),
-                    ),
+                  : _buildContent(),
             ),
           ],
         ),
@@ -188,95 +221,287 @@ class _FriendsPageState extends State<FriendsPage> {
     );
   }
 
-  Widget _buildEmptyState() {
-    if (_isLoadingSuggestions) {
-      return Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
-        ),
-      );
-    }
-
-    if (_suggestedUsers.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Ionicons.people_outline,
-              size: 80,
-              color: AppTheme.darkColor.withOpacity(0.3),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'У вас пока нет друзей',
-              style: TextStyle(
-                color: AppTheme.darkColor.withOpacity(0.7),
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Найдите друзей через поиск',
-              style: TextStyle(
-                color: AppTheme.darkColor.withOpacity(0.5),
-                fontSize: 14,
-              ),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const UserSearchPage(),
+  Widget _buildContent() {
+    return RefreshIndicator(
+      onRefresh: () async {
+        await _loadFriends();
+        await _loadSentRequests();
+        await _loadSuggestions();
+      },
+      color: AppTheme.primaryColor,
+      child: CustomScrollView(
+        slivers: [
+          // Секция с друзьями (если есть)
+          if (_friends.isNotEmpty) ...[
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+              sliver: SliverToBoxAdapter(
+                child: Text(
+                  'Мои друзья (${_friends.length})',
+                  style: TextStyle(
+                    color: AppTheme.darkColor,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                   ),
-                ).then((_) => _loadFriends());
-              },
-              icon: const Icon(Ionicons.search, color: AppTheme.whiteColor),
-              label: const Text(
-                'Найти друзей',
-                style: TextStyle(color: AppTheme.whiteColor),
+                ),
               ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final friend = _friends[index];
+                    return _buildFriendCard(friend);
+                  },
+                  childCount: _friends.length,
+                ),
+              ),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.only(top: 24, bottom: 8),
+              sliver: SliverToBoxAdapter(
+                child: Divider(
+                  color: AppTheme.darkColor.withOpacity(0.1),
+                  thickness: 1,
+                ),
+              ),
+            ),
+          ],
+
+          // Секция с отправленными запросами
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+            sliver: SliverToBoxAdapter(
+              child: Text(
+                'Отправленные запросы (${_sentRequests.length})',
+                style: TextStyle(
+                  color: AppTheme.darkColor,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          if (_sentRequests.isNotEmpty)
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final user = _sentRequests[index];
+                    return _buildSentRequestCard(user);
+                  },
+                  childCount: _sentRequests.length,
+                ),
+              ),
+            )
+          else
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              sliver: SliverToBoxAdapter(
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.darkColor.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    'Нет отправленных запросов',
+                    style: TextStyle(
+                      color: AppTheme.darkColor.withOpacity(0.6),
+                      fontSize: 14,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+            ),
+          SliverPadding(
+            padding: const EdgeInsets.only(top: 24, bottom: 8),
+            sliver: SliverToBoxAdapter(
+              child: Divider(
+                color: AppTheme.darkColor.withOpacity(0.1),
+                thickness: 1,
+              ),
+            ),
+          ),
+
+          // Секция с потенциальными друзьями
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+            sliver: SliverToBoxAdapter(
+              child: Text(
+                _friends.isEmpty
+                    ? 'Потенциальные друзья'
+                    : 'Потенциальные друзья',
+                style: TextStyle(
+                  color: AppTheme.darkColor,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          if (_isLoadingSuggestions)
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    AppTheme.primaryColor,
+                  ),
+                ),
+              ),
+            )
+          else if (_suggestedUsers.isEmpty)
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Ionicons.people_outline,
+                      size: 64,
+                      color: AppTheme.darkColor.withOpacity(0.3),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Нет доступных пользователей',
+                      style: TextStyle(
+                        color: AppTheme.darkColor.withOpacity(0.7),
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final user = _suggestedUsers[index];
+                    return _buildSuggestionCard(user);
+                  },
+                  childCount: _suggestedUsers.length,
+                ),
+              ),
+            ),
+          // Отступ для таббара
+          const SliverPadding(
+            padding: EdgeInsets.only(bottom: 90),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSentRequestCard(FriendProfile user) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: AppTheme.whiteColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppTheme.darkColor.withOpacity(0.1),
+          width: 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            // Avatar
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: AppTheme.primaryGradient,
+              ),
+              child: Center(
+                child: user.avatarUrl != null
+                    ? ClipOval(
+                        child: Image.network(
+                          user.avatarUrl!,
+                          width: 56,
+                          height: 56,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Text(
+                              user.fullName[0].toUpperCase(),
+                              style: const TextStyle(
+                                color: AppTheme.whiteColor,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            );
+                          },
+                        ),
+                      )
+                    : Text(
+                        user.fullName[0].toUpperCase(),
+                        style: const TextStyle(
+                          color: AppTheme.whiteColor,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            // User info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    user.fullName,
+                    style: TextStyle(
+                      color: AppTheme.darkColor,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  if (user.username.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      '@${user.username}',
+                      style: TextStyle(
+                        color: AppTheme.darkColor.withOpacity(0.5),
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            // Status button (disabled)
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 8,
+              ),
+              decoration: BoxDecoration(
+                color: AppTheme.darkColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                'Запрос отправлен',
+                style: TextStyle(
+                  color: AppTheme.darkColor.withOpacity(0.6),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
           ],
         ),
-      );
-    }
-
-    // Показываем рекомендации
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Text(
-          'Рекомендуемые пользователи',
-          style: TextStyle(
-            color: AppTheme.darkColor,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Добавьте их в друзья',
-          style: TextStyle(
-            color: AppTheme.darkColor.withOpacity(0.6),
-            fontSize: 14,
-          ),
-        ),
-        const SizedBox(height: 16),
-        ..._suggestedUsers.map((user) => _buildSuggestionCard(user)),
-        const SizedBox(height: 90), // Отступ для таббара
-      ],
+      ),
     );
   }
 
@@ -347,7 +572,7 @@ class _FriendsPageState extends State<FriendsPage> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  if (user.username != null) ...[
+                  if (user.username.isNotEmpty) ...[
                     const SizedBox(height: 2),
                     Text(
                       '@${user.username}',

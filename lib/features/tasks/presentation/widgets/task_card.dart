@@ -29,6 +29,16 @@ class _TaskCardState extends State<TaskCard> {
     final isCompleted = widget.task.status == TaskStatus.completed;
     final color = _getTaskColor(widget.task);
     final hasSubtasks = widget.task.subtasks.isNotEmpty;
+    
+    // Логируем подзадачи для отладки
+    if (widget.task.subtasks.isNotEmpty) {
+      debugPrint('📝 [TASK_CARD] Task "${widget.task.title}" has ${widget.task.subtasks.length} subtasks');
+      for (var subtask in widget.task.subtasks) {
+        debugPrint('   - Subtask: ${subtask.title} (completed: ${subtask.is_completed})');
+      }
+    } else {
+      debugPrint('⚠️ [TASK_CARD] Task "${widget.task.title}" has NO subtasks (parent_task_id: ${widget.task.parent_task_id})');
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
