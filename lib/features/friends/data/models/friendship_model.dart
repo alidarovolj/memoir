@@ -28,6 +28,17 @@ class FriendProfile with _$FriendProfile {
     @JsonKey(name: 'memories_count') @Default(0) int memoriesCount,
     @JsonKey(name: 'friends_count') @Default(0) int friendsCount,
     @JsonKey(name: 'streak_days') @Default(0) int streakDays,
+    // Personal data
+    String? profession,
+    @JsonKey(name: 'telegram_url') String? telegramUrl,
+    @JsonKey(name: 'whatsapp_url') String? whatsappUrl,
+    @JsonKey(name: 'youtube_url') String? youtubeUrl,
+    @JsonKey(name: 'linkedin_url') String? linkedinUrl,
+    @JsonKey(name: 'about_me') String? aboutMe,
+    String? city,
+    @JsonKey(name: 'date_of_birth') DateTime? dateOfBirth,
+    String? education,
+    String? hobbies,
   }) = _FriendProfile;
 
   String get fullName {

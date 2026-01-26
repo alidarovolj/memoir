@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:memoir/injection_container.dart' as di;
@@ -120,6 +121,16 @@ class MemoirApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.lightTheme, // Используем светлую тему всегда
       themeMode: ThemeMode.light, // Всегда светлая тема
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('ru', 'RU'),
+        Locale('en', 'US'),
+      ],
+      locale: const Locale('ru', 'RU'),
       initialRoute: '/',
       routes: {
         '/': (context) => const SplashScreen(),
@@ -1440,17 +1451,6 @@ class _HomePageState extends State<HomePage>
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            if (user.username.isNotEmpty)
-                              Text(
-                                '@${user.username}',
-                                style: TextStyle(
-                                  color: AppTheme.darkColor.withOpacity(0.6),
-                                  fontSize: 11,
-                                ),
-                                textAlign: TextAlign.center,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
                             // Информация о взаимных друзьях (заглушка)
                             if (user.friendsCount > 0) ...[
                               const SizedBox(height: 4),

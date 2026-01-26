@@ -8,6 +8,7 @@ import 'package:memoir/core/utils/snackbar_utils.dart';
 import 'package:memoir/core/widgets/custom_header.dart';
 import 'package:memoir/features/challenges/presentation/pages/challenges_page.dart';
 import 'package:memoir/features/achievements/presentation/pages/achievements_page.dart';
+import 'package:memoir/features/profile/presentation/pages/personal_data_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -587,6 +588,23 @@ class _ProfilePageState extends State<ProfilePage> {
                   builder: (context) => const AchievementsPage(),
                 ),
               );
+            },
+          ),
+          Divider(height: 1, color: AppTheme.darkColor.withOpacity(0.1)),
+          _buildSettingsItem(
+            icon: Ionicons.person_circle_outline,
+            title: 'Личные данные',
+            subtitle: 'Профессия, соц. сети, о себе',
+            onTap: () async {
+              final result = await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const PersonalDataPage(),
+                ),
+              );
+              // Обновляем данные профиля после возврата, если данные были сохранены
+              if (result == true) {
+                await _loadUserData();
+              }
             },
           ),
           Divider(height: 1, color: AppTheme.darkColor.withOpacity(0.1)),

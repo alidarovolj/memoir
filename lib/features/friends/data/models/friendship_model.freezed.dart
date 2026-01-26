@@ -36,7 +36,23 @@ mixin _$FriendProfile {
   @JsonKey(name: 'friends_count')
   int get friendsCount => throw _privateConstructorUsedError;
   @JsonKey(name: 'streak_days')
-  int get streakDays => throw _privateConstructorUsedError;
+  int get streakDays => throw _privateConstructorUsedError; // Personal data
+  String? get profession => throw _privateConstructorUsedError;
+  @JsonKey(name: 'telegram_url')
+  String? get telegramUrl => throw _privateConstructorUsedError;
+  @JsonKey(name: 'whatsapp_url')
+  String? get whatsappUrl => throw _privateConstructorUsedError;
+  @JsonKey(name: 'youtube_url')
+  String? get youtubeUrl => throw _privateConstructorUsedError;
+  @JsonKey(name: 'linkedin_url')
+  String? get linkedinUrl => throw _privateConstructorUsedError;
+  @JsonKey(name: 'about_me')
+  String? get aboutMe => throw _privateConstructorUsedError;
+  String? get city => throw _privateConstructorUsedError;
+  @JsonKey(name: 'date_of_birth')
+  DateTime? get dateOfBirth => throw _privateConstructorUsedError;
+  String? get education => throw _privateConstructorUsedError;
+  String? get hobbies => throw _privateConstructorUsedError;
 
   /// Serializes this FriendProfile to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -65,6 +81,16 @@ abstract class $FriendProfileCopyWith<$Res> {
     @JsonKey(name: 'memories_count') int memoriesCount,
     @JsonKey(name: 'friends_count') int friendsCount,
     @JsonKey(name: 'streak_days') int streakDays,
+    String? profession,
+    @JsonKey(name: 'telegram_url') String? telegramUrl,
+    @JsonKey(name: 'whatsapp_url') String? whatsappUrl,
+    @JsonKey(name: 'youtube_url') String? youtubeUrl,
+    @JsonKey(name: 'linkedin_url') String? linkedinUrl,
+    @JsonKey(name: 'about_me') String? aboutMe,
+    String? city,
+    @JsonKey(name: 'date_of_birth') DateTime? dateOfBirth,
+    String? education,
+    String? hobbies,
   });
 }
 
@@ -92,6 +118,16 @@ class _$FriendProfileCopyWithImpl<$Res, $Val extends FriendProfile>
     Object? memoriesCount = null,
     Object? friendsCount = null,
     Object? streakDays = null,
+    Object? profession = freezed,
+    Object? telegramUrl = freezed,
+    Object? whatsappUrl = freezed,
+    Object? youtubeUrl = freezed,
+    Object? linkedinUrl = freezed,
+    Object? aboutMe = freezed,
+    Object? city = freezed,
+    Object? dateOfBirth = freezed,
+    Object? education = freezed,
+    Object? hobbies = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -131,6 +167,46 @@ class _$FriendProfileCopyWithImpl<$Res, $Val extends FriendProfile>
                 ? _value.streakDays
                 : streakDays // ignore: cast_nullable_to_non_nullable
                       as int,
+            profession: freezed == profession
+                ? _value.profession
+                : profession // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            telegramUrl: freezed == telegramUrl
+                ? _value.telegramUrl
+                : telegramUrl // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            whatsappUrl: freezed == whatsappUrl
+                ? _value.whatsappUrl
+                : whatsappUrl // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            youtubeUrl: freezed == youtubeUrl
+                ? _value.youtubeUrl
+                : youtubeUrl // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            linkedinUrl: freezed == linkedinUrl
+                ? _value.linkedinUrl
+                : linkedinUrl // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            aboutMe: freezed == aboutMe
+                ? _value.aboutMe
+                : aboutMe // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            city: freezed == city
+                ? _value.city
+                : city // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            dateOfBirth: freezed == dateOfBirth
+                ? _value.dateOfBirth
+                : dateOfBirth // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
+            education: freezed == education
+                ? _value.education
+                : education // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            hobbies: freezed == hobbies
+                ? _value.hobbies
+                : hobbies // ignore: cast_nullable_to_non_nullable
+                      as String?,
           )
           as $Val,
     );
@@ -156,6 +232,16 @@ abstract class _$$FriendProfileImplCopyWith<$Res>
     @JsonKey(name: 'memories_count') int memoriesCount,
     @JsonKey(name: 'friends_count') int friendsCount,
     @JsonKey(name: 'streak_days') int streakDays,
+    String? profession,
+    @JsonKey(name: 'telegram_url') String? telegramUrl,
+    @JsonKey(name: 'whatsapp_url') String? whatsappUrl,
+    @JsonKey(name: 'youtube_url') String? youtubeUrl,
+    @JsonKey(name: 'linkedin_url') String? linkedinUrl,
+    @JsonKey(name: 'about_me') String? aboutMe,
+    String? city,
+    @JsonKey(name: 'date_of_birth') DateTime? dateOfBirth,
+    String? education,
+    String? hobbies,
   });
 }
 
@@ -182,6 +268,16 @@ class __$$FriendProfileImplCopyWithImpl<$Res>
     Object? memoriesCount = null,
     Object? friendsCount = null,
     Object? streakDays = null,
+    Object? profession = freezed,
+    Object? telegramUrl = freezed,
+    Object? whatsappUrl = freezed,
+    Object? youtubeUrl = freezed,
+    Object? linkedinUrl = freezed,
+    Object? aboutMe = freezed,
+    Object? city = freezed,
+    Object? dateOfBirth = freezed,
+    Object? education = freezed,
+    Object? hobbies = freezed,
   }) {
     return _then(
       _$FriendProfileImpl(
@@ -221,6 +317,46 @@ class __$$FriendProfileImplCopyWithImpl<$Res>
             ? _value.streakDays
             : streakDays // ignore: cast_nullable_to_non_nullable
                   as int,
+        profession: freezed == profession
+            ? _value.profession
+            : profession // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        telegramUrl: freezed == telegramUrl
+            ? _value.telegramUrl
+            : telegramUrl // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        whatsappUrl: freezed == whatsappUrl
+            ? _value.whatsappUrl
+            : whatsappUrl // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        youtubeUrl: freezed == youtubeUrl
+            ? _value.youtubeUrl
+            : youtubeUrl // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        linkedinUrl: freezed == linkedinUrl
+            ? _value.linkedinUrl
+            : linkedinUrl // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        aboutMe: freezed == aboutMe
+            ? _value.aboutMe
+            : aboutMe // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        city: freezed == city
+            ? _value.city
+            : city // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        dateOfBirth: freezed == dateOfBirth
+            ? _value.dateOfBirth
+            : dateOfBirth // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
+        education: freezed == education
+            ? _value.education
+            : education // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        hobbies: freezed == hobbies
+            ? _value.hobbies
+            : hobbies // ignore: cast_nullable_to_non_nullable
+                  as String?,
       ),
     );
   }
@@ -239,6 +375,16 @@ class _$FriendProfileImpl extends _FriendProfile {
     @JsonKey(name: 'memories_count') this.memoriesCount = 0,
     @JsonKey(name: 'friends_count') this.friendsCount = 0,
     @JsonKey(name: 'streak_days') this.streakDays = 0,
+    this.profession,
+    @JsonKey(name: 'telegram_url') this.telegramUrl,
+    @JsonKey(name: 'whatsapp_url') this.whatsappUrl,
+    @JsonKey(name: 'youtube_url') this.youtubeUrl,
+    @JsonKey(name: 'linkedin_url') this.linkedinUrl,
+    @JsonKey(name: 'about_me') this.aboutMe,
+    this.city,
+    @JsonKey(name: 'date_of_birth') this.dateOfBirth,
+    this.education,
+    this.hobbies,
   }) : super._();
 
   factory _$FriendProfileImpl.fromJson(Map<String, dynamic> json) =>
@@ -269,10 +415,37 @@ class _$FriendProfileImpl extends _FriendProfile {
   @override
   @JsonKey(name: 'streak_days')
   final int streakDays;
+  // Personal data
+  @override
+  final String? profession;
+  @override
+  @JsonKey(name: 'telegram_url')
+  final String? telegramUrl;
+  @override
+  @JsonKey(name: 'whatsapp_url')
+  final String? whatsappUrl;
+  @override
+  @JsonKey(name: 'youtube_url')
+  final String? youtubeUrl;
+  @override
+  @JsonKey(name: 'linkedin_url')
+  final String? linkedinUrl;
+  @override
+  @JsonKey(name: 'about_me')
+  final String? aboutMe;
+  @override
+  final String? city;
+  @override
+  @JsonKey(name: 'date_of_birth')
+  final DateTime? dateOfBirth;
+  @override
+  final String? education;
+  @override
+  final String? hobbies;
 
   @override
   String toString() {
-    return 'FriendProfile(id: $id, username: $username, firstName: $firstName, lastName: $lastName, avatarUrl: $avatarUrl, createdAt: $createdAt, memoriesCount: $memoriesCount, friendsCount: $friendsCount, streakDays: $streakDays)';
+    return 'FriendProfile(id: $id, username: $username, firstName: $firstName, lastName: $lastName, avatarUrl: $avatarUrl, createdAt: $createdAt, memoriesCount: $memoriesCount, friendsCount: $friendsCount, streakDays: $streakDays, profession: $profession, telegramUrl: $telegramUrl, whatsappUrl: $whatsappUrl, youtubeUrl: $youtubeUrl, linkedinUrl: $linkedinUrl, aboutMe: $aboutMe, city: $city, dateOfBirth: $dateOfBirth, education: $education, hobbies: $hobbies)';
   }
 
   @override
@@ -296,12 +469,29 @@ class _$FriendProfileImpl extends _FriendProfile {
             (identical(other.friendsCount, friendsCount) ||
                 other.friendsCount == friendsCount) &&
             (identical(other.streakDays, streakDays) ||
-                other.streakDays == streakDays));
+                other.streakDays == streakDays) &&
+            (identical(other.profession, profession) ||
+                other.profession == profession) &&
+            (identical(other.telegramUrl, telegramUrl) ||
+                other.telegramUrl == telegramUrl) &&
+            (identical(other.whatsappUrl, whatsappUrl) ||
+                other.whatsappUrl == whatsappUrl) &&
+            (identical(other.youtubeUrl, youtubeUrl) ||
+                other.youtubeUrl == youtubeUrl) &&
+            (identical(other.linkedinUrl, linkedinUrl) ||
+                other.linkedinUrl == linkedinUrl) &&
+            (identical(other.aboutMe, aboutMe) || other.aboutMe == aboutMe) &&
+            (identical(other.city, city) || other.city == city) &&
+            (identical(other.dateOfBirth, dateOfBirth) ||
+                other.dateOfBirth == dateOfBirth) &&
+            (identical(other.education, education) ||
+                other.education == education) &&
+            (identical(other.hobbies, hobbies) || other.hobbies == hobbies));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     runtimeType,
     id,
     username,
@@ -312,7 +502,17 @@ class _$FriendProfileImpl extends _FriendProfile {
     memoriesCount,
     friendsCount,
     streakDays,
-  );
+    profession,
+    telegramUrl,
+    whatsappUrl,
+    youtubeUrl,
+    linkedinUrl,
+    aboutMe,
+    city,
+    dateOfBirth,
+    education,
+    hobbies,
+  ]);
 
   /// Create a copy of FriendProfile
   /// with the given fields replaced by the non-null parameter values.
@@ -339,6 +539,16 @@ abstract class _FriendProfile extends FriendProfile {
     @JsonKey(name: 'memories_count') final int memoriesCount,
     @JsonKey(name: 'friends_count') final int friendsCount,
     @JsonKey(name: 'streak_days') final int streakDays,
+    final String? profession,
+    @JsonKey(name: 'telegram_url') final String? telegramUrl,
+    @JsonKey(name: 'whatsapp_url') final String? whatsappUrl,
+    @JsonKey(name: 'youtube_url') final String? youtubeUrl,
+    @JsonKey(name: 'linkedin_url') final String? linkedinUrl,
+    @JsonKey(name: 'about_me') final String? aboutMe,
+    final String? city,
+    @JsonKey(name: 'date_of_birth') final DateTime? dateOfBirth,
+    final String? education,
+    final String? hobbies,
   }) = _$FriendProfileImpl;
   const _FriendProfile._() : super._();
 
@@ -369,7 +579,33 @@ abstract class _FriendProfile extends FriendProfile {
   int get friendsCount;
   @override
   @JsonKey(name: 'streak_days')
-  int get streakDays;
+  int get streakDays; // Personal data
+  @override
+  String? get profession;
+  @override
+  @JsonKey(name: 'telegram_url')
+  String? get telegramUrl;
+  @override
+  @JsonKey(name: 'whatsapp_url')
+  String? get whatsappUrl;
+  @override
+  @JsonKey(name: 'youtube_url')
+  String? get youtubeUrl;
+  @override
+  @JsonKey(name: 'linkedin_url')
+  String? get linkedinUrl;
+  @override
+  @JsonKey(name: 'about_me')
+  String? get aboutMe;
+  @override
+  String? get city;
+  @override
+  @JsonKey(name: 'date_of_birth')
+  DateTime? get dateOfBirth;
+  @override
+  String? get education;
+  @override
+  String? get hobbies;
 
   /// Create a copy of FriendProfile
   /// with the given fields replaced by the non-null parameter values.

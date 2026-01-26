@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:memoir/core/theme/app_theme.dart';
 import 'package:memoir/core/network/dio_client.dart';
 import 'package:memoir/core/utils/snackbar_utils.dart';
+import 'package:memoir/core/widgets/base_input.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
 import 'dart:async';
@@ -320,81 +321,26 @@ class _EmailAuthPageState extends State<EmailAuthPage> {
             const SizedBox(height: 40),
 
             // Email field (always shown)
-            TextFormField(
+            BaseInput(
               controller: _emailController,
+              label: 'Email',
+              hint: 'Enter your email',
+              icon: Icons.email_outlined,
               keyboardType: TextInputType.emailAddress,
               enabled: !_codeSent,
-              decoration: InputDecoration(
-                labelText: 'Email',
-                hintText: 'Enter your email',
-                prefixIcon: const Icon(Icons.email_outlined),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(
-                    color: AppTheme.darkColor.withOpacity(0.2),
-                  ),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(
-                    color: AppTheme.darkColor.withOpacity(0.2),
-                  ),
-                ),
-                disabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(
-                    color: AppTheme.darkColor.withOpacity(0.1),
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(
-                    color: AppTheme.primaryColor,
-                    width: 2,
-                  ),
-                ),
-                filled: true,
-                fillColor: _codeSent
-                    ? AppTheme.lightGrayColor.withOpacity(0.5)
-                    : AppTheme.lightGrayColor,
-              ),
             ),
 
             if (_codeSent) ...[
               const SizedBox(height: 16),
 
               // Code field
-              TextFormField(
+              BaseInput(
                 controller: _codeController,
+                label: 'Verification Code',
+                hint: 'Enter 6-digit code',
+                icon: Icons.lock_outline,
                 keyboardType: TextInputType.number,
                 maxLength: 6,
-                decoration: InputDecoration(
-                  labelText: 'Verification Code',
-                  hintText: 'Enter 6-digit code',
-                  prefixIcon: const Icon(Icons.lock_outline),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(
-                      color: AppTheme.darkColor.withOpacity(0.2),
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(
-                      color: AppTheme.darkColor.withOpacity(0.2),
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(
-                      color: AppTheme.primaryColor,
-                      width: 2,
-                    ),
-                  ),
-                  filled: true,
-                  fillColor: AppTheme.lightGrayColor,
-                  counterText: '',
-                ),
               ),
 
               const SizedBox(height: 16),
