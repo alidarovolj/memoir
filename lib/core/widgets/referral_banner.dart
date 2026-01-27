@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:ionicons/ionicons.dart';
-import 'package:memoir/core/theme/app_theme.dart';
 
 class ReferralBanner extends StatelessWidget {
   final VoidCallback onTap;

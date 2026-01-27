@@ -8,8 +8,11 @@ class AppTheme {
   static const blueColor = Color(0xFF6366FF); // #6366ff - Синий (резерв)
   static const tealColor = Color(0xFF277070); // #277070 - Бирюзовый (основной)
   static const limeColor = Color(0xFFC9F158); // #c9f158 - Салатовый (резерв)
-  static const lightGrayColor = Color(0xFFF2F1F7); // rgb(242, 241, 247) - Светло-серый фон
+  static const lightGrayColor = Color(
+    0xFFF2F1F7,
+  ); // rgb(242, 241, 247) - Светло-серый фон
   static const whiteColor = Color(0xFFFFFFFF); // #ffffff - Белый
+  static const redColor = Color(0xFFFF0000); // #ff0000 - Красный
   static const lightGrayBorder = Color(
     0xFFE0E0E0,
   ); // #E0E0E0 - Светло-серая рамка

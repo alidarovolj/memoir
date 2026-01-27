@@ -8,6 +8,9 @@ import 'package:memoir/features/friends/data/datasources/friends_remote_datasour
 import 'package:memoir/features/friends/data/models/friendship_model.dart';
 import 'package:memoir/features/friends/presentation/pages/friend_requests_page.dart';
 import 'package:memoir/features/friends/presentation/pages/user_search_page.dart';
+import 'package:memoir/features/messages/presentation/pages/chat_modal.dart';
+import 'package:memoir/core/services/auth_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -24,16 +27,52 @@ class _FriendsPageState extends State<FriendsPage> {
   final _dataSource = FriendsRemoteDataSource(DioClient());
   List<FriendProfile> _friends = [];
   List<FriendProfile> _suggestedUsers = [];
+  List<FriendRequest> _receivedRequests = []; // Полученные запросы в друзья
   List<FriendProfile> _sentRequests =
       []; // Пользователи, которым отправлен запрос
   bool _isLoading = true;
   bool _isLoadingSuggestions = false;
+  String? _currentUserId;
 
   @override
   void initState() {
     super.initState();
     _initializeDateFormatting();
+    _loadCurrentUserId();
     _initializeData();
+  }
+
+  Future<void> _loadCurrentUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final authService = AuthService(DioClient.instance, prefs);
+    final user = await authService.getCurrentUser();
+    if (user != null && mounted) {
+      setState(() {
+        _currentUserId = user['id'] as String;
+      });
+    }
+  }
+
+  Future<void> _openChat(FriendProfile friend) async {
+    if (_currentUserId == null) {
+      await _loadCurrentUserId();
+    }
+    if (_currentUserId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ошибка: не удалось определить пользователя')),
+      );
+      return;
+    }
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => ChatModal(
+        friend: friend,
+        currentUserId: _currentUserId!,
+      ),
+    );
   }
 
   Future<void> _initializeDateFormatting() async {
@@ -42,6 +81,7 @@ class _FriendsPageState extends State<FriendsPage> {
 
   Future<void> _initializeData() async {
     await _loadFriends();
+    await _loadReceivedRequests(); // Загружаем полученные запросы
     await _loadSentRequests(); // Загружаем отправленные запросы перед предложениями
     await _loadSuggestions(); // Всегда загружаем список потенциальных друзей
   }
@@ -62,6 +102,23 @@ class _FriendsPageState extends State<FriendsPage> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Ошибка загрузки друзей: $e')));
+      }
+    }
+  }
+
+  Future<void> _loadReceivedRequests() async {
+    try {
+      final receivedRequests = await _dataSource.getFriendRequests();
+      if (mounted) {
+        setState(() {
+          _receivedRequests = receivedRequests;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _receivedRequests = [];
+        });
       }
     }
   }
@@ -210,17 +267,53 @@ class _FriendsPageState extends State<FriendsPage> {
                         ).then((_) => _loadFriends());
                       },
                     ),
-                    // Friend requests button
-                    IconButton(
-                      icon: const Icon(Ionicons.person_add_outline),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const FriendRequestsPage(),
+                    // Friend requests button with badge
+                    Stack(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Ionicons.person_add_outline),
+                          onPressed: () async {
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const FriendRequestsPage(),
+                              ),
+                            );
+                            // Обновляем данные после возврата
+                            await _loadFriends();
+                            await _loadReceivedRequests();
+                          },
+                        ),
+                        if (_receivedRequests.isNotEmpty)
+                          Positioned(
+                            right: 3,
+                            top: 0,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: AppTheme.redColor,
+                                shape: BoxShape.circle,
+                              ),
+                              constraints: const BoxConstraints(
+                                minWidth: 18,
+                                minHeight: 18,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  _receivedRequests.length > 99
+                                      ? '99+'
+                                      : '${_receivedRequests.length}',
+                                  style: const TextStyle(
+                                    color: AppTheme.whiteColor,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
-                        ).then((_) => _loadFriends());
-                      },
+                      ],
                     ),
                   ],
                 ),
@@ -245,7 +338,9 @@ class _FriendsPageState extends State<FriendsPage> {
           // Отступ для CustomHeader
           SliverPadding(
             padding: EdgeInsets.only(
-              top: MediaQuery.of(context).padding.top + 64, // SafeArea + высота CustomHeader
+              top:
+                  MediaQuery.of(context).padding.top +
+                  64, // SafeArea + высота CustomHeader
             ),
           ),
           // Секция с друзьями (если есть)
@@ -425,31 +520,41 @@ class _FriendsPageState extends State<FriendsPage> {
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
-          children: [
-            // Avatar
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: AppTheme.primaryGradient,
-              ),
-              child: Center(
-                child: user.avatarUrl != null
-                    ? ClipOval(
-                        child: CachedNetworkImage(
-                          imageUrl: user.avatarUrl!.startsWith('/uploads')
-                              ? '${ApiConfig.baseUrl}${user.avatarUrl}'
-                              : user.avatarUrl!,
-                          width: 56,
-                          height: 56,
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) => Container(
-                            decoration: BoxDecoration(
-                              gradient: AppTheme.primaryGradient,
-                            ),
-                            child: Center(
-                              child: Text(
+              children: [
+                // Avatar
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: AppTheme.primaryGradient,
+                  ),
+                  child: Center(
+                    child: user.avatarUrl != null
+                        ? ClipOval(
+                            child: CachedNetworkImage(
+                              imageUrl: user.avatarUrl!.startsWith('/uploads')
+                                  ? '${ApiConfig.baseUrl}${user.avatarUrl}'
+                                  : user.avatarUrl!,
+                              width: 56,
+                              height: 56,
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) => Container(
+                                decoration: BoxDecoration(
+                                  gradient: AppTheme.primaryGradient,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    user.fullName[0].toUpperCase(),
+                                    style: const TextStyle(
+                                      color: AppTheme.whiteColor,
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              errorWidget: (context, url, error) => Text(
                                 user.fullName[0].toUpperCase(),
                                 style: const TextStyle(
                                   color: AppTheme.whiteColor,
@@ -458,8 +563,8 @@ class _FriendsPageState extends State<FriendsPage> {
                                 ),
                               ),
                             ),
-                          ),
-                          errorWidget: (context, url, error) => Text(
+                          )
+                        : Text(
                             user.fullName[0].toUpperCase(),
                             style: const TextStyle(
                               color: AppTheme.whiteColor,
@@ -467,44 +572,34 @@ class _FriendsPageState extends State<FriendsPage> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                        ),
-                      )
-                    : Text(
-                        user.fullName[0].toUpperCase(),
-                        style: const TextStyle(
-                          color: AppTheme.whiteColor,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // User info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        user.fullName,
+                        style: TextStyle(
+                          color: AppTheme.darkColor,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            // User info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    user.fullName,
-                    style: TextStyle(
-                      color: AppTheme.darkColor,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-            // Status icon
-            IconButton(
-              icon: Icon(
-                Ionicons.time_outline,
-                color: AppTheme.darkColor.withOpacity(0.6),
-              ),
-              onPressed: null,
-            ),
-          ],
+                ),
+                // Status icon
+                IconButton(
+                  icon: Icon(
+                    Ionicons.time_outline,
+                    color: AppTheme.darkColor.withOpacity(0.6),
+                  ),
+                  onPressed: null,
+                ),
+              ],
             ),
           ),
         ),
@@ -531,31 +626,41 @@ class _FriendsPageState extends State<FriendsPage> {
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
-          children: [
-            // Avatar
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: AppTheme.primaryGradient,
-              ),
-              child: Center(
-                child: user.avatarUrl != null
-                    ? ClipOval(
-                        child: CachedNetworkImage(
-                          imageUrl: user.avatarUrl!.startsWith('/uploads')
-                              ? '${ApiConfig.baseUrl}${user.avatarUrl}'
-                              : user.avatarUrl!,
-                          width: 56,
-                          height: 56,
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) => Container(
-                            decoration: BoxDecoration(
-                              gradient: AppTheme.primaryGradient,
-                            ),
-                            child: Center(
-                              child: Text(
+              children: [
+                // Avatar
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: AppTheme.primaryGradient,
+                  ),
+                  child: Center(
+                    child: user.avatarUrl != null
+                        ? ClipOval(
+                            child: CachedNetworkImage(
+                              imageUrl: user.avatarUrl!.startsWith('/uploads')
+                                  ? '${ApiConfig.baseUrl}${user.avatarUrl}'
+                                  : user.avatarUrl!,
+                              width: 56,
+                              height: 56,
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) => Container(
+                                decoration: BoxDecoration(
+                                  gradient: AppTheme.primaryGradient,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    user.fullName[0].toUpperCase(),
+                                    style: const TextStyle(
+                                      color: AppTheme.whiteColor,
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              errorWidget: (context, url, error) => Text(
                                 user.fullName[0].toUpperCase(),
                                 style: const TextStyle(
                                   color: AppTheme.whiteColor,
@@ -564,8 +669,8 @@ class _FriendsPageState extends State<FriendsPage> {
                                 ),
                               ),
                             ),
-                          ),
-                          errorWidget: (context, url, error) => Text(
+                          )
+                        : Text(
                             user.fullName[0].toUpperCase(),
                             style: const TextStyle(
                               color: AppTheme.whiteColor,
@@ -573,44 +678,34 @@ class _FriendsPageState extends State<FriendsPage> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                        ),
-                      )
-                    : Text(
-                        user.fullName[0].toUpperCase(),
-                        style: const TextStyle(
-                          color: AppTheme.whiteColor,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // User info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        user.fullName,
+                        style: TextStyle(
+                          color: AppTheme.darkColor,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            // User info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    user.fullName,
-                    style: TextStyle(
-                      color: AppTheme.darkColor,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-            // Add icon
-            GestureDetector(
-              onTap: () => _sendFriendRequest(user),
-              child: Icon(
-                Ionicons.person_add_outline,
-                color: AppTheme.primaryColor,
-              ),
-            ),
-          ],
+                ),
+                // Add icon
+                GestureDetector(
+                  onTap: () => _sendFriendRequest(user),
+                  child: Icon(
+                    Ionicons.person_add_outline,
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -742,6 +837,14 @@ class _FriendsPageState extends State<FriendsPage> {
                   ),
                 ),
 
+                // Chat button
+                IconButton(
+                  icon: const Icon(
+                    Ionicons.chatbubble_outline,
+                    color: AppTheme.primaryColor,
+                  ),
+                  onPressed: () => _openChat(friend),
+                ),
                 // Options button
                 IconButton(
                   icon: Icon(
@@ -892,325 +995,339 @@ class _FriendsPageState extends State<FriendsPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-            // Handle bar
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 20),
-              decoration: BoxDecoration(
-                color: AppTheme.darkColor.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(2),
+              // Handle bar
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: AppTheme.darkColor.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-            ),
-            // Avatar
-            Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: AppTheme.primaryGradient,
-              ),
-              child: Center(
-                child: user.avatarUrl != null
-                    ? ClipOval(
-                        child: CachedNetworkImage(
-                          imageUrl: user.avatarUrl!.startsWith('/uploads')
-                              ? '${ApiConfig.baseUrl}${user.avatarUrl}'
-                              : user.avatarUrl!,
-                          width: 100,
-                          height: 100,
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) => Container(
-                            decoration: BoxDecoration(
-                              gradient: AppTheme.primaryGradient,
-                            ),
-                            child: Center(
-                              child: Text(
-                                user.fullName[0].toUpperCase(),
-                                style: const TextStyle(
-                                  color: AppTheme.whiteColor,
-                                  fontSize: 40,
-                                  fontWeight: FontWeight.bold,
+              // Avatar
+              Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: AppTheme.primaryGradient,
+                ),
+                child: Center(
+                  child: user.avatarUrl != null
+                      ? ClipOval(
+                          child: CachedNetworkImage(
+                            imageUrl: user.avatarUrl!.startsWith('/uploads')
+                                ? '${ApiConfig.baseUrl}${user.avatarUrl}'
+                                : user.avatarUrl!,
+                            width: 100,
+                            height: 100,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => Container(
+                              decoration: BoxDecoration(
+                                gradient: AppTheme.primaryGradient,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  user.fullName[0].toUpperCase(),
+                                  style: const TextStyle(
+                                    color: AppTheme.whiteColor,
+                                    fontSize: 40,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                          errorWidget: (context, url, error) => Text(
-                            user.fullName[0].toUpperCase(),
-                            style: const TextStyle(
-                              color: AppTheme.whiteColor,
-                              fontSize: 40,
-                              fontWeight: FontWeight.bold,
+                            errorWidget: (context, url, error) => Text(
+                              user.fullName[0].toUpperCase(),
+                              style: const TextStyle(
+                                color: AppTheme.whiteColor,
+                                fontSize: 40,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
+                        )
+                      : Text(
+                          user.fullName[0].toUpperCase(),
+                          style: const TextStyle(
+                            color: AppTheme.whiteColor,
+                            fontSize: 40,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      )
-                    : Text(
-                        user.fullName[0].toUpperCase(),
-                        style: const TextStyle(
-                          color: AppTheme.whiteColor,
-                          fontSize: 40,
-                          fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 20),
+              // Name
+              Text(
+                user.fullName,
+                style: const TextStyle(
+                  color: AppTheme.darkColor,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 20),
+              // Social networks (if any)
+              if (user.telegramUrl != null ||
+                  user.whatsappUrl != null ||
+                  user.youtubeUrl != null ||
+                  user.linkedinUrl != null) ...[
+                _buildSocialNetworksRow(user),
+                const SizedBox(height: 24),
+              ],
+              // Stats
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  // Memories count
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Ionicons.book_outline,
+                          size: 28,
+                          color: AppTheme.darkColor.withOpacity(0.6),
                         ),
-                      ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${user.memoriesCount}',
+                          style: const TextStyle(
+                            color: AppTheme.darkColor,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'воспоминаний',
+                          style: TextStyle(
+                            color: AppTheme.darkColor.withOpacity(0.6),
+                            fontSize: 12,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Divider
+                  Container(
+                    width: 1,
+                    height: 60,
+                    color: AppTheme.darkColor.withOpacity(0.1),
+                  ),
+                  // Friends count
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Ionicons.people_outline,
+                          size: 28,
+                          color: AppTheme.darkColor.withOpacity(0.6),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${user.friendsCount}',
+                          style: const TextStyle(
+                            color: AppTheme.darkColor,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'друзей',
+                          style: TextStyle(
+                            color: AppTheme.darkColor.withOpacity(0.6),
+                            fontSize: 12,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Divider
+                  Container(
+                    width: 1,
+                    height: 60,
+                    color: AppTheme.darkColor.withOpacity(0.1),
+                  ),
+                  // Streak days
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Ionicons.flame_outline,
+                          size: 28,
+                          color: AppTheme.darkColor.withOpacity(0.6),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${user.streakDays}',
+                          style: const TextStyle(
+                            color: AppTheme.darkColor,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'дней',
+                          style: TextStyle(
+                            color: AppTheme.darkColor.withOpacity(0.6),
+                            fontSize: 12,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 20),
-            // Name
-            Text(
-              user.fullName,
-              style: const TextStyle(
-                color: AppTheme.darkColor,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 20),
-            // Social networks (if any)
-            if (user.telegramUrl != null ||
-                user.whatsappUrl != null ||
-                user.youtubeUrl != null ||
-                user.linkedinUrl != null) ...[
-              _buildSocialNetworksRow(user),
               const SizedBox(height: 24),
-            ],
-            // Stats
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                // Memories count
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Ionicons.book_outline,
-                        size: 28,
-                        color: AppTheme.darkColor.withOpacity(0.6),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${user.memoriesCount}',
-                        style: const TextStyle(
-                          color: AppTheme.darkColor,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'воспоминаний',
-                        style: TextStyle(
-                          color: AppTheme.darkColor.withOpacity(0.6),
-                          fontSize: 12,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-                // Divider
-                Container(
-                  width: 1,
-                  height: 60,
-                  color: AppTheme.darkColor.withOpacity(0.1),
-                ),
-                // Friends count
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Ionicons.people_outline,
-                        size: 28,
-                        color: AppTheme.darkColor.withOpacity(0.6),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${user.friendsCount}',
-                        style: const TextStyle(
-                          color: AppTheme.darkColor,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'друзей',
-                        style: TextStyle(
-                          color: AppTheme.darkColor.withOpacity(0.6),
-                          fontSize: 12,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-                // Divider
-                Container(
-                  width: 1,
-                  height: 60,
-                  color: AppTheme.darkColor.withOpacity(0.1),
-                ),
-                // Streak days
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Ionicons.flame_outline,
-                        size: 28,
-                        color: AppTheme.darkColor.withOpacity(0.6),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${user.streakDays}',
-                        style: const TextStyle(
-                          color: AppTheme.darkColor,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'дней',
-                        style: TextStyle(
-                          color: AppTheme.darkColor.withOpacity(0.6),
-                          fontSize: 12,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            // Created at
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Ionicons.calendar_outline,
-                  size: 16,
-                  color: AppTheme.darkColor.withOpacity(0.6),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'На платформе с ${_formatDate(user.createdAt)}',
-                  style: TextStyle(
+              // Created at
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Ionicons.calendar_outline,
+                    size: 16,
                     color: AppTheme.darkColor.withOpacity(0.6),
-                    fontSize: 14,
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            // Personal data section
-            if (user.profession != null ||
-                user.city != null ||
-                user.dateOfBirth != null ||
-                user.education != null ||
-                user.hobbies != null ||
-                user.aboutMe != null ||
-                user.telegramUrl != null ||
-                user.whatsappUrl != null ||
-                user.youtubeUrl != null ||
-                user.linkedinUrl != null) ...[
-              Divider(color: AppTheme.darkColor.withOpacity(0.1)),
-              const SizedBox(height: 16),
-              // Personal info
-              if (user.profession != null) ...[
-                _buildInfoRow(Ionicons.briefcase_outline, 'Профессия', user.profession!),
-                const SizedBox(height: 12),
-              ],
-              if (user.city != null) ...[
-                _buildInfoRow(Ionicons.location_outline, 'Город', user.city!),
-                const SizedBox(height: 12),
-              ],
-              if (user.dateOfBirth != null) ...[
-                _buildInfoRow(
-                  Ionicons.calendar_outline,
-                  'Дата рождения',
-                  DateFormat('dd MMMM yyyy', 'ru').format(user.dateOfBirth!),
-                ),
-                const SizedBox(height: 12),
-              ],
-              if (user.education != null) ...[
-                _buildInfoRow(Ionicons.school_outline, 'Образование', user.education!),
-                const SizedBox(height: 12),
-              ],
-              if (user.hobbies != null) ...[
-                _buildInfoRow(Ionicons.heart_outline, 'Хобби', user.hobbies!),
-                const SizedBox(height: 12),
-              ],
-              if (user.aboutMe != null) ...[
-                _buildInfoRow(Ionicons.person_outline, 'О себе', user.aboutMe!),
-                const SizedBox(height: 12),
-              ],
-            ],
-            const SizedBox(height: 24),
-            // Action button
-            Builder(
-              builder: (context) {
-                final isFriend = _friends.any((f) => f.id == user.id);
-                final isRequestSent = _sentRequests.any((r) => r.id == user.id);
-                
-                if (isFriend) {
-                  return SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.darkColor.withOpacity(0.1),
-                        foregroundColor: AppTheme.darkColor,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text('Вы уже друзья'),
+                  const SizedBox(width: 8),
+                  Text(
+                    'На платформе с ${_formatDate(user.createdAt)}',
+                    style: TextStyle(
+                      color: AppTheme.darkColor.withOpacity(0.6),
+                      fontSize: 14,
                     ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              // Personal data section
+              if (user.profession != null ||
+                  user.city != null ||
+                  user.dateOfBirth != null ||
+                  user.education != null ||
+                  user.hobbies != null ||
+                  user.aboutMe != null ||
+                  user.telegramUrl != null ||
+                  user.whatsappUrl != null ||
+                  user.youtubeUrl != null ||
+                  user.linkedinUrl != null) ...[
+                Divider(color: AppTheme.darkColor.withOpacity(0.1)),
+                const SizedBox(height: 16),
+                // Personal info
+                if (user.profession != null) ...[
+                  _buildInfoRow(
+                    Ionicons.briefcase_outline,
+                    'Профессия',
+                    user.profession!,
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                if (user.city != null) ...[
+                  _buildInfoRow(Ionicons.location_outline, 'Город', user.city!),
+                  const SizedBox(height: 12),
+                ],
+                if (user.dateOfBirth != null) ...[
+                  _buildInfoRow(
+                    Ionicons.calendar_outline,
+                    'Дата рождения',
+                    DateFormat('dd MMMM yyyy', 'ru').format(user.dateOfBirth!),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                if (user.education != null) ...[
+                  _buildInfoRow(
+                    Ionicons.school_outline,
+                    'Образование',
+                    user.education!,
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                if (user.hobbies != null) ...[
+                  _buildInfoRow(Ionicons.heart_outline, 'Хобби', user.hobbies!),
+                  const SizedBox(height: 12),
+                ],
+                if (user.aboutMe != null) ...[
+                  _buildInfoRow(
+                    Ionicons.person_outline,
+                    'О себе',
+                    user.aboutMe!,
+                  ),
+                  const SizedBox(height: 12),
+                ],
+              ],
+              const SizedBox(height: 24),
+              // Action button
+              Builder(
+                builder: (context) {
+                  final isFriend = _friends.any((f) => f.id == user.id);
+                  final isRequestSent = _sentRequests.any(
+                    (r) => r.id == user.id,
                   );
-                } else if (isRequestSent) {
-                  return SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.darkColor.withOpacity(0.1),
-                        foregroundColor: AppTheme.darkColor,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+
+                  if (isFriend) {
+                    return SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.darkColor.withOpacity(0.1),
+                          foregroundColor: AppTheme.darkColor,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
+                        child: const Text('Вы уже друзья'),
                       ),
-                      child: const Text('Запрос отправлен'),
-                    ),
-                  );
-                } else {
-                  return SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        Navigator.pop(context);
-                        await _sendFriendRequest(user);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryColor,
-                        foregroundColor: AppTheme.whiteColor,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                    );
+                  } else if (isRequestSent) {
+                    return SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.darkColor.withOpacity(0.1),
+                          foregroundColor: AppTheme.darkColor,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
+                        child: const Text('Запрос отправлен'),
                       ),
-                      child: const Text('Добавить в друзья'),
-                    ),
-                  );
-                }
-              },
-            ),
-            SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
+                    );
+                  } else {
+                    return SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          Navigator.pop(context);
+                          await _sendFriendRequest(user);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryColor,
+                          foregroundColor: AppTheme.whiteColor,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text('Добавить в друзья'),
+                      ),
+                    );
+                  }
+                },
+              ),
+              SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
             ],
           ),
         ),
@@ -1240,11 +1357,7 @@ class _FriendsPageState extends State<FriendsPage> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(
-          icon,
-          size: 20,
-          color: AppTheme.primaryColor,
-        ),
+        Icon(icon, size: 20, color: AppTheme.primaryColor),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -1260,10 +1373,7 @@ class _FriendsPageState extends State<FriendsPage> {
               const SizedBox(height: 4),
               Text(
                 value,
-                style: const TextStyle(
-                  color: AppTheme.darkColor,
-                  fontSize: 16,
-                ),
+                style: const TextStyle(color: AppTheme.darkColor, fontSize: 16),
               ),
             ],
           ),
@@ -1274,7 +1384,7 @@ class _FriendsPageState extends State<FriendsPage> {
 
   Widget _buildSocialNetworksRow(FriendProfile user) {
     final socialNetworks = <Map<String, String>>[];
-    
+
     if (user.telegramUrl != null) {
       socialNetworks.add({
         'name': 'Telegram',
@@ -1313,14 +1423,11 @@ class _FriendsPageState extends State<FriendsPage> {
         final index = entry.key;
         final network = entry.value;
         final isLast = index == socialNetworks.length - 1;
-        
+
         return Expanded(
           child: Padding(
             padding: EdgeInsets.only(right: isLast ? 0 : 8),
-            child: _buildSocialButton(
-              network['url']!,
-              network['icon']!,
-            ),
+            child: _buildSocialButton(network['url']!, network['icon']!),
           ),
         );
       }).toList(),
