@@ -25,87 +25,78 @@ class StoryCircle extends StatelessWidget {
       onTap: onTap,
       child: Container(
         width: 80,
-        margin: const EdgeInsets.only(right: 6),
+        margin: const EdgeInsets.only(right: 8),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // Story circle с градиентной обводкой и новым фоном
+            // Story circle с упрощенной структурой
             Container(
               width: 68,
               height: 68,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: const LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color.fromRGBO(255, 255, 255, 0.2),
-                    Color.fromRGBO(233, 233, 233, 0.2),
-                    Color.fromRGBO(242, 242, 242, 0),
-                  ],
-                  stops: [0.0, 0.5, 1.0],
-                ),
+                gradient: isViewed
+                    ? LinearGradient(
+                        colors: [
+                          Colors.grey.shade300,
+                          Colors.grey.shade400,
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      )
+                    : AppTheme.primaryGradient,
               ),
               child: Container(
-                margin: const EdgeInsets.all(1), // Толщина границы
+                margin: const EdgeInsets.all(2.5),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color.fromRGBO(44, 44, 44, 1),
+                  color: AppTheme.whiteColor,
                 ),
-                child: Container(
-                  margin: const EdgeInsets.all(
-                    2,
-                  ), // Отступ от фона до градиента истории
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: isViewed
-                        ? LinearGradient(
-                            colors: [
-                              Colors.grey.shade400,
-                              Colors.grey.shade300,
-                            ],
-                          )
-                        : AppTheme.primaryGradient,
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(1.5),
-                    child: ClipOval(
-                      child: imageUrl != null && imageUrl!.isNotEmpty
-                          ? CachedNetworkImage(
-                              imageUrl: imageUrl!,
-                              fit: BoxFit.cover,
-                              width: 60,
-                              height: 60,
-                              placeholder: (context, url) => Container(
-                                color: Colors.grey.shade200,
-                                child: const Center(
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
+                child: ClipOval(
+                  child: imageUrl != null && imageUrl!.isNotEmpty
+                      ? CachedNetworkImage(
+                          imageUrl: imageUrl!,
+                          fit: BoxFit.cover,
+                          width: 63,
+                          height: 63,
+                          placeholder: (context, url) => Container(
+                            decoration: BoxDecoration(
+                              gradient: AppTheme.primaryGradient,
+                            ),
+                            child: const Center(
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  AppTheme.whiteColor,
                                 ),
-                              ),
-                              errorWidget: (context, url, error) => Container(
-                                color: const Color.fromRGBO(44, 44, 44, 1),
-                                child: const Icon(
-                                  Ionicons.person,
-                                  color: Colors.white,
-                                  size: 28,
-                                ),
-                              ),
-                            )
-                          : Container(
-                              color: const Color.fromRGBO(44, 44, 44, 1),
-                              child: const Icon(
-                                Ionicons.person,
-                                color: Colors.white,
-                                size: 28,
                               ),
                             ),
-                    ),
-                  ),
+                          ),
+                          errorWidget: (context, url, error) => Container(
+                            decoration: BoxDecoration(
+                              gradient: AppTheme.primaryGradient,
+                            ),
+                            child: const Icon(
+                              Ionicons.person,
+                              color: AppTheme.whiteColor,
+                              size: 28,
+                            ),
+                          ),
+                        )
+                      : Container(
+                          decoration: BoxDecoration(
+                            gradient: AppTheme.primaryGradient,
+                          ),
+                          child: const Icon(
+                            Ionicons.person,
+                            color: AppTheme.whiteColor,
+                            size: 28,
+                          ),
+                        ),
                 ),
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 5),
             // Username
             Text(
               username.length > 10
@@ -114,8 +105,11 @@ class StoryCircle extends StatelessWidget {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
-                letterSpacing: 0.3,
-                color: isViewed ? Colors.white70 : Colors.white,
+                letterSpacing: 0.2,
+                height: 1.2,
+                color: isViewed
+                    ? AppTheme.darkColor.withOpacity(0.5)
+                    : AppTheme.darkColor,
               ),
               textAlign: TextAlign.center,
               maxLines: 1,

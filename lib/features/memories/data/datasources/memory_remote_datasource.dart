@@ -8,6 +8,7 @@ abstract class MemoryRemoteDataSource {
   Future<Map<String, dynamic>> updateMemory(String id, Map<String, dynamic> memoryData);
   Future<void> deleteMemory(String id);
   Future<List<Map<String, dynamic>>> searchMemories({required String query, bool isSemanticSearch = false});
+  Future<bool> hasMemoryForTask(String taskId);
 }
 
 class MemoryRemoteDataSourceImpl implements MemoryRemoteDataSource {
@@ -115,6 +116,17 @@ class MemoryRemoteDataSourceImpl implements MemoryRemoteDataSource {
       return [];
     } catch (e) {
       rethrow;
+    }
+  }
+
+  @override
+  Future<bool> hasMemoryForTask(String taskId) async {
+    try {
+      final response = await dio.get('${ApiConfig.memories}/by-task/$taskId/exists');
+      return response.data['has_memory'] as bool? ?? false;
+    } catch (e) {
+      // Если ошибка, считаем что воспоминания нет
+      return false;
     }
   }
 }

@@ -60,49 +60,54 @@ class CustomHeader extends StatelessWidget {
                       ? 120 // Отступ для trailing виджета (несколько кнопок)
                       : 0,
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.darkColor.withOpacity(0.1),
+                        blurRadius: 20,
+                        spreadRadius: 0,
+                        offset: const Offset(0, 4),
                       ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.85),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.darkColor.withOpacity(0.1),
-                            blurRadius: 20,
-                            spreadRadius: 0,
-                            offset: const Offset(0, 4),
-                          ),
-                          BoxShadow(
-                            color: AppTheme.darkColor.withOpacity(0.05),
-                            blurRadius: 10,
-                            spreadRadius: 0,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                        border: Border(
-                          bottom: BorderSide(
-                            color: AppTheme.darkColor.withOpacity(0.08),
-                            width: 0.5,
+                      BoxShadow(
+                        color: AppTheme.darkColor.withOpacity(0.05),
+                        blurRadius: 10,
+                        spreadRadius: 0,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.85),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border(
+                            bottom: BorderSide(
+                              color: AppTheme.darkColor.withOpacity(0.08),
+                              width: 0.5,
+                            ),
                           ),
                         ),
-                      ),
-                      child: Text(
-                        title,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.darkColor,
+                        child: Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.darkColor,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
                       ),
                     ),
                   ),

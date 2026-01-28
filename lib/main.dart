@@ -39,6 +39,7 @@ import 'package:confetti/confetti.dart';
 import 'dart:math' as math;
 import 'package:memoir/features/profile/presentation/pages/profile_page.dart';
 import 'package:memoir/features/friends/presentation/pages/friends_page.dart';
+import 'package:memoir/features/friends/presentation/widgets/user_profile_modal.dart';
 import 'package:memoir/features/friends/data/datasources/friends_remote_datasource.dart';
 import 'package:memoir/features/friends/data/models/friendship_model.dart';
 import 'package:memoir/features/analytics/presentation/pages/analytics_page.dart';
@@ -126,10 +127,7 @@ class MemoirApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [
-        Locale('ru', 'RU'),
-        Locale('en', 'US'),
-      ],
+      supportedLocales: const [Locale('ru', 'RU'), Locale('en', 'US')],
       locale: const Locale('ru', 'RU'),
       initialRoute: '/',
       routes: {
@@ -345,7 +343,8 @@ class _HomePageState extends State<HomePage>
   List<Map<String, dynamic>> _memories = [];
   List<StoryModel> _stories = [];
   List<FriendProfile> _potentialFriends = [];
-  Set<String> _sentFriendRequests = {}; // ID пользователей, которым отправлен запрос
+  Set<String> _sentFriendRequests =
+      {}; // ID пользователей, которым отправлен запрос
   bool _isLoading = false;
   bool _isLoadingStories = false;
   bool _isLoadingPotentialFriends = false;
@@ -598,12 +597,62 @@ class _HomePageState extends State<HomePage>
   }
 
   Future<void> _toggleTaskStatus(TaskModel task) async {
-    if (task.status == TaskStatus.completed) {
-      SnackBarUtils.showInfo(context, 'Задача уже выполнена');
-      return;
-    }
-
     try {
+      if (task.status == TaskStatus.completed) {
+        // Проверяем, есть ли связанное воспоминание
+        final hasMemory = await _memoryDataSource.hasMemoryForTask(task.id);
+        if (hasMemory) {
+          if (mounted) {
+            SnackBarUtils.showWarning(
+              context,
+              'Нельзя отменить выполнение задачи, так как по ней уже создано воспоминание',
+            );
+          }
+          return;
+        }
+
+        // Отменяем выполнение задачи
+        await _taskDataSource.uncompleteTask(task.id);
+
+        // Обновляем задачу локально
+        final updatedTask = task.copyWith(
+          status: TaskStatus.pending,
+          completed_at: null,
+        );
+
+        // Обновляем задачу в списках
+        final taskIndex = _tasks.indexWhere((t) => t.id == task.id);
+        if (taskIndex != -1) {
+          _tasks[taskIndex] = updatedTask;
+        }
+
+        final longTermIndex = _longTermTasks.indexWhere((t) => t.id == task.id);
+        if (longTermIndex != -1) {
+          _longTermTasks[longTermIndex] = updatedTask;
+        }
+
+        // Обновляем в группах
+        for (final group in _taskGroups.values) {
+          final groupTaskIndex = group.tasks.indexWhere((t) => t.id == task.id);
+          if (groupTaskIndex != -1) {
+            group.tasks[groupTaskIndex] = updatedTask;
+          }
+        }
+
+        // Обновляем в негруппированных задачах
+        final ungroupedIndex = _ungroupedTasks.indexWhere(
+          (t) => t.id == task.id,
+        );
+        if (ungroupedIndex != -1) {
+          _ungroupedTasks[ungroupedIndex] = updatedTask;
+        }
+
+        setState(() {});
+        SnackBarUtils.showInfo(context, 'Выполнение задачи отменено');
+        return;
+      }
+
+      // Выполняем задачу
       await _taskDataSource.completeTask(task.id);
       await PetService().playWithPet();
 
@@ -645,6 +694,12 @@ class _HomePageState extends State<HomePage>
       // Вызываем setState только для уведомления Flutter об изменении
       setState(() {});
 
+      // Если задача долгосрочная и была выполнена (не отменена), открываем модалку создания воспоминания
+      if (updatedTask.status == TaskStatus.completed &&
+          task.time_scope == TimeScope.longTerm) {
+        await _openCreateMemoryFromTask(updatedTask);
+      }
+
       // Не перезагружаем задачи сразу - мы уже обновили локально
       // Синхронизация произойдет при следующей загрузке страницы или при обновлении списка
     } catch (e) {
@@ -653,6 +708,71 @@ class _HomePageState extends State<HomePage>
         context,
         'Ошибка: ${ErrorMessages.getErrorMessage(e)}',
       );
+    }
+  }
+
+  Future<void> _openCreateMemoryFromTask(TaskModel task) async {
+    // Небольшая задержка для завершения анимации конфетти
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    if (!mounted) return;
+
+    final result = await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => CreateMemoryPage(task: task),
+    );
+
+    if (result != null && result is Map<String, dynamic>) {
+      print('📝 [TASKS] Creating memory from task, result: $result');
+      // Extract story flag before sending to backend
+      final shouldPublishAsStory =
+          result.remove('publish_as_story') as bool? ?? false;
+      print('📝 [TASKS] Should publish as story: $shouldPublishAsStory');
+      
+      try {
+        final response = await _memoryDataSource.createMemory(result);
+        print('✅ [TASKS] Memory created successfully: ${response['id']}');
+        
+        // If user wants to publish as story, create story
+        if (shouldPublishAsStory) {
+          final memoryId = response['id']?.toString();
+          if (memoryId != null && memoryId.isNotEmpty) {
+            print('📖 [TASKS] Creating story for memory $memoryId...');
+            try {
+              await _storyDataSource.createStory(memoryId, true);
+              print('✅ [TASKS] Story created successfully');
+              await Future.delayed(const Duration(milliseconds: 500));
+              await _loadStories();
+            } catch (storyError) {
+              print('❌ [TASKS] Error creating story: $storyError');
+              if (mounted) {
+                SnackBarUtils.showWarning(
+                  context,
+                  'Воспоминание создано, но не удалось опубликовать в историях: ${ErrorMessages.getErrorMessage(storyError)}',
+                );
+              }
+            }
+          }
+        }
+        
+        if (mounted) {
+          await _loadMemories();
+          SnackBarUtils.showSuccess(
+            context,
+            '✅ Воспоминание создано из выполненной задачи!',
+          );
+        }
+      } catch (e) {
+        log('❌ [TASKS] Error creating memory from task: $e');
+        if (mounted) {
+          SnackBarUtils.showError(
+            context,
+            'Не удалось создать воспоминание: ${ErrorMessages.getErrorMessage(e)}',
+          );
+        }
+      }
     }
   }
 
@@ -904,15 +1024,26 @@ class _HomePageState extends State<HomePage>
   }
 
   Future<void> _createMemory(Map<String, dynamic> memoryData) async {
+    print('🏠 [HOME] ========== _createMemory CALLED ==========');
     print('🏠 [HOME] Received memory data from CreateMemoryPage');
     print('📦 [HOME] Memory data keys: ${memoryData.keys}');
+    print('📦 [HOME] Full memory data: $memoryData');
 
     // Extract story flag before sending to backend
+    final hasPublishFlag = memoryData.containsKey('publish_as_story');
+    final publishValue = memoryData['publish_as_story'];
+    print(
+      '📖 [HOME] Memory data before extraction: hasFlag=$hasPublishFlag, value=$publishValue, type=${publishValue.runtimeType}',
+    );
+    
     final shouldPublishAsStory =
         memoryData.remove('publish_as_story') as bool? ?? false;
+    
     print(
-      '📖 [HOME] Should publish as story: $shouldPublishAsStory (type: ${shouldPublishAsStory.runtimeType})',
+      '📖 [HOME] After remove - shouldPublish=$shouldPublishAsStory (type: ${shouldPublishAsStory.runtimeType})',
     );
+    print('📦 [HOME] Memory data after remove: ${memoryData.keys}');
+    print('📦 [HOME] Full memory data after remove: $memoryData');
 
     try {
       print('🚀 [HOME] Calling backend API...');
@@ -921,18 +1052,41 @@ class _HomePageState extends State<HomePage>
       print('📦 [HOME] Response ID: ${response['id']}');
 
       // If user wants to publish as story, create story
-      if (shouldPublishAsStory && response['id'] != null) {
-        print('📖 [HOME] Creating story for memory ${response['id']}...');
-        try {
-          await _storyDataSource.createStory(response['id'], true);
-          print('✅ [HOME] Story created successfully');
-          await _loadStories(); // Reload stories
-        } catch (storyError) {
-          print('❌ [HOME] Error creating story: $storyError');
+      print(
+        '📖 [HOME] Checking story creation: shouldPublish=$shouldPublishAsStory, memoryId=${response['id']}, memoryIdType=${response['id'].runtimeType}',
+      );
+      
+      bool storyCreatedSuccessfully = false;
+      
+      if (shouldPublishAsStory) {
+        final memoryId = response['id']?.toString();
+        if (memoryId != null && memoryId.isNotEmpty) {
+          print('📖 [HOME] Creating story for memory $memoryId...');
+          try {
+            await _storyDataSource.createStory(memoryId, true);
+            print('✅ [HOME] Story created successfully');
+            storyCreatedSuccessfully = true;
+            // Небольшая задержка перед загрузкой, чтобы бэкенд успел обработать
+            await Future.delayed(const Duration(milliseconds: 500));
+            await _loadStories(); // Reload stories
+          } catch (storyError, stackTrace) {
+            print('❌ [HOME] Error creating story: $storyError');
+            print('📚 [HOME] Stack trace: $stackTrace');
+            storyCreatedSuccessfully = false;
+            if (mounted) {
+              SnackBarUtils.showWarning(
+                context,
+                'Воспоминание создано, но не удалось опубликовать в историях: ${ErrorMessages.getErrorMessage(storyError)}',
+              );
+            }
+          }
+        } else {
+          print('⚠️ [HOME] Memory ID is null or empty, cannot create story');
+          storyCreatedSuccessfully = false;
           if (mounted) {
             SnackBarUtils.showWarning(
               context,
-              'Воспоминание создано, но не удалось опубликовать в историях',
+              'Воспоминание создано, но не удалось получить ID для публикации в историях',
             );
           }
         }
@@ -950,10 +1104,16 @@ class _HomePageState extends State<HomePage>
         // 🐾 NEW: Feed pet when creating memory
         await _feedPet();
 
-        if (shouldPublishAsStory) {
+        if (shouldPublishAsStory && storyCreatedSuccessfully) {
           SnackBarUtils.showSuccess(
             context,
             '✨ Воспоминание создано и опубликовано в историях!\nAI обрабатывает данные...',
+          );
+        } else if (shouldPublishAsStory && !storyCreatedSuccessfully) {
+          // Сообщение об ошибке уже показано выше
+          SnackBarUtils.showAIProcessing(
+            context,
+            'Воспоминание создано!\nAI классифицирует его в фоне...',
           );
         } else {
           SnackBarUtils.showAIProcessing(
@@ -1107,12 +1267,30 @@ class _HomePageState extends State<HomePage>
     setState(() => _isLoadingStories = true);
 
     try {
-      final stories = await _storyDataSource.getPublicStories();
-      print('📖 [STORIES] Loaded ${stories.length} stories');
+      // Загружаем и публичные, и свои истории
+      final publicStories = await _storyDataSource.getPublicStories();
+      print('📖 [STORIES] Loaded ${publicStories.length} public stories');
+      
+      final myStories = await _storyDataSource.getMyStories();
+      print('📖 [STORIES] Loaded ${myStories.length} my stories');
+      
+      // Объединяем истории, убирая дубликаты по ID
+      final Map<String, StoryModel> uniqueStories = {};
+      for (var story in publicStories) {
+        uniqueStories[story.id] = story;
+      }
+      for (var story in myStories) {
+        uniqueStories[story.id] = story;
+      }
+      
+      // Сортируем по дате создания (новые первыми)
+      final allStories = uniqueStories.values.toList()
+        ..sort((a, b) => b.created_at.compareTo(a.created_at));
+      print('📖 [STORIES] Total unique stories: ${allStories.length}');
 
       if (mounted) {
         setState(() {
-          _stories = stories;
+          _stories = allStories;
           _isLoadingStories = false;
         });
       }
@@ -1125,18 +1303,31 @@ class _HomePageState extends State<HomePage>
   }
 
   Future<void> _showAddStoryDialog() async {
+    print('📖 [HOME] ========== _showAddStoryDialog CALLED ==========');
     // Redirect to create memory page
     SnackBarUtils.showInfo(
       context,
       'Создайте воспоминание и включите "Опубликовать в историях" 📖',
     );
 
-    final result = await Navigator.of(
-      context,
-    ).push(PageTransitions.slideFromBottom(const CreateMemoryPage()));
+    print('📖 [HOME] Opening CreateMemoryPage modal...');
+    final result = await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const CreateMemoryPage(),
+    );
 
+    print('📖 [HOME] Modal closed, result: $result');
+    print('📖 [HOME] Result type: ${result.runtimeType}');
+    print('📖 [HOME] Result is Map: ${result is Map<String, dynamic>}');
+    
     if (result != null && result is Map<String, dynamic>) {
+      print('📖 [HOME] Calling _createMemory with result...');
       await _createMemory(result);
+      print('📖 [HOME] _createMemory completed');
+    } else {
+      print('📖 [HOME] Result is null or not a Map, skipping _createMemory');
     }
   }
 
@@ -1175,7 +1366,7 @@ class _HomePageState extends State<HomePage>
       if (mounted) {
         final errorMessage = e.toString();
         // Если запрос уже отправлен - это не ошибка, просто показываем статус
-        if (errorMessage.contains('already sent') || 
+        if (errorMessage.contains('already sent') ||
             errorMessage.contains('Friend request already sent')) {
           setState(() {
             _sentFriendRequests.add(userId);
@@ -1364,35 +1555,41 @@ class _HomePageState extends State<HomePage>
               itemCount: _potentialFriends.length,
               itemBuilder: (context, index) {
                 final user = _potentialFriends[index];
-                return Container(
-                  width: 160,
-                  margin: EdgeInsets.only(
-                    right: index < _potentialFriends.length - 1 ? 12 : 20,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppTheme.darkColor.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: AppTheme.darkColor.withOpacity(0.1),
-                      width: 1,
+                return GestureDetector(
+                  onTap: () {
+                    UserProfileModal.show(
+                      context,
+                      user: user,
+                      isFriend: false,
+                      isRequestSent: _sentFriendRequests.contains(user.id),
+                      onSendFriendRequest: () => _sendFriendRequest(user.id),
+                    );
+                  },
+                  child: Container(
+                    width: 160,
+                    margin: EdgeInsets.only(
+                      right: index < _potentialFriends.length - 1 ? 12 : 20,
                     ),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: Stack(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            // Аватар
-                            GestureDetector(
-                              onTap: () {
-                                // Можно добавить навигацию на профиль
-                              },
-                              child: Container(
+                    decoration: BoxDecoration(
+                      color: AppTheme.darkColor.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: AppTheme.darkColor.withOpacity(0.1),
+                        width: 1,
+                      ),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Stack(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.max,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              // Аватар
+                              Container(
                                 width: 80,
                                 height: 80,
                                 decoration: BoxDecoration(
@@ -1437,74 +1634,75 @@ class _HomePageState extends State<HomePage>
                                         ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(height: 10),
-                            // Имя пользователя
-                            Text(
-                              user.fullName,
-                              style: const TextStyle(
-                                color: AppTheme.darkColor,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
+                              const Spacer(),
+                              // Имя пользователя
+                              Text(
+                                user.fullName,
+                                style: const TextStyle(
+                                  color: AppTheme.darkColor,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                textAlign: TextAlign.center,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            // Информация о взаимных друзьях (заглушка)
-                            if (user.friendsCount > 0) ...[
-                              const SizedBox(height: 4),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    width: 14,
-                                    height: 14,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: AppTheme.darkColor.withOpacity(
-                                        0.2,
-                                      ),
-                                    ),
-                                    child: const Icon(
-                                      Ionicons.person,
-                                      size: 8,
-                                      color: AppTheme.darkColor,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Flexible(
-                                    child: Text(
-                                      '${user.friendsCount} ${user.friendsCount == 1
-                                          ? 'друг'
-                                          : user.friendsCount < 5
-                                          ? 'друга'
-                                          : 'друзей'}',
-                                      style: TextStyle(
+                              // Информация о взаимных друзьях (заглушка)
+                              if (user.friendsCount > 0) ...[
+                                const SizedBox(height: 4),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Container(
+                                      width: 14,
+                                      height: 14,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
                                         color: AppTheme.darkColor.withOpacity(
-                                          0.6,
+                                          0.2,
                                         ),
-                                        fontSize: 10,
                                       ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                                      child: const Icon(
+                                        Ionicons.person,
+                                        size: 8,
+                                        color: AppTheme.darkColor,
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                            const SizedBox(height: 10),
-                            // Кнопка "Подписаться" или "Запрос отправлен"
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: SizedBox(
+                                    const SizedBox(width: 4),
+                                    Flexible(
+                                      child: Text(
+                                        '${user.friendsCount} ${user.friendsCount == 1
+                                            ? 'друг'
+                                            : user.friendsCount < 5
+                                            ? 'друга'
+                                            : 'друзей'}',
+                                        style: TextStyle(
+                                          color: AppTheme.darkColor.withOpacity(
+                                            0.6,
+                                          ),
+                                          fontSize: 10,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                              const Spacer(),
+                              // Кнопка "Подписаться" или "Запрос отправлен"
+                              SizedBox(
                                 width: double.infinity,
                                 height: 32,
                                 child: _sentFriendRequests.contains(user.id)
                                     ? Container(
                                         decoration: BoxDecoration(
-                                          color: AppTheme.darkColor.withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(8),
+                                          color: AppTheme.darkColor.withOpacity(
+                                            0.1,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                         ),
                                         child: Center(
                                           child: Text(
@@ -1512,22 +1710,27 @@ class _HomePageState extends State<HomePage>
                                             style: TextStyle(
                                               fontSize: 12,
                                               fontWeight: FontWeight.w600,
-                                              color: AppTheme.darkColor.withOpacity(0.6),
+                                              color: AppTheme.darkColor
+                                                  .withOpacity(0.6),
                                             ),
                                           ),
                                         ),
                                       )
                                     : ElevatedButton(
-                                        onPressed: () => _sendFriendRequest(user.id),
+                                        onPressed: () =>
+                                            _sendFriendRequest(user.id),
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: AppTheme.primaryColor,
+                                          backgroundColor:
+                                              AppTheme.primaryColor,
                                           foregroundColor: AppTheme.whiteColor,
                                           padding: EdgeInsets.zero,
                                           minimumSize: const Size(0, 32),
                                           tapTargetSize:
                                               MaterialTapTargetSize.shrinkWrap,
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(8),
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
                                           ),
                                           elevation: 0,
                                         ),
@@ -1540,36 +1743,36 @@ class _HomePageState extends State<HomePage>
                                         ),
                                       ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                      // Кнопка закрытия (X) в правом верхнем углу
-                      Positioned(
-                        top: 8,
-                        right: 8,
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _potentialFriends.removeAt(index);
-                            });
-                          },
-                          child: Container(
-                            width: 24,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              color: AppTheme.darkColor.withOpacity(0.6),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Ionicons.close,
-                              size: 14,
-                              color: AppTheme.whiteColor,
+                        // Кнопка закрытия (X) в правом верхнем углу
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _potentialFriends.removeAt(index);
+                              });
+                            },
+                            child: Container(
+                              width: 24,
+                              height: 24,
+                              decoration: BoxDecoration(
+                                color: AppTheme.darkColor.withOpacity(0.6),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Ionicons.close,
+                                size: 14,
+                                color: AppTheme.whiteColor,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 );
               },
@@ -1600,42 +1803,20 @@ class _HomePageState extends State<HomePage>
                   64, // SafeArea + высота CustomHeader
             ),
           ),
-          // Заголовок "Главная" над сторисами
-          if (_stories.isNotEmpty || _isLoadingStories)
-            SliverToBoxAdapter(
-              child: AnimatedOpacity(
-                opacity: _showHeaderTitle ? 0.0 : 1.0,
-                duration: const Duration(milliseconds: 300),
-                child: Container(
-                  color: AppTheme.whiteColor,
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-                  child: const Text(
-                    'Главная',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.darkColor,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
           // Stories list
-          if (_stories.isNotEmpty || _isLoadingStories)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 0),
-                child: StoriesList(
-                  stories: _stories,
-                  isLoading: _isLoadingStories,
-                  onAddStory: _showAddStoryDialog,
-                  onStoryTap: (story) {
-                    // onStoryTap больше не используется, навигация внутри StoriesList
-                  },
-                ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 0),
+              child: StoriesList(
+                stories: _stories,
+                isLoading: _isLoadingStories,
+                onAddStory: _showAddStoryDialog,
+                onStoryTap: (story) {
+                  // onStoryTap больше не используется, навигация внутри StoriesList
+                },
               ),
             ),
+          ),
 
           // Banner carousel
           // SliverToBoxAdapter(
@@ -2112,7 +2293,6 @@ class _HomePageState extends State<HomePage>
           if (_memories.isNotEmpty)
             SliverToBoxAdapter(
               child: Container(
-                color: AppTheme.whiteColor,
                 padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
                 child: const Text(
                   'Вспоминаем вместе',
@@ -2157,6 +2337,19 @@ class _HomePageState extends State<HomePage>
                         memory['category_id'] == null &&
                         DateTime.now().difference(createdAt).inMinutes < 5;
 
+                    // Debug: логируем данные изображения для каждого воспоминания
+                    final imageUrl =
+                        memory['image_url'] ?? memory['backdrop_url'];
+                    if (imageUrl != null) {
+                      print(
+                        '🖼️ [RENDER] Memory "${memory['title']}": imageUrl=$imageUrl (image_url=${memory['image_url']}, backdrop_url=${memory['backdrop_url']})',
+                      );
+                    } else {
+                      print(
+                        '⚠️ [RENDER] Memory "${memory['title']}": No image - image_url=${memory['image_url']}, backdrop_url=${memory['backdrop_url']}',
+                      );
+                    }
+
                     return Padding(
                       padding: const EdgeInsets.only(
                         left: 16,
@@ -2165,6 +2358,7 @@ class _HomePageState extends State<HomePage>
                         top: 16,
                       ),
                       child: MemoryCard(
+                        memoryId: memory['id'],
                         title: memory['title'] ?? 'Без заголовка',
                         content: memory['content'] ?? '',
                         category: memory['category_name'],
@@ -2172,12 +2366,20 @@ class _HomePageState extends State<HomePage>
                             ? List<String>.from(memory['tags'])
                             : null,
                         createdAt: createdAt,
-                        imageUrl: memory['image_url'],
+                        // Показываем либо основное изображение, либо бекдроп (если пост из ссылки/фильма)
+                        imageUrl: imageUrl,
+                        sourceUrl: memory['source_url'],
+                        audioUrl: memory['audio_url'],
                         aiConfidence: aiConfidence,
                         isAiProcessing: isProcessing,
                         authorName: _userName,
                         authorAvatar: _userAvatar,
                         isOwnPost: true, // Все посты на главной - свои
+                        reactionsCount: memory['reactions_count'] ?? 0,
+                        commentsCount: memory['comments_count'] ?? 0,
+                        sharesCount: memory['shares_count'] ?? 0,
+                        viewsCount: memory['views_count'] ?? 0,
+                        isReacted: memory['is_reacted'] ?? false,
                         onTap: () async {
                           final result = await Navigator.of(context).push(
                             PageTransitions.slideFromRight(

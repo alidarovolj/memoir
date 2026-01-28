@@ -414,6 +414,7 @@ class _SearchPageState extends State<SearchPage> {
           return Padding(
             padding: const EdgeInsets.only(bottom: 16),
             child: MemoryCard(
+              memoryId: memory['id'] ?? '',
               title: memory['title'] ?? 'Без заголовка',
               content: memory['content'] ?? '',
               imageUrl: memory['image_url'],
@@ -423,6 +424,11 @@ class _SearchPageState extends State<SearchPage> {
                   : null,
               createdAt: createdAt,
               aiConfidence: aiConfidence,
+              reactionsCount: memory['reactions_count'] ?? 0,
+              commentsCount: memory['comments_count'] ?? 0,
+              sharesCount: memory['shares_count'] ?? 0,
+              viewsCount: memory['views_count'] ?? 0,
+              isReacted: memory['is_reacted'] ?? false,
               onTap: () {
                 SnackBarUtils.showInfo(
                   context,

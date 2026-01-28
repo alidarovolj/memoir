@@ -89,24 +89,24 @@ class _TasksPageState extends State<TasksPage> {
   }
 
   Future<void> _toggleTaskStatus(TaskModel task) async {
-    if (task.status == TaskStatus.completed) {
-      // Already completed, just show info
-      SnackBarUtils.showInfo(context, 'Задача уже выполнена');
-      return;
-    }
-
     try {
-      // Complete task
-      await _taskDataSource.completeTask(task.id);
+      if (task.status == TaskStatus.completed) {
+        // Отменяем выполнение задачи
+        await _taskDataSource.uncompleteTask(task.id);
+        SnackBarUtils.showInfo(context, 'Выполнение задачи отменено');
+      } else {
+        // Выполняем задачу
+        await _taskDataSource.completeTask(task.id);
 
-      // 🐾 Play with pet when completing task
-      await PetService().playWithPet();
+        // 🐾 Play with pet when completing task
+        await PetService().playWithPet();
 
-      SnackBarUtils.showSuccess(context, 'Задача выполнена! 🎉');
+        SnackBarUtils.showSuccess(context, 'Задача выполнена! 🎉');
+      }
 
       await _loadTasks();
     } catch (e) {
-      log('❌ [TASKS] Error completing task: $e');
+      log('❌ [TASKS] Error toggling task status: $e');
       SnackBarUtils.showError(
         context,
         'Ошибка: ${ErrorMessages.getErrorMessage(e)}',

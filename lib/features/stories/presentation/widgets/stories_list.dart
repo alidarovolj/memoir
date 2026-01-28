@@ -49,22 +49,9 @@ class _StoriesListState extends State<StoriesList>
     if (widget.isLoading) {
       return Container(
         height: 110,
-        decoration: BoxDecoration(
-          color: AppTheme.headerBackgroundColor,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
+        decoration: BoxDecoration(),
         child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
       );
-    }
-
-    if (widget.stories.isEmpty) {
-      return const SizedBox.shrink();
     }
 
     // Группируем истории по пользователям
@@ -78,18 +65,14 @@ class _StoriesListState extends State<StoriesList>
       storiesByUser[userId]!.add(story);
     }
 
+    // Сортируем истории внутри каждой группы по дате создания (новые первыми)
+    for (var userStories in storiesByUser.values) {
+      userStories.sort((a, b) => b.created_at.compareTo(a.created_at));
+    }
+
     return Container(
-      height: 110,
-      decoration: BoxDecoration(
-        color: AppTheme.headerBackgroundColor,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      height: 112,
+      decoration: BoxDecoration(color: AppTheme.pageBackgroundColor),
       child: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         scrollDirection: Axis.horizontal,
@@ -99,62 +82,50 @@ class _StoriesListState extends State<StoriesList>
             onTap: widget.onAddStory,
             child: Container(
               width: 80,
-              margin: const EdgeInsets.only(right: 6),
+              margin: const EdgeInsets.only(right: 8),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
                     width: 68,
                     height: 68,
                     decoration: const BoxDecoration(
                       shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Color.fromRGBO(255, 255, 255, 0.2),
-                          Color.fromRGBO(233, 233, 233, 0.2),
-                          Color.fromRGBO(242, 242, 242, 0),
-                        ],
-                        stops: [0.0, 0.5, 1.0],
-                      ),
+                      color: AppTheme.whiteColor,
                     ),
-                    child: Container(
-                      margin: const EdgeInsets.all(1), // Толщина границы
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Color.fromRGBO(44, 44, 44, 1),
-                      ),
-                      child: Stack(
-                        children: [
-                          // Вращающаяся пунктирная обводка
-                          RotationTransition(
-                            turns: _rotationController,
-                            child: CustomPaint(
-                              size: const Size(68, 68),
-                              painter: DashedCirclePainter(),
-                            ),
+                    child: Stack(
+                      children: [
+                        // Вращающаяся пунктирная обводка
+                        RotationTransition(
+                          turns: _rotationController,
+                          child: CustomPaint(
+                            size: const Size(68, 68),
+                            painter: DashedCirclePainter(),
                           ),
-                          // Статичная иконка по центру
-                          const Center(
-                            child: Icon(
-                              Ionicons.add,
-                              color: Colors.white,
-                              size: 32,
-                            ),
+                        ),
+                        // Статичная иконка по центру
+                        const Center(
+                          child: Icon(
+                            Ionicons.add,
+                            color: AppTheme.primaryColor,
+                            size: 28,
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  const Text(
+                  const SizedBox(height: 5),
+                  Text(
                     'Добавить',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                      color: AppTheme.darkColor.withOpacity(0.7),
+                      letterSpacing: 0.2,
+                      height: 1.2,
                     ),
                     textAlign: TextAlign.center,
+                    maxLines: 1,
                   ),
                 ],
               ),
@@ -172,13 +143,28 @@ class _StoriesListState extends State<StoriesList>
               (s) => _viewedStoryIds.contains(s.id),
             );
 
+            // Определяем изображение: приоритет у изображения из памяти, затем аватар пользователя
+            String? storyImageUrl;
+            if (firstStory.memory?.image_url != null) {
+              final memoryImageUrl = firstStory.memory!.image_url!;
+              storyImageUrl =
+                  memoryImageUrl.startsWith('/uploads') ||
+                      memoryImageUrl.startsWith('http')
+                  ? (memoryImageUrl.startsWith('/uploads')
+                        ? 'http://localhost:8000$memoryImageUrl'
+                        : memoryImageUrl)
+                  : null;
+            }
+
+            if (storyImageUrl == null && firstStory.user?.avatar_url != null) {
+              final avatarUrl = firstStory.user!.avatar_url!;
+              storyImageUrl = avatarUrl.startsWith('/uploads')
+                  ? 'http://localhost:8000$avatarUrl'
+                  : avatarUrl;
+            }
+
             return StoryCircle(
-              // ignore: invalid_use_of_protected_member
-              imageUrl:
-                  firstStory.user?.avatar_url != null &&
-                      firstStory.user!.avatar_url!.startsWith('/uploads')
-                  ? 'http://localhost:8000${firstStory.user!.avatar_url}'
-                  : firstStory.user?.avatar_url,
+              imageUrl: storyImageUrl,
               username: _getUserDisplayName(firstStory.user),
               isViewed: allViewed,
               storiesCount: userStories.length,
@@ -218,9 +204,39 @@ class _StoriesListState extends State<StoriesList>
               allGroups: allGroups,
               startGroupIndex: startGroupIndex,
             ),
+        transitionDuration: const Duration(milliseconds: 250),
+        reverseTransitionDuration: const Duration(milliseconds: 250),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return child;
+          // Анимация fade + scale при открытии и закрытии
+          // При открытии: animation идет от 0.0 до 1.0
+          // При закрытии: animation идет от 1.0 до 0.0 (reverse)
+          
+          final fadeAnimation = Tween<double>(
+            begin: 0.0,
+            end: 1.0,
+          ).animate(CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+          ));
+          
+          final scaleAnimation = Tween<double>(
+            begin: 0.95,
+            end: 1.0,
+          ).animate(CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+          ));
+          
+          return FadeTransition(
+            opacity: fadeAnimation,
+            child: ScaleTransition(
+              scale: scaleAnimation,
+              alignment: Alignment.center,
+              child: child,
+            ),
+          );
         },
+        opaque: false,
       ),
     );
   }
@@ -245,7 +261,7 @@ class DashedCirclePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = AppTheme.primaryColor
+      ..color = AppTheme.primaryColor.withOpacity(0.8)
       ..strokeWidth = 2.0
       ..style = PaintingStyle.stroke;
 

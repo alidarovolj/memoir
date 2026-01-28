@@ -4,14 +4,18 @@ import 'package:memoir/core/core.dart';
 import 'package:memoir/core/network/dio_client.dart';
 import 'package:memoir/core/widgets/audio_recorder_widget.dart';
 import 'package:memoir/core/widgets/audio_player_widget.dart';
+import 'package:memoir/core/widgets/base_input.dart';
+import 'package:memoir/core/widgets/base_textarea.dart';
+import 'package:memoir/core/widgets/base_button.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:memoir/features/smart_search/presentation/widgets/smart_search_modal.dart';
-import 'package:memoir/features/smart_search/data/models/search_result_model.dart';
+import 'package:memoir/features/tasks/data/models/task_model.dart';
 import 'package:dio/dio.dart';
 
 class CreateMemoryPage extends StatefulWidget {
-  const CreateMemoryPage({super.key});
+  final TaskModel? task; // Опциональная задача для предзаполнения
+
+  const CreateMemoryPage({super.key, this.task});
 
   @override
   State<CreateMemoryPage> createState() => _CreateMemoryPageState();
@@ -22,25 +26,16 @@ class _CreateMemoryPageState extends State<CreateMemoryPage>
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();
+  final _linkController = TextEditingController();
   bool _isLoading = false;
-  String _selectedSourceType = 'text';
   bool _publishAsStory = false; // Toggle для публикации в историях
   late AnimationController _slideController;
-  Map<String, dynamic>?
-  _selectedContent; // Store selected content from smart search
   File? _selectedImage; // Selected image file
   String? _uploadedImageUrl; // Uploaded image URL from backend
   File? _selectedAudio; // Selected audio file
   String? _uploadedAudioUrl; // Uploaded audio URL from backend
   String? _audioTranscript; // Transcribed text from audio
   final ImagePicker _imagePicker = ImagePicker();
-
-  final List<Map<String, dynamic>> _sourceTypes = [
-    {'type': 'text', 'icon': Ionicons.text_outline, 'label': 'Текст'},
-    {'type': 'link', 'icon': Ionicons.link_outline, 'label': 'Ссылка'},
-    {'type': 'image', 'icon': Ionicons.image_outline, 'label': 'Фото'},
-    {'type': 'voice', 'icon': Ionicons.mic_outline, 'label': 'Голос'},
-  ];
 
   @override
   void initState() {
@@ -50,45 +45,27 @@ class _CreateMemoryPageState extends State<CreateMemoryPage>
       vsync: this,
     );
     _slideController.forward();
+    
+    // Предзаполняем данные из задачи, если она передана
+    if (widget.task != null) {
+      _titleController.text = widget.task!.title;
+      // Используем описание задачи, если оно есть, иначе оставляем пустым для пользователя
+      if (widget.task!.description != null && widget.task!.description!.isNotEmpty) {
+        _contentController.text = widget.task!.description!;
+      }
+      // Если описания нет, оставляем поле пустым - пользователь сам заполнит
+    }
   }
 
   @override
   void dispose() {
     _titleController.dispose();
     _contentController.dispose();
+    _linkController.dispose();
     _slideController.dispose();
     super.dispose();
   }
 
-  Future<void> _openSmartSearch() async {
-    final query = _titleController.text.trim();
-    if (query.isEmpty) {
-      SnackBarUtils.showWarning(context, 'Введите заголовок для поиска');
-      return;
-    }
-
-    final result = await showModalBottomSheet<ContentResult?>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.9,
-        minChildSize: 0.5,
-        maxChildSize: 0.95,
-        expand: false,
-        builder: (context, scrollController) {
-          return SmartSearchModal(
-            initialQuery: query,
-            scrollController: scrollController,
-          );
-        },
-      ),
-    );
-
-    if (result != null) {
-      _fillFormFromSearchResult(result);
-    }
-  }
 
   Future<void> _pickImage() async {
     try {
@@ -136,14 +113,18 @@ class _CreateMemoryPageState extends State<CreateMemoryPage>
       final response = await dio.post('/api/v1/upload/image', data: formData);
 
       if (response.data['success'] == true) {
+        final imageUrl = response.data['image_url'];
+        print('📸 [UPLOAD] Image uploaded successfully: $imageUrl');
         setState(() {
-          _uploadedImageUrl = response.data['image_url'];
+          _uploadedImageUrl = imageUrl;
           _isLoading = false;
         });
 
         if (mounted) {
           SnackBarUtils.showSuccess(context, 'Изображение загружено!');
         }
+      } else {
+        print('❌ [UPLOAD] Upload failed - success is not true');
       }
     } catch (e) {
       setState(() => _isLoading = false);
@@ -163,7 +144,6 @@ class _CreateMemoryPageState extends State<CreateMemoryPage>
   Future<void> _handleAudioRecording(String audioPath) async {
     setState(() {
       _selectedAudio = File(audioPath);
-      _selectedSourceType = 'voice';
     });
 
     // Upload audio to backend
@@ -251,60 +231,6 @@ class _CreateMemoryPageState extends State<CreateMemoryPage>
     );
   }
 
-  void _fillFormFromSearchResult(ContentResult result) {
-    setState(() {
-      _titleController.text = result.title;
-
-      // Build rich description
-      final descriptionParts = <String>[];
-
-      if (result.description != null && result.description!.isNotEmpty) {
-        descriptionParts.add(result.description!);
-      }
-
-      // Add metadata
-      if (result.director != null) {
-        descriptionParts.add('\n🎬 Режиссер: ${result.director}');
-      }
-
-      if (result.actors != null && result.actors!.isNotEmpty) {
-        descriptionParts.add('🎭 Актеры: ${result.actors!.take(3).join(", ")}');
-      }
-
-      if (result.authors != null && result.authors!.isNotEmpty) {
-        descriptionParts.add('✍️ Автор: ${result.authors!.join(", ")}');
-      }
-
-      if (result.year != null) {
-        descriptionParts.add('📅 Год: ${result.year}');
-      }
-
-      if (result.rating != null) {
-        descriptionParts.add('⭐ Рейтинг: ${result.rating!.toStringAsFixed(1)}');
-      }
-
-      if (result.genres != null && result.genres!.isNotEmpty) {
-        descriptionParts.add('🎭 Жанры: ${result.genres!.join(", ")}');
-      }
-
-      _contentController.text = descriptionParts.join('\n');
-
-      // Store the full result with metadata
-      _selectedContent = {
-        'source': result.source,
-        'external_id': result.externalId,
-        'type': result.type,
-        'image_url': result.imageUrl,
-        'backdrop_url': result.backdropUrl,
-        'metadata': result.metadata ?? {},
-      };
-    });
-
-    SnackBarUtils.showSuccess(
-      context,
-      '✨ Контент найден! Проверьте и сохраните',
-    );
-  }
 
   Future<void> _createMemory() async {
     print('🎯 [CREATE] Starting memory creation...');
@@ -326,12 +252,25 @@ class _CreateMemoryPageState extends State<CreateMemoryPage>
       final memoryData = <String, dynamic>{
         'title': _titleController.text,
         'content': _contentController.text,
-        'source_type': _selectedSourceType,
+        'source_type': 'text', // Всегда text, так как можно добавлять разные типы контента
       };
+
+      // Добавляем привязку к задаче, если воспоминание создается из задачи
+      if (widget.task != null) {
+        memoryData['related_task_id'] = widget.task!.id;
+      }
+
+      // Add link URL if exists
+      if (_linkController.text.trim().isNotEmpty) {
+        memoryData['source_url'] = _linkController.text.trim();
+      }
 
       // Add uploaded image URL if exists
       if (_uploadedImageUrl != null) {
         memoryData['image_url'] = 'http://localhost:8000$_uploadedImageUrl';
+        print('📸 [CREATE] Image URL added: ${memoryData['image_url']}');
+      } else {
+        print('⚠️ [CREATE] No image URL - _uploadedImageUrl is null');
       }
 
       // Add uploaded audio URL and transcript if exists
@@ -343,39 +282,6 @@ class _CreateMemoryPageState extends State<CreateMemoryPage>
       }
 
       print('📝 [CREATE] Base memory data: $memoryData');
-
-      // Add smart search metadata if available
-      if (_selectedContent != null) {
-        print('✨ [CREATE] Adding smart search metadata');
-        print('   - external_id: ${_selectedContent!['external_id']}');
-        print('   - metadata: ${_selectedContent!['metadata']}');
-
-        memoryData['source_url'] = _selectedContent!['external_id']?.toString();
-        memoryData['image_url'] = _selectedContent!['image_url']?.toString();
-        memoryData['backdrop_url'] = _selectedContent!['backdrop_url']
-            ?.toString();
-
-        print('   - image_url: ${memoryData['image_url']}');
-        print('   - backdrop_url: ${memoryData['backdrop_url']}');
-
-        // Merge smart search metadata - keep as Map, don't convert to JSON string
-        if (_selectedContent!['metadata'] != null) {
-          // Convert to mutable Map (freezed returns immutable Map)
-          final metadata = _selectedContent!['metadata'];
-          if (metadata is Map) {
-            // Keep as Map - backend accepts JSONB which is a Map
-            memoryData['memory_metadata'] = Map<String, dynamic>.from(metadata);
-            print(
-              '   - memory_metadata added as Map: ${memoryData['memory_metadata']}',
-            );
-          } else {
-            print('   ⚠️ metadata is not a Map: ${metadata.runtimeType}');
-          }
-        }
-      } else {
-        print('ℹ️ [CREATE] No smart search metadata');
-      }
-
       print('✅ [CREATE] Final memory data: $memoryData');
 
       // Add story flag to memory data
@@ -405,166 +311,137 @@ class _CreateMemoryPageState extends State<CreateMemoryPage>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: AppTheme.lightBackgroundGradient,
-        ),
-        child: Column(
-          children: [
-            // SafeArea с хедером
-            Container(
-              color: AppTheme.headerBackgroundColor,
-              child: SafeArea(
-                bottom: false,
-                child: SlideTransition(
-                  position:
-                      Tween<Offset>(
-                        begin: const Offset(0, 0.1),
-                        end: Offset.zero,
-                      ).animate(
-                        CurvedAnimation(
-                          parent: _slideController,
-                          curve: Curves.easeOutCubic,
-                        ),
-                      ),
-                  child: FadeTransition(
-                    opacity: _slideController,
-                    child: CustomHeader(
-                      title: 'Новое воспоминание',
-                      type: HeaderType.close,
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.9,
+      decoration: const BoxDecoration(
+        color: AppTheme.pageBackgroundColor,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        children: [
+          // Handle bar
+          Container(
+            width: 36,
+            height: 5,
+            margin: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              color: AppTheme.darkColor.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(2.5),
+            ),
+          ),
+          
+          // Header
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 16, 0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Новое воспоминание',
+                  style: TextStyle(
+                    color: AppTheme.darkColor,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () => Navigator.of(context).pop(),
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: AppTheme.darkColor.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Ionicons.close,
+                      color: AppTheme.darkColor,
+                      size: 20,
                     ),
                   ),
                 ),
-              ),
+              ],
             ),
-            Expanded(
-              child: Form(
-                key: _formKey,
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Тип источника
-                      _buildSectionTitle('Тип контента'),
+          ),
+          
+          // Divider
+          Container(
+            height: 1,
+            margin: const EdgeInsets.symmetric(vertical: 16),
+            color: AppTheme.darkColor.withOpacity(0.1),
+          ),
+          
+          // Content
+          Expanded(
+            child: Form(
+              key: _formKey,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                      // Заголовок
+                      _buildSectionTitle('Заголовок'),
                       const SizedBox(height: 12),
-                      _buildSourceTypeSelector(),
-                      const SizedBox(height: 24),
-
-                      // Заголовок с кнопкой Smart Search
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _buildSectionTitle('Заголовок'),
-                          TextButton.icon(
-                            onPressed: _isLoading ? null : _openSmartSearch,
-                            icon: GradientIcon(
-                              icon: Ionicons.sparkles,
-                              size: 18,
-                              gradient: AppTheme.primaryGradient,
-                            ),
-                            label: ShaderMask(
-                              shaderCallback: (bounds) =>
-                                  AppTheme.primaryGradient.createShader(
-                                    Rect.fromLTWH(
-                                      0,
-                                      0,
-                                      bounds.width,
-                                      bounds.height,
-                                    ),
-                                  ),
-                              child: const Text(
-                                'Искать контент',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                            style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      CustomTextField(
+                      BaseInput(
                         controller: _titleController,
-                        hintText: 'Например: Интерстеллар',
-                        prefixIcon: Ionicons.text_outline,
+                        hint: 'О чем это воспоминание?',
+                        icon: Ionicons.text_outline,
                         enabled: !_isLoading,
-                      ),
-                      const SizedBox(height: 12),
-                      // Hint about smart search
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: AppTheme.primaryColor.withOpacity(0.2),
-                            width: 1,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Ionicons.information_circle_outline,
-                              size: 18,
-                              color: AppTheme.primaryColor,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Введите название и нажмите "Искать контент" для автозаполнения',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: AppTheme.primaryColor,
-                                  height: 1.4,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
                       ),
                       const SizedBox(height: 24),
 
                       // Описание
                       _buildSectionTitle('Описание'),
                       const SizedBox(height: 12),
-                      CustomTextField(
+                      BaseTextarea(
                         controller: _contentController,
-                        hintText:
-                            'Фильм Кристофера Нолана про космос и путешествия во времени...',
-                        prefixIcon: Ionicons.document_text_outline,
+                        hint: 'Расскажите подробнее о том, что вы хотите запомнить...',
+                        icon: Ionicons.document_text_outline,
+                        minLines: 3,
                         maxLines: 8,
                         enabled: !_isLoading,
                       ),
+                      const SizedBox(height: 32),
+
+                      // Ссылка
+                      _buildAddContentSection(
+                        title: 'Ссылка',
+                        icon: Ionicons.link_outline,
+                        onAdd: () => _showLinkInput(),
+                        hasContent: _linkController.text.trim().isNotEmpty,
+                        contentWidget: _linkController.text.trim().isNotEmpty
+                            ? _buildLinkPreview()
+                            : null,
+                      ),
                       const SizedBox(height: 24),
 
-                      // Image preview if uploaded
-                      if (_selectedImage != null) ...[
-                        _buildSectionTitle('Изображение'),
-                        const SizedBox(height: 12),
-                        _buildImagePreview(),
-                        const SizedBox(height: 24),
-                      ],
+                      // Фото
+                      _buildAddContentSection(
+                        title: 'Фото',
+                        icon: Ionicons.image_outline,
+                        onAdd: _pickImage,
+                        hasContent: _selectedImage != null,
+                        contentWidget: _selectedImage != null
+                            ? _buildImagePreview()
+                            : null,
+                      ),
+                      const SizedBox(height: 24),
 
-                      // Аудио плеер (если есть)
-                      if (_selectedAudio != null) ...[
-                        _buildSectionTitle('Голосовая заметка'),
-                        const SizedBox(height: 12),
-                        AudioPlayerWidget(
-                          audioPath: _selectedAudio!.path,
-                          onDelete: _removeAudio,
-                        ),
-                        const SizedBox(height: 24),
-                      ],
+                      // Голосовая заметка
+                      _buildAddContentSection(
+                        title: 'Голосовая заметка',
+                        icon: Ionicons.mic_outline,
+                        onAdd: _showAudioRecorder,
+                        hasContent: _selectedAudio != null,
+                        contentWidget: _selectedAudio != null
+                            ? AudioPlayerWidget(
+                                audioPath: _selectedAudio!.path,
+                                onDelete: _removeAudio,
+                              )
+                            : null,
+                      ),
+                      const SizedBox(height: 24),
 
                       // Переключатель "Опубликовать в историях"
                       _buildPublishAsStoryToggle(),
@@ -594,63 +471,46 @@ class _CreateMemoryPageState extends State<CreateMemoryPage>
                       // const SizedBox(height: 32),
 
                       // Кнопка создания (дополнительная)
-                      GradientButton(
+                      BaseButton(
                         text: 'Создать воспоминание',
                         icon: Ionicons.add_circle_outline,
                         onPressed: _createMemory,
                         isLoading: _isLoading,
                       ),
                       const SizedBox(height: 20),
-                    ],
-                  ),
+                  ],
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildSectionTitle(String title) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Text(
       title,
-      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-        color: isDark ? Colors.white : Colors.black87,
+      style: const TextStyle(
+        fontSize: 20,
         fontWeight: FontWeight.w700,
+        color: AppTheme.darkColor,
       ),
     );
   }
 
   Widget _buildPublishAsStoryToggle() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark
-            ? AppTheme.surfaceColor.withOpacity(0.5)
-            : Colors.white.withOpacity(0.9),
+        color: AppTheme.whiteColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: _publishAsStory
               ? AppTheme.primaryColor
-              : (isDark
-                    ? Colors.white.withOpacity(0.1)
-                    : Colors.black.withOpacity(0.1)),
+              : AppTheme.darkColor.withOpacity(0.1),
           width: _publishAsStory ? 2 : 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: isDark
-                ? Colors.black.withOpacity(0.2)
-                : Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Row(
         children: [
@@ -660,23 +520,30 @@ class _CreateMemoryPageState extends State<CreateMemoryPage>
               gradient: _publishAsStory
                   ? AppTheme.primaryGradient
                   : LinearGradient(
-                      colors: [Colors.grey.shade300, Colors.grey.shade400],
+                      colors: [
+                        AppTheme.darkColor.withOpacity(0.2),
+                        AppTheme.darkColor.withOpacity(0.3),
+                      ],
                     ),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(Ionicons.book_outline, color: Colors.white, size: 24),
+            child: const Icon(
+              Ionicons.book_outline,
+              color: Colors.white,
+              size: 24,
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'Опубликовать в историях',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: isDark ? Colors.white : Colors.black87,
+                    color: AppTheme.darkColor,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -686,9 +553,7 @@ class _CreateMemoryPageState extends State<CreateMemoryPage>
                       : 'Только вы сможете видеть это воспоминание',
                   style: TextStyle(
                     fontSize: 12,
-                    color: isDark
-                        ? Colors.white.withOpacity(0.6)
-                        : Colors.black54,
+                    color: AppTheme.darkColor.withOpacity(0.6),
                   ),
                 ),
               ],
@@ -712,88 +577,233 @@ class _CreateMemoryPageState extends State<CreateMemoryPage>
     );
   }
 
-  Widget _buildSourceTypeSelector() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  Widget _buildAddContentSection({
+    required String title,
+    required IconData icon,
+    required VoidCallback onAdd,
+    required bool hasContent,
+    Widget? contentWidget,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: hasContent
+                        ? AppTheme.primaryColor.withOpacity(0.1)
+                        : AppTheme.darkColor.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: hasContent
+                        ? AppTheme.primaryColor
+                        : AppTheme.darkColor.withOpacity(0.5),
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.darkColor,
+                  ),
+                ),
+              ],
+            ),
+            if (!hasContent)
+              BaseButton(
+                text: 'Добавить',
+                icon: Ionicons.add_outline,
+                onPressed: _isLoading ? null : onAdd,
+                isFullWidth: false,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                fontSize: 14,
+                borderRadius: 12,
+              )
+            else
+              BaseButton(
+                text: 'Изменить',
+                onPressed: _isLoading ? null : onAdd,
+                isFullWidth: false,
+                backgroundColor: AppTheme.darkColor.withOpacity(0.05),
+                foregroundColor: AppTheme.darkColor,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                borderRadius: 8,
+              ),
+          ],
+        ),
+        if (contentWidget != null) ...[
+          const SizedBox(height: 12),
+          contentWidget,
+        ],
+      ],
+    );
+  }
 
+  void _showLinkInput() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: Container(
+          decoration: const BoxDecoration(
+            color: AppTheme.pageBackgroundColor,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Добавить ссылку',
+                style: TextStyle(
+                  color: AppTheme.darkColor,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              BaseInput(
+                controller: _linkController,
+                hint: 'https://example.com',
+                icon: Ionicons.link_outline,
+                enabled: !_isLoading,
+                keyboardType: TextInputType.url,
+                onSubmitted: (value) {
+                  setState(() {});
+                  Navigator.pop(context);
+                },
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  BaseButton(
+                    text: 'Отмена',
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    isFullWidth: false,
+                    backgroundColor: AppTheme.darkColor.withOpacity(0.1),
+                    foregroundColor: AppTheme.darkColor,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    fontSize: 14,
+                  ),
+                  const SizedBox(width: 12),
+                  BaseButton(
+                    text: 'Добавить',
+                    onPressed: () {
+                      setState(() {});
+                      Navigator.pop(context);
+                    },
+                    isFullWidth: false,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    fontSize: 14,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLinkPreview() {
     return Container(
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark
-            ? AppTheme.surfaceColor.withOpacity(0.5)
-            : Colors.white.withOpacity(0.8),
+        color: AppTheme.whiteColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark
-              ? Colors.white.withOpacity(0.1)
-              : Colors.black.withOpacity(0.1),
+          color: AppTheme.darkColor.withOpacity(0.1),
           width: 1,
         ),
       ),
-      padding: const EdgeInsets.all(8),
       child: Row(
-        children: _sourceTypes.map((source) {
-          final isSelected = _selectedSourceType == source['type'];
-          return Expanded(
-            child: GestureDetector(
-              onTap: _isLoading
-                  ? null
-                  : () {
-                      if (source['type'] == 'image') {
-                        _pickImage();
-                      } else if (source['type'] == 'voice') {
-                        _showAudioRecorder();
-                      }
-                      setState(() {
-                        _selectedSourceType = source['type'] as String;
-                      });
-                    },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  gradient: isSelected ? AppTheme.primaryGradient : null,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: AppTheme.primaryColor.withOpacity(0.3),
-                            blurRadius: 8,
-                            spreadRadius: 0,
-                          ),
-                        ]
-                      : null,
-                ),
-                child: Column(
-                  children: [
-                    Icon(
-                      source['icon'] as IconData,
-                      color: isSelected
-                          ? Colors.black
-                          : (isDark
-                                ? Colors.white.withOpacity(0.5)
-                                : Colors.black54),
-                      size: 24,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      source['label'] as String,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: isSelected
-                            ? FontWeight.w600
-                            : FontWeight.w500,
-                        color: isSelected
-                            ? Colors.black
-                            : (isDark
-                                  ? Colors.white.withOpacity(0.5)
-                                  : Colors.black54),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              gradient: AppTheme.primaryGradient,
+              borderRadius: BorderRadius.circular(12),
             ),
-          );
-        }).toList(),
+            child: const Icon(
+              Ionicons.link_outline,
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Ссылка',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.darkColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _linkController.text.trim(),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppTheme.darkColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: _isLoading
+                ? null
+                : () {
+                    setState(() {
+                      _linkController.clear();
+                    });
+                  },
+            icon: const Icon(
+              Ionicons.close_outline,
+              color: AppTheme.darkColor,
+              size: 20,
+            ),
+          ),
+        ],
       ),
     );
   }

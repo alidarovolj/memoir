@@ -60,6 +60,7 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
   // Habit preview data
   Map<String, dynamic>? _habitAnalysis;
   List<Map<String, dynamic>> _previewSubtasks = [];
+  int _subtasksCount = 5; // Количество задач для привычки
 
   // Available colors (like in Grit)
   final List<Color> _availableColors = [
@@ -154,9 +155,10 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
 
     try {
       if (_isHabit) {
-        // Анализ привычки
+        // Анализ привычки (передаем null, чтобы AI сам решил количество)
         final response = await _taskDataSource.analyzeHabit(
           _titleController.text.trim(),
+          subtasksCount: null, // AI сам определяет оптимальное количество
         );
 
         log('✨ [HABIT_AI] Habit analysis: $response');
@@ -842,6 +844,40 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
                 ),
 
                 const SizedBox(height: 16),
+
+                // Информация для привычек
+                if (_isHabit) ...[
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AppTheme.primaryColor.withOpacity(0.3),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Ionicons.sparkles,
+                          color: AppTheme.primaryColor,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'AI автоматически определит оптимальное количество задач',
+                            style: TextStyle(
+                              color: AppTheme.darkColor.withOpacity(0.8),
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
 
                 // Кнопка пропустить AI
                 TextButton(
@@ -2179,6 +2215,76 @@ class _CreateTaskPageState extends State<CreateTaskPage> {
               ),
             ),
           ],
+          
+          // Вложенные сабтаски
+          if (task['subtasks'] != null && (task['subtasks'] as List).isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.whiteColor,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: color.withOpacity(0.3),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Шаги:',
+                    style: TextStyle(
+                      color: AppTheme.darkColor.withOpacity(0.7),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ...(task['subtasks'] as List).asMap().entries.map((entry) {
+                    final stepIndex = entry.key;
+                    final stepTitle = entry.value as String;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 20,
+                            height: 20,
+                            decoration: BoxDecoration(
+                              color: color.withOpacity(0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Text(
+                                '${stepIndex + 1}',
+                                style: TextStyle(
+                                  color: color,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              stepTitle,
+                              style: TextStyle(
+                                color: AppTheme.darkColor.withOpacity(0.8),
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ],
+              ),
+            ),
+          ],
+          
           // Приоритет
           const SizedBox(height: 8),
           Container(

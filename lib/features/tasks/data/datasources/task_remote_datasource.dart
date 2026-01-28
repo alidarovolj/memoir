@@ -20,13 +20,14 @@ abstract class TaskRemoteDataSource {
   Future<TaskModel> createTask(Map<String, dynamic> taskData);
   Future<TaskModel> updateTask(String taskId, Map<String, dynamic> taskData);
   Future<void> completeTask(String taskId);
+  Future<void> uncompleteTask(String taskId);
   Future<void> deleteTask(String taskId);
   Future<Map<String, dynamic>> generateRecurringInstances(
     String taskId, {
     int daysAhead = 7,
   });
   Future<Map<String, dynamic>> analyzeTask(String title);
-  Future<Map<String, dynamic>> analyzeHabit(String title);
+  Future<Map<String, dynamic>> analyzeHabit(String title, {int? subtasksCount});
   Future<Map<String, dynamic>> createHabitWithSubtasks(
     Map<String, dynamic> habitData,
   );
@@ -170,6 +171,17 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
   }
 
   @override
+  Future<void> uncompleteTask(String taskId) async {
+    try {
+      await dio.post('${ApiConfig.tasks}/$taskId/uncomplete');
+      log('✅ [TASKS] Task uncompleted: $taskId');
+    } catch (e) {
+      log('❌ [TASKS] Error uncompleting task $taskId: $e');
+      rethrow;
+    }
+  }
+
+  @override
   Future<void> deleteTask(String taskId) async {
     try {
       await dio.delete('${ApiConfig.tasks}/$taskId');
@@ -214,11 +226,15 @@ class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
   }
 
   @override
-  Future<Map<String, dynamic>> analyzeHabit(String title) async {
+  Future<Map<String, dynamic>> analyzeHabit(String title, {int? subtasksCount}) async {
     try {
+      final data = <String, dynamic>{'title': title};
+      if (subtasksCount != null) {
+        data['subtasks_count'] = subtasksCount;
+      }
       final response = await dio.post(
         '${ApiConfig.tasksAI}/analyze-habit',
-        data: {'title': title},
+        data: data,
       );
       log('✨ [HABIT_AI] Habit analyzed: ${response.data}');
       return response.data;

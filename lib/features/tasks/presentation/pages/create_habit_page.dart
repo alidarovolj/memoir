@@ -52,8 +52,10 @@ class _CreateHabitPageState extends State<CreateHabitPage> {
     });
 
     try {
+      // Передаем null, чтобы AI сам определил оптимальное количество
       final response = await _taskDataSource.analyzeHabit(
         _titleController.text.trim(),
+        subtasksCount: null, // AI сам решает оптимальное количество
       );
 
       log('✨ [HABIT_AI] Analysis: $response');
@@ -267,6 +269,39 @@ class _CreateHabitPageState extends State<CreateHabitPage> {
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.all(24),
               ),
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // Информация о том, что AI сам определит количество
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: AppTheme.primaryColor.withOpacity(0.3),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Ionicons.sparkles,
+                  color: AppTheme.primaryColor,
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'AI автоматически определит оптимальное количество задач для вашей привычки',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.9),
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
 
@@ -502,6 +537,8 @@ class _CreateHabitPageState extends State<CreateHabitPage> {
     final color = subtask['color'] != null
         ? Color(int.parse(subtask['color'].substring(1, 7), radix: 16) + 0xFF000000)
         : AppTheme.primaryColor;
+    
+    final nestedSubtasks = subtask['subtasks'] as List<dynamic>? ?? [];
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -511,94 +548,165 @@ class _CreateHabitPageState extends State<CreateHabitPage> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: color.withOpacity(0.3)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Icon
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Center(
-              child: Icon(
-                _getIconData(subtask['icon']),
-                color: Colors.white,
-                size: 20,
-              ),
-            ),
-          ),
-
-          const SizedBox(width: 12),
-
-          // Info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  subtask['title'] ?? '',
-                  style: const TextStyle(
+          Row(
+            children: [
+              // Icon
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Center(
+                  child: Icon(
+                    _getIconData(subtask['icon']),
                     color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                    size: 20,
                   ),
                 ),
-                if (subtask['description'] != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    subtask['description'],
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.6),
-                      fontSize: 14,
+              ),
+
+              const SizedBox(width: 12),
+
+              // Info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      subtask['title'] ?? '',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-                if (subtask['suggested_time'] != null) ...[
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      Icon(
-                        Ionicons.time_outline,
-                        size: 14,
-                        color: Colors.white.withOpacity(0.5),
-                      ),
-                      const SizedBox(width: 4),
+                    if (subtask['description'] != null) ...[
+                      const SizedBox(height: 4),
                       Text(
-                        subtask['suggested_time'],
+                        subtask['description'],
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.5),
-                          fontSize: 12,
+                          color: Colors.white.withOpacity(0.6),
+                          fontSize: 14,
                         ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(width: 12),
-                      if (subtask['is_recurring'] == true)
-                        Row(
-                          children: [
-                            Icon(
-                              Ionicons.repeat_outline,
-                              size: 14,
+                    ],
+                    if (subtask['suggested_time'] != null) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Icon(
+                            Ionicons.time_outline,
+                            size: 14,
+                            color: Colors.white.withOpacity(0.5),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            subtask['suggested_time'],
+                            style: TextStyle(
                               color: Colors.white.withOpacity(0.5),
+                              fontSize: 12,
                             ),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Ежедневно',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.5),
-                                fontSize: 12,
+                          ),
+                          const SizedBox(width: 12),
+                          if (subtask['is_recurring'] == true)
+                            Row(
+                              children: [
+                                Icon(
+                                  Ionicons.repeat_outline,
+                                  size: 14,
+                                  color: Colors.white.withOpacity(0.5),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Ежедневно',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.5),
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+          
+          // Вложенные сабтаски
+          if (nestedSubtasks.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Шаги:',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.7),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ...nestedSubtasks.asMap().entries.map((entry) {
+                    final stepIndex = entry.key;
+                    final stepTitle = entry.value as String;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 20,
+                            height: 20,
+                            decoration: BoxDecoration(
+                              color: color.withOpacity(0.3),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Text(
+                                '${stepIndex + 1}',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
-                          ],
-                        ),
-                    ],
-                  ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              stepTitle,
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.8),
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
                 ],
-              ],
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );

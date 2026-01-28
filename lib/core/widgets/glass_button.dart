@@ -28,7 +28,20 @@ class GlassButton extends StatelessWidget {
         height: size,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(size / 2),
-          // Убрано темное свечение
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.darkColor.withOpacity(0.1),
+              blurRadius: 20,
+              spreadRadius: 0,
+              offset: const Offset(0, 4),
+            ),
+            BoxShadow(
+              color: AppTheme.darkColor.withOpacity(0.05),
+              blurRadius: 10,
+              spreadRadius: 0,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(size / 2),
@@ -38,20 +51,6 @@ class GlassButton extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.85),
                 borderRadius: BorderRadius.circular(size / 2),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.darkColor.withOpacity(0.1),
-                    blurRadius: 20,
-                    spreadRadius: 0,
-                    offset: const Offset(0, 4),
-                  ),
-                  BoxShadow(
-                    color: AppTheme.darkColor.withOpacity(0.05),
-                    blurRadius: 10,
-                    spreadRadius: 0,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
                 border: Border(
                   bottom: BorderSide(
                     color: AppTheme.darkColor.withOpacity(0.08),
